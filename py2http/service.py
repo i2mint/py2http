@@ -27,11 +27,15 @@ def handle_ping():
 
 
 def mk_request_handler(controller, **configs):
+
     def method_not_found(method_name):
         raise web.HTTPNotFound(text=json.dumps({'error': f'method {method_name} not found'}),
                                content_type='application/json')
 
+
     async def handle_request(req):
+
+        # method
         method_name = req.match_info.get('method', '')
         if not method_name:
             if callable(controller):
@@ -43,16 +47,22 @@ def mk_request_handler(controller, **configs):
             method = getattr(controller, method_name, None)
             if not method:
                 method_not_found(method_name)
+
+        assert callable(method), "method should be callable at this point"  # TODO: Handle more finely
+
+        # input_mapper
         input_mapper = mk_config('input_mapper', configs, default_configs)
         if isinstance(input_mapper, dict) and method_name in input_mapper:
             input_mapper = input_mapper[method_name]
         if callable(input_mapper):
-            if inspect.isawaitable(input_mapper):
+            if inspect.isawaitable(input_mapper):  # Pattern: pass-on async property
                 input_kwargs = await input_mapper(req)
             else:
                 input_kwargs = input_mapper(req)
         else:
             input_kwargs = {}
+
+        # input_validator
         input_validator = mk_config('input_validator', configs, default_configs)
         if isinstance(input_validator, dict) and method_name in input_validator:
             input_validator = input_validator[method_name]
@@ -61,13 +71,19 @@ def mk_request_handler(controller, **configs):
             if validation_result is not True:
                 raise web.HTTPBadRequest(text=json.dumps({'error': validation_result}),
                                          content_type='application/json')
-        if inspect.isawaitable(method):
+
+        # call the method
+        if inspect.isawaitable(method):  # Pattern: pass-on async property
             raw_result = await method(**input_kwargs)
         else:
             raw_result = method(**input_kwargs)
+
+        # output mapping
         output_mapper = mk_config('output_mapper', configs, default_configs)
         if isinstance(output_mapper, dict) and method_name in output_mapper:
-            output_mapper = output_mapper[method_name]
+            output_mapper = output_mapper[method_name]  # assumes the value is a callable
+            assert callable(output_mapper), f"Should be a callable, was not: {output_mapper}"
+
         if callable(output_mapper):
             result = output_mapper(raw_result)
         else:
