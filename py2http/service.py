@@ -74,7 +74,8 @@ def handle_ping():
 
 
 def run_http_service(functions, **configs):
-    app = web.Application()
+    middleware = mk_config('middleware', configs, default_configs)
+    app = web.Application(middlewares=middleware)
     routes = [mk_route(item, **configs) for item in functions]
     app.add_routes([web.get('/ping', handle_ping), *routes])
     web.run_app(app, port=3030)
