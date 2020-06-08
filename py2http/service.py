@@ -32,6 +32,7 @@ def mk_route(function, **configs):
     input_mapper = getattr(function, 'input_mapper', None)
     if not input_mapper:
         input_mapper = mk_config('input_mapper', configs, default_configs)
+        # TODO: perhaps collections.abc.Mapping instead of dict?
         if isinstance(input_mapper, dict) and method_name in input_mapper:
             input_mapper = input_mapper[method_name]
     assert callable(input_mapper), f'Invalid input mapper for function {method_name}, must be callable'

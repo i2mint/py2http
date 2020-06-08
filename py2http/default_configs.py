@@ -4,28 +4,28 @@ import jwt
 from warnings import warn
 
 
-def jwt_reader_middleware(request, handler):
+def jwt_reader_middleware(req, handler):
     auth_header = req.headers.get('Authorization', '')
     token = auth_header[7:]
     if not token:
-        return handler(request)
+        return handler(req)
     try:
         decoded = jwt.decode(token, verify=False)
-        request.token = decoded
-        return handler(request)
+        req.token = decoded
+        return handler(req)
     except jwt.DecodeError:
         warn(f'Invalid JWT: {token}')
-        return handler(request)
+        return handler(req)
 
 
-async def default_input_mapper(request):
+async def default_input_mapper(req):
     try:
-        body = await request.json()
+        body = await req.json()
     except JSONDecodeError:
-        warn('Invalid request body, expected JSON format.')
+        warn('Invalid req body, expected JSON format.')
         body = {}
-    if request.getattr('token', None):
-        body = dict(body, **request.token)
+    if req.getattr('token', None):
+        body = dict(body, **req.token)
     return [], body
 
 
