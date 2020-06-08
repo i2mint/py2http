@@ -22,6 +22,6 @@ def default_output_mapper(output):
 
 default_configs = {
     'input_mapper': default_input_mapper,
-    'input validator': default_input_validator,
+    'input_validator': default_input_validator,
     'output_mapper': default_output_mapper,
 }

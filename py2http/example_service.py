@@ -1,19 +1,27 @@
 from py2http import run_http_service
 
 
-class ExampleController:
-    def add(self, a, b):
-        return a + b
-
-    def no_args(self):
-        return 'no args'
-
-    def __call__(self):
-        return 'base route'
+def add(a, b):
+    return a + b
 
 
-controller = ExampleController()
+def no_args():
+    return 'no args'
+
+
+class MultiplierClass:
+    def __init__(self, multiplicand):
+        self.multiplicand = multiplicand
+
+    def multiply(self, multiplier):
+        return self.multiplicand * multiplier
+
+
+multiplier_instance = MultiplierClass(5)
+
+
+example_functions = [add, no_args, multiplier_instance.multiply]
 
 
 if __name__ == '__main__':
-    run_http_service(controller)
+    run_http_service(example_functions)
