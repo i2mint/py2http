@@ -51,9 +51,12 @@ def mk_route(function, **configs):
     assert callable(output_mapper), f'Invalid output mapper for function {method_name}, must be callable'
 
     async def handle_request(req):
-        input_kwargs = input_mapper(req)
-        if inspect.isawaitable(input_kwargs):  # Pattern: pass-on async property
-            input_kwargs = await input_kwargs
+        print('reached handle_request')
+        input_tuple = input_mapper(req)
+        if inspect.isawaitable(input_tuple):  # Pattern: pass-on async property
+            input_tuple = await input_tuple
+        input_args, input_kwargs = input_tuple
+        print(input_args, input_kwargs)
 
         validation_result = input_validator(input_kwargs)
         if validation_result is not True:
@@ -63,6 +66,9 @@ def mk_route(function, **configs):
         raw_result = function(**input_kwargs)
         if inspect.isawaitable(raw_result):  # Pattern: pass-on async property
             raw_result = await raw_result
+            print(f'awaited result, {raw_result}')
+        else:
+            print(f'sync result, {raw_result}')
 
         return output_mapper(raw_result)
 
@@ -74,8 +80,22 @@ def handle_ping():
 
 
 def run_http_service(functions, **configs):
+    app = mk_http_service(functions, **configs)
+    port = mk_config('port', configs, default_configs)
+    web.run_app(app, port=port)
+
+
+def mk_http_service(functions, **configs):
     middleware = mk_config('middleware', configs, default_configs)
     app = web.Application(middlewares=middleware)
     routes = [mk_route(item, **configs) for item in functions]
     app.add_routes([web.get('/ping', handle_ping), *routes])
-    web.run_app(app, port=3030)
+    return app
+
+
+def run_many_services(apps, **configs):
+    app = web.Application()
+    for route, subapp in apps.items():
+        app.add_subapp(route, subapp)
+    port = mk_config('port', configs, default_configs)
+    web.run_app(app, port=port)
