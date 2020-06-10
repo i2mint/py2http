@@ -11,9 +11,11 @@ def method_not_found(method_name):
                            content_type='application/json')
 
 
-def mk_config(key, configs, defaults, **options):
-    result = configs.get(key, None)
+def mk_config(key, func, funcname, configs, defaults, **options):
+    result = getattr(func, key, configs.get(key, None))
     if result:
+        if isinstance(result, dict) and funcname in result:
+            result = result[funcname]
         if options.get('is_func', None) and not callable(result):
             warn(f'Config {key} is not callable, using default.')
             result = defaults.get(key, None)
@@ -29,26 +31,14 @@ def mk_config(key, configs, defaults, **options):
 
 def mk_route(function, **configs):
     method_name = function.__name__
-    input_mapper = getattr(function, 'input_mapper', None)
-    if not input_mapper:
-        input_mapper = mk_config('input_mapper', configs, default_configs)
-        # TODO: perhaps collections.abc.Mapping instead of dict?
-        if isinstance(input_mapper, dict) and method_name in input_mapper:
-            input_mapper = input_mapper[method_name]
+    input_mapper = mk_config('input_mapper', function, method_name, configs, default_configs)
+    # TODO: perhaps collections.abc.Mapping instead of dict?
     assert callable(input_mapper), f'Invalid input mapper for function {method_name}, must be callable'
 
-    input_validator = getattr(function, 'input_validator', None)
-    if not input_validator:
-        input_validator = mk_config('input_validator', configs, default_configs)
-        if isinstance(input_validator, dict) and method_name in input_validator:
-            input_validator = input_validator[method_name]
+    input_validator = mk_config('input_validator', function, method_name, configs, default_configs)
     assert callable(input_validator), f'Invalid input validator for function {method_name}, must be callable'
 
-    output_mapper = getattr(function, 'output_mapper', None)
-    if not output_mapper:
-        output_mapper = mk_config('output_mapper', configs, default_configs)
-        if isinstance(output_mapper, dict) and method_name in output_mapper:
-            output_mapper = output_mapper[method_name]
+    output_mapper = mk_config('output_mapper', function, method_name, configs, default_configs)
     assert callable(output_mapper), f'Invalid output mapper for function {method_name}, must be callable'
 
     async def handle_request(req):
@@ -73,11 +63,13 @@ def mk_route(function, **configs):
 
         return output_mapper(raw_result)
 
-    http_method = getattr(function, 'http_method', None).lower()
+    http_method = mk_config('http_method', function, method_name, configs, default_configs).lower()
     if http_method not in ['get', 'put', 'post', 'delete']:
         http_method = 'post'
     web_mk_route = getattr(web, http_method)
-    route = getattr(method, 'route', f'/{method_name}')
+    route = mk_config('route', function, configs, default_configs)
+    if not route:
+        route = f'/{method_name}'
     return web_mk_route(route, handle_request)
 
 
