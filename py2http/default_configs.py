@@ -14,7 +14,7 @@ async def default_input_mapper(req):
     return [], body
 
 
-def default_input_validator(input):
+def default_input_validator(input_args, input_kwargs):
     return True
 
 

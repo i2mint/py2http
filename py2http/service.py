@@ -29,6 +29,9 @@ def mk_config(key, configs, defaults, **options):
 
 def mk_route(function, **configs):
     method_name = function.__name__
+    http_method = getattr(function, 'http_method', None).lower()
+    if http_method not in ['get', 'put', 'post', 'delete']:
+        http_method = 'post'
     input_mapper = getattr(function, 'input_mapper', None)
     if not input_mapper:
         input_mapper = mk_config('input_mapper', configs, default_configs)
@@ -59,7 +62,7 @@ def mk_route(function, **configs):
         input_args, input_kwargs = input_tuple
         print(input_args, input_kwargs)
 
-        validation_result = input_validator(input_kwargs)
+        validation_result = input_validator(input_args, input_kwargs)
         if validation_result is not True:
             raise web.HTTPBadRequest(text=json.dumps({'error': validation_result}),
                                      content_type='application/json')
@@ -73,7 +76,8 @@ def mk_route(function, **configs):
 
         return output_mapper(raw_result)
 
-    return web.post(f'/{method_name}', handle_request)
+    route = getattr(web, http_method)
+    return route(f'/{method_name}', handle_request)
 
 
 def handle_ping():
