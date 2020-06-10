@@ -8,6 +8,118 @@ from typing import Union, Callable
 
 _empty = Parameter.empty
 
+from inspect import _empty
+
+
+class Param(Parameter):
+    # aliases
+    PK = Parameter.POSITIONAL_OR_KEYWORD
+    OP = Parameter.POSITIONAL_ONLY
+    OK = Parameter.KEYWORD_ONLY
+    VP = Parameter.VAR_POSITIONAL
+    VK = Parameter.VAR_KEYWORD
+
+    def __init__(self, name, kind=PK, *, default=_empty, annotation=_empty):
+        super().__init__(name, kind, default=default, annotation=annotation)
+
+
+class Params(UserDict):
+    """
+
+    >>> def foo(a, b: int, c=None, d: str='hi') -> int: ...
+    >>> def bar(b: float, d='hi'): ...
+    >>> Params(foo)
+    {'a': <Parameter "a">, 'b': <Parameter "b: int">, 'c': <Parameter "c=None">, 'd': <Parameter "d: str = 'hi'">}
+    >>> p = Params(bar)
+    >>> Params(p['b'])
+    {'b': <Parameter "b: float">}
+    >>> Params()
+    {}
+    >>> Params([p['d'], p['b']])
+    {'d': <Parameter "d='hi'">, 'b': <Parameter "b: float">}
+    """
+
+    def __init__(self, obj=None, validate=True):
+        if obj is None:
+            params_dict = dict()
+        elif callable(obj):
+            params_dict = dict(signature(obj).parameters)
+        elif isinstance(obj, Parameter):
+            params_dict = {obj.name: obj}
+        else:
+            try:
+                params_dict = dict(obj)
+            except TypeError:
+                params_dict = {x.name: x for x in obj}
+
+        super().__init__(params_dict)
+        # if validate:
+        #     self.validate()
+
+    @staticmethod
+    def foo(obj=None):
+        if obj is None:
+            params_dict = dict()
+        elif callable(obj):
+            params_dict = dict(signature(obj).parameters)
+        elif isinstance(obj, Parameter):
+            params_dict = {obj.name: obj}
+        else:
+            try:
+                params_dict = dict(obj)
+            except TypeError:
+                params_dict = {x.name: x for x in obj}
+
+        return params_dict
+
+    @classmethod
+    def from_signature(cls, sig):
+        """
+
+        :param sig:
+        :return:
+
+        >>> from inspect import signature, Signature
+        >>> def foo(a, b: int, c=None, d: str='hi') -> int: ...
+        >>> sig = signature(foo)
+        >>> assert isinstance(sig, Signature)
+        >>> params = Params.from_signature(sig)
+        >>> params
+        """
+        return cls(sig.parameters.values())
+
+    @classmethod
+    def from_callable(cls, obj):
+        return cls.from_signature(signature(obj))
+
+    def __add__(self, params):
+        if isinstance(params, Parameter):
+            self.__class__([params])
+        elif isinstance(params, Signature):
+            self.__class__.from_signature(params)
+        else:
+            pass
+
+    def __setitem__(self, k, v):
+        pass
+
+    def validate(self):
+        for k, v in self.items():
+            assert isinstance(k, str), f"isinstance({k}, str)"
+            assert isinstance(v, Parameter), f"isinstance({v}, Parameter)"
+        return True
+
+
+class Sig(Signature):
+    @classmethod
+    def from_params(cls, params):
+        if isinstance(params, Parameter):
+            params = (params,)
+        return cls(params)
+
+    def __add__(self, sig):
+        pass
+
 
 def mk_sig(obj: Union[Signature, Callable, Mapping, None] = None, return_annotations=_empty, **annotations):
     """Convenience function to make a signature or inject annotations to an existing one.
@@ -78,47 +190,6 @@ def insert_annotations(s: Signature, *, return_annotation=_empty, **annotations)
         p = params[name]
         params[name] = Parameter(name=name, kind=p.kind, default=p.default, annotation=annotation)
     return Signature(params.values(), return_annotation=return_annotation)
-
-
-class Params(UserDict):
-    """
-
-    >>> def foo(a, b: int, c=None, d: str='hi') -> int: ...
-    >>> def bar(b: float, d='hi'): ...
-    >>> Params(foo)
-    {'a': <Parameter "a">, 'b': <Parameter "b: int">, 'c': <Parameter "c=None">, 'd': <Parameter "d: str = 'hi'">}
-    >>> p = Params(bar)
-    >>> Params(p['b'])
-    {'b': <Parameter "b: float">}
-    >>> Params()
-    {}
-    >>> Params([p['d'], p['b']])
-    {'d': <Parameter "d='hi'">, 'b': <Parameter "b: float">}
-    """
-
-    def __init__(self, obj=None, validate=True):
-        if obj is None:
-            params_dict = dict()
-        elif callable(obj):
-            params_dict = dict(signature(obj).parameters)
-        elif isinstance(obj, Parameter):
-            params_dict = {obj.name: obj}
-        else:
-            try:
-                params_dict = dict(obj)
-            except TypeError:
-                params_dict = {x.name: x for x in obj}
-
-        super().__init__(params_dict)
-
-        if validate:
-            self.validate()
-
-    def validate(self):
-        for k, v in self.items():
-            assert isinstance(k, str), f"isinstance({k}, str)"
-            assert isinstance(v, Parameter), f"isinstance({v}, Parameter)"
-        return True
 
 
 mappingproxy = type(Signature().parameters)
