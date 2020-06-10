@@ -29,9 +29,6 @@ def mk_config(key, configs, defaults, **options):
 
 def mk_route(function, **configs):
     method_name = function.__name__
-    http_method = getattr(function, 'http_method', None).lower()
-    if http_method not in ['get', 'put', 'post', 'delete']:
-        http_method = 'post'
     input_mapper = getattr(function, 'input_mapper', None)
     if not input_mapper:
         input_mapper = mk_config('input_mapper', configs, default_configs)
@@ -76,8 +73,12 @@ def mk_route(function, **configs):
 
         return output_mapper(raw_result)
 
-    route = getattr(web, http_method)
-    return route(f'/{method_name}', handle_request)
+    http_method = getattr(function, 'http_method', None).lower()
+    if http_method not in ['get', 'put', 'post', 'delete']:
+        http_method = 'post'
+    web_mk_route = getattr(web, http_method)
+    route = getattr(method, 'route', f'/{method_name}')
+    return web_mk_route(route, handle_request)
 
 
 def handle_ping():

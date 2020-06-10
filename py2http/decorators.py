@@ -20,6 +20,12 @@ def http_delete(func):
     func.http_method = 'delete'
     return func
 
+
+def route(route):
+    func.route = route
+    return func
+
+
 # TODO: stub
 def mk_input_mapper(input_map):
     def decorator(func):
