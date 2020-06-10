@@ -22,8 +22,10 @@ def http_delete(func):
 
 
 def route(route):
-    func.route = route
-    return func
+    def decorator(func):
+        func.route = route
+        return func
+    return decorator
 
 
 # TODO: stub
