@@ -67,7 +67,7 @@ def mk_route(function, **configs):
     if http_method not in ['get', 'put', 'post', 'delete']:
         http_method = 'post'
     web_mk_route = getattr(web, http_method)
-    route = mk_config('route', function, configs, default_configs)
+    route = mk_config('route', function, method_name, configs, default_configs)
     if not route:
         route = f'/{method_name}'
     return web_mk_route(route, handle_request)
@@ -79,12 +79,12 @@ def handle_ping():
 
 def run_http_service(functions, **configs):
     app = mk_http_service(functions, **configs)
-    port = mk_config('port', configs, default_configs)
+    port = mk_config('port', None, None, configs, default_configs)
     web.run_app(app, port=port)
 
 
 def mk_http_service(functions, **configs):
-    middleware = mk_config('middleware', configs, default_configs)
+    middleware = mk_config('middleware', None, None, configs, default_configs)
     app = web.Application(middlewares=middleware)
     routes = [mk_route(item, **configs) for item in functions]
     app.add_routes([web.get('/ping', handle_ping), *routes])
@@ -95,5 +95,5 @@ def run_many_services(apps, **configs):
     app = web.Application()
     for route, subapp in apps.items():
         app.add_subapp(route, subapp)
-    port = mk_config('port', configs, default_configs)
+    port = mk_config('port', None, None, configs, default_configs)
     web.run_app(app, port=port)

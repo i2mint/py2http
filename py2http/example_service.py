@@ -23,5 +23,9 @@ multiplier_instance = MultiplierClass(5)
 example_functions = [add, no_args, multiplier_instance.multiply]
 
 
-if __name__ == '__main__':
+def run_example_service():
     run_http_service(example_functions)
+
+
+if __name__ == '__main__':
+    run_example_service()

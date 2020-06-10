@@ -28,4 +28,5 @@ default_configs = {
     'output_mapper': default_output_mapper,
     'middleware': [],
     'port': 3030,
+    'http_method': 'post',
 }
