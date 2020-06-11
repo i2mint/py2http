@@ -1,4 +1,69 @@
-from functools import wraps
+from inspect import signature, Signature
+
+
+def mk_flat(cls, method, *, func_name=None):
+    """
+    Flatten a simple cls->instance->method call pipeline into one function.
+
+    That is, instead of this:
+    ```graphviz
+    cls, init_kwargs -> instance
+    instance, method, method_kwargs -> result
+    ```
+    you get a function `flat_func` that you can use like this:
+    ```graphviz
+    flat_func, init_kwargs, method_kwargs -> result
+    ```
+    :param cls:
+    :param method:
+    :param func_name:
+    :return:
+
+    >>> class MultiplierClass:
+    ...     def __init__(self, x):
+    ...         self.x = x
+    ...     def multiply(self, y: float = 1) -> float:
+    ...         return self.x * y
+    ...     def subtract(self, z):
+    ...         return self.x - z
+    ...
+    >>> MultiplierClass(6).multiply(7)
+    42
+    >>> MultiplierClass(3.14).multiply()
+    3.14
+    >>> MultiplierClass(3).subtract(1)
+    2
+    >>> f = mk_flat(MultiplierClass, 'multiply', func_name='my_special_func')
+    >>> help(f)
+    Help on function my_special_func in module decorators:
+    <BLANKLINE>
+    my_special_func(x, y: float = 1) -> float
+    <BLANKLINE>
+    >>> f = mk_flat(MultiplierClass, MultiplierClass.subtract)
+    >>> help(f)
+    Help on function flat_func in module decorators:
+    <BLANKLINE>
+    flat_func(x, z)
+    <BLANKLINE>
+    """
+    sig1 = signature(cls)
+    if isinstance(method, str):
+        method = getattr(cls, method)
+    sig2 = signature(method)
+    parameters = list(sig1.parameters.values()) + list(sig2.parameters.values())[1:]
+
+    def flat_func(**kwargs):
+        for1 = {k: kwargs[k] for k in kwargs if k in sig1.parameters}
+        for2 = {k: kwargs[k] for k in kwargs if k in sig2.parameters}
+        instance = cls(**for1)  # TODO: implement caching option
+        return getattr(instance, method)(**for2)
+
+    flat_func.__signature__ = Signature(parameters, return_annotation=sig2.return_annotation)
+
+    if func_name is not None:
+        flat_func.__name__ = func_name
+
+    return flat_func
 
 
 def add_attrs(**attrs):
