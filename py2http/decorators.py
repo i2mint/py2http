@@ -1,5 +1,153 @@
 from inspect import signature, Signature
 
+from inspect import signature, Signature, Parameter
+
+from typing import Iterable, Callable, Union, Mapping
+from functools import partial, wraps, update_wrapper
+from types import FunctionType
+
+ParameterKind = type(Parameter.POSITIONAL_OR_KEYWORD)  # to get the enum type
+
+Params = Iterable[Parameter]
+HasParams = Union[Iterable[Parameter], Mapping[str, Parameter], Signature, Callable]
+
+
+def copy_func(f):
+    """Copy a function (not sure it works with all types of callables)"""
+    g = FunctionType(f.__code__, f.__globals__, name=f.__name__,
+                     argdefs=f.__defaults__, closure=f.__closure__)
+    g = update_wrapper(g, f)
+    g.__kwdefaults__ = f.__kwdefaults__
+    if hasattr(f, '__signature__'):
+        g.__signature__ = f.__signature__
+    return g
+
+
+def transparently_wrapped(func):
+    @wraps(func)
+    def transparently_wrapped_func(*args, **kwargs):
+        return func(args, **kwargs)
+
+    return transparently_wrapped_func
+
+
+def params_of(obj: HasParams):
+    if isinstance(obj, Signature):
+        obj = list(obj.parameters.values())
+    elif isinstance(obj, Mapping):
+        obj = list(obj.values())
+    elif callable(obj):
+        obj = list(signature(obj).parameters.values())
+    assert all(isinstance(p, Parameter) for p in obj), "obj needs to be a Iterable[Parameter] at this point"
+    return obj  # as is
+
+
+def replace_with_params(target=None, /, *, source=None, inplace=False):
+    """Will return a version of the target type that has params taken from source.
+    Both target and source can be of the HasParams type, i.e.
+    ```
+        Union[Iterable[Parameter], Mapping[str, Parameter], Signature, Callable]
+    ```
+
+    >>> def f(a, /, b, *, c=None, **kwargs): ...
+    ...
+    >>> def g(x, y=1, *args, **kwargs): ...
+    ...
+    >>> f_sig = signature(f)
+    >>> f_params_map = f_sig.parameters
+    >>> f_params = tuple(f_params_map.values())
+    >>> g_sig = signature(g)
+    >>> g_params_map = g_sig.parameters
+    >>> g_params = tuple(g_params_map.values())
+    >>>
+    >>> original_f_sig = signature(f)
+    >>> print(original_f_sig)
+    (a, /, b, *, c=None, **kwargs)
+    >>> new_f = replace_with_params(f, source=g)
+    >>> print(signature(new_f))
+    (x, y=1, *args, **kwargs)
+    >>> assert signature(new_f) == signature(g)
+    >>> # but f remains unchanged (there is inplace=False option though!)
+    >>> assert signature(f) == original_f_sig
+    """
+    if target is None:
+        return partial(replace_with_params, source=source)
+    else:
+        if source is not None:
+            new_params = params_of(source)
+            if isinstance(target, Signature):
+                # same return_annotation, but different params
+                return Signature(new_params, obj.return_annotation)
+            elif isinstance(target, Mapping):
+                # Note: params_of already asserts p are all Parameter instances
+                return {p.name: p for p in new_params}
+            elif callable(target):
+                if not inplace:
+                    target = copy_func(target)  # make a copy of the function so we don't
+                target.__signature__ = Signature(new_params,
+                                                 return_annotation=signature(target).return_annotation)
+                return target
+            else:
+                return new_params
+        else:
+            return target
+
+
+def params_replacer(replace: Union[dict, Callable[[Parameter], dict]],
+                    obj: Iterable[Parameter]):
+    """Generator of transformed params."""
+
+    if isinstance(replace, dict):
+        replace = lambda x: replace  # use the same replace on all parameters
+
+    for p in params_of(obj):
+        p = p.replace(**(replace(p) or {}))
+        yield p
+
+
+VP, PK, VK = (Parameter.VAR_POSITIONAL, Parameter.POSITIONAL_OR_KEYWORD, Parameter.VAR_KEYWORD)
+var_param_types = {VP, VK}
+
+
+def ch_signature_to_all_pk(sig):
+    def changed_params():
+        for p in sig.parameters.values():
+            if p.kind not in var_param_types:
+                yield p.replace(kind=PK)
+            else:
+                yield p
+
+    return Signature(list(changed_params()), return_annotation=sig.return_annotation)
+
+
+def ch_func_to_all_pk(func):
+    sig = signature(func)
+    if any(p.kind == VP for p in sig.parameters.values()):
+        pass
+    func.__signature__ = ch_signature_to_all_pk(sig)
+    return func
+
+
+def flatten(*callables, func_name=None):
+    """
+    Flatten a pipeline of calls into one function.
+    """
+    for call in callables:
+        pass
+
+    # def flat_func(**kwargs):
+    #     for1 = {k: kwargs[k] for k in kwargs if k in sig1.parameters}
+    #     for2 = {k: kwargs[k] for k in kwargs if k in sig2.parameters}
+    #     instance = cls(**for1)  # TODO: implement caching option
+    #     return getattr(instance, method)(**for2)
+    #
+    # flat_func.__signature__ = Signature(parameters, return_annotation=sig2.return_annotation)
+
+    # if func_name is not None:
+    #     flat_func.__name__ = func_name
+    #
+    # return flat_func
+
 
 def mk_flat(cls, method, *, func_name=None):
     """
