@@ -77,7 +77,7 @@ def replace_with_params(target=None, /, *, source=None, inplace=False):
             new_params = params_of(source)
             if isinstance(target, Signature):
                 # same return_annotation, but different params
-                return Signature(new_params, obj.return_annotation)
+                return Signature(new_params, target.return_annotation)
             elif isinstance(target, Mapping):
                 # Note: params_of already asserts p are all Parameter instances
                 return {p.name: p for p in new_params}
