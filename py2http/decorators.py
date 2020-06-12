@@ -105,6 +105,35 @@ def params_replacer(replace: Union[dict, Callable[[Parameter], dict]],
         yield p
 
 
+def tuple_the_args(func):
+    """A decorator that will change a VAR_POSITIONAL (*args) argument to a tuple (args)
+    argument of the same name.
+    """
+    params = params_of(func)
+    is_vp = list(p.kind == VP for p in params)
+    if any(is_vp):
+        index_of_vp = is_vp.index(True)  # there's can be only one
+
+        @wraps(func)
+        def vpless_func(*args, **kwargs):
+            # extract the element of args that needs to be unraveled
+            a, _vp_args_, aa = args[:index_of_vp], args[index_of_vp], args[(index_of_vp + 1):]
+            # call the original function with the unravelled args
+            return func(*a, *_vp_args_, *aa, **kwargs)
+
+        try:  # TODO: Avoid this try catch. Look in advance for default ordering
+            params[index_of_vp] = params[index_of_vp].replace(kind=PK, default=())
+            vpless_func.__signature__ = Signature(params,
+                                                  return_annotation=signature(func).return_annotation)
+        except ValueError:
+            params[index_of_vp] = params[index_of_vp].replace(kind=PK)
+            vpless_func.__signature__ = Signature(params,
+                                                  return_annotation=signature(func).return_annotation)
+        return vpless_func
+    else:
+        return copy_func(func)  # don't change anything (or should we wrap anyway, to be consistent?)
+
+
 VP, PK, VK = (Parameter.VAR_POSITIONAL, Parameter.POSITIONAL_OR_KEYWORD, Parameter.VAR_KEYWORD)
 var_param_types = {VP, VK}
 
@@ -121,6 +150,31 @@ def ch_signature_to_all_pk(sig):
 
 
 def ch_func_to_all_pk(func):
+    """Returns a copy of the function where all arguments are of the PK kind.
+    (PK: Positional_or_keyword)
+
+    :param func: A callable
+    :return:
+
+    >>> from py2http.decorators import signature, ch_func_to_all_pk
+    >>>
+    >>> def f(a, /, b, *, c=None, **kwargs): ...
+    ...
+    >>> print(signature(f))
+    (a, /, b, *, c=None, **kwargs)
+    >>> ff = ch_func_to_all_pk(f)
+    >>> print(signature(ff))
+    (a, b, c=None, **kwargs)
+    >>> def g(x, y=1, *args, **kwargs): ...
+    ...
+    >>> print(signature(g))
+    (x, y=1, *args, **kwargs)
+    >>> gg = ch_func_to_all_pk(g)
+    >>> print(signature(gg))
+    (x, y=1, *args, **kwargs)
+
+    """
+    func = tuple_the_args(func)
     sig = signature(func)
     if any(p.kind == VP for p in sig.parameters.values()):
         pass
@@ -128,7 +182,7 @@ def ch_func_to_all_pk(func):
     return func
 
 
-def flatten(*callables, func_name=None):
+def flatten_callables(*callables, func_name=None):
     """
     Flatten a pipeline of calls into one function.
     """
@@ -149,22 +203,29 @@ def flatten(*callables, func_name=None):
     # return flat_func
 
 
-def mk_flat(cls, method, *, func_name=None):
+def mk_flat(cls, method, *, func_name="flat_func"):
     """
     Flatten a simple cls->instance->method call pipeline into one function.
 
-    That is, instead of this:
+    That is, a function mk_flat(cls, method) that returns a "flat function" such that
+    ```
+    cls(**init_kwargs).method(**method_kwargs) == flat_func(**init_kwargs, **method_kwargs)
+    ```
+
+    So, instead of this:
     ```graphviz
+    label="NESTED: result = cls(**init_kwargs).method(**method_kwargs)"
     cls, init_kwargs -> instance
     instance, method, method_kwargs -> result
     ```
     you get a function `flat_func` that you can use like this:
     ```graphviz
+    label="FLAT: result = flat_func(**init_kwargs, **method_kwargs)"
     flat_func, init_kwargs, method_kwargs -> result
     ```
-    :param cls:
-    :param method:
-    :param func_name:
+    :param cls: A class
+    :param method: A method of this class
+    :param func_name: The name of the function (will be "flat_func" by default)
     :return:
 
     >>> class MultiplierClass:
@@ -207,9 +268,7 @@ def mk_flat(cls, method, *, func_name=None):
         return getattr(instance, method)(**for2)
 
     flat_func.__signature__ = Signature(parameters, return_annotation=sig2.return_annotation)
-
-    if func_name is not None:
-        flat_func.__name__ = func_name
+    flat_func.__name__ = func_name
 
     return flat_func
 
