@@ -172,12 +172,9 @@ def ch_func_to_all_pk(func):
     >>> gg = ch_func_to_all_pk(g)
     >>> print(signature(gg))
     (x, y=1, *args, **kwargs)
-
     """
     func = tuple_the_args(func)
     sig = signature(func)
-    if any(p.kind == VP for p in sig.parameters.values()):
-        pass
     func.__signature__ = ch_signature_to_all_pk(sig)
     return func
 
@@ -186,6 +183,7 @@ def flatten_callables(*callables, func_name=None):
     """
     Flatten a pipeline of calls into one function.
     """
+    raise NotImplementedError("Meant to be a generalization of mk_flat")
     for call in callables:
         pass
 
