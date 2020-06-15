@@ -1,5 +1,4 @@
 from inspect import signature, Signature, Parameter
-
 from typing import Iterable, Callable, Union, Mapping
 from functools import partial, wraps, update_wrapper
 from types import FunctionType
