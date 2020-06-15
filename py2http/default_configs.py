@@ -18,7 +18,7 @@ def default_input_validator(input_args, input_kwargs):
     return True
 
 
-def default_output_mapper(output):
+def default_output_mapper(output, input_args, input_kwargs):
     return web.json_response(output)
 
 

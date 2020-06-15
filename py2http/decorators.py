@@ -424,7 +424,8 @@ def mk_flat(cls, method, *, func_name="flat_func"):
         for1 = {k: kwargs[k] for k in kwargs if k in sig1.parameters}
         for2 = {k: kwargs[k] for k in kwargs if k in sig2.parameters}
         instance = cls(**for1)  # TODO: implement caching option
-        return getattr(instance, method)(**for2)
+        print(f'method: {method}')
+        return getattr(instance, method.__name__)(**for2)
 
     flat_func.__signature__ = Signature(parameters, return_annotation=sig2.return_annotation)
     flat_func.__name__ = func_name

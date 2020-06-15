@@ -12,6 +12,7 @@ def mk_jwt_middleware(secret, verify=True):
         try:
             decoded = jwt.decode(token, secret, verify=False)
             req.token = decoded
+            print('jwt: {}'.format(str(decoded)))
             return await handler(req)
         except jwt.DecodeError:
             if verify:
