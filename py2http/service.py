@@ -13,9 +13,9 @@ def method_not_found(method_name):
 
 def mk_config(key, func, funcname, configs, defaults, **options):
     result = getattr(func, key, configs.get(key, None))
+    if isinstance(result, dict):
+        result = result.get(funcname, None)
     if result:
-        if isinstance(result, dict) and funcname in result:
-            result = result[funcname]
         if options.get('is_func', None) and not callable(result):
             warn(f'Config {key} is not callable, using default.')
             result = defaults.get(key, None)
@@ -61,7 +61,16 @@ def mk_route(function, **configs):
         else:
             print(f'sync result, {raw_result}')
 
-        return output_mapper(raw_result)
+        final_result = output_mapper(raw_result, input_args, input_kwargs)
+        if inspect.isawaitable(final_result):
+            final_result = await final_result
+        if not isinstance(final_result, web.Response):
+            print('making it a response')
+            final_result = web.json_response(final_result)
+        else:
+            print('correctly identified response type')
+        print(f'final result: {type(final_result)}')
+        return final_result
 
     http_method = mk_config('http_method', function, method_name, configs, default_configs).lower()
     if http_method not in ['get', 'put', 'post', 'delete']:
