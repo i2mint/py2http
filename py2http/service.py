@@ -26,28 +26,24 @@ def mk_config(key, func, funcname, configs, defaults, **options):
                 result = defaults.get(key, None)
     else:
         result = defaults.get(key, None)
+    assert callable(result), f'Invalid input mapper for function {key}, must be callable'
     return result
 
 
 def mk_route(function, **configs):
     method_name = function.__name__
-    input_mapper = mk_config('input_mapper', function, method_name, configs, default_configs)
     # TODO: perhaps collections.abc.Mapping instead of dict?
-    assert callable(input_mapper), f'Invalid input mapper for function {method_name}, must be callable'
-
+    input_mapper = mk_config('input_mapper', function, method_name, configs, default_configs)
     input_validator = mk_config('input_validator', function, method_name, configs, default_configs)
-    assert callable(input_validator), f'Invalid input validator for function {method_name}, must be callable'
-
     output_mapper = mk_config('output_mapper', function, method_name, configs, default_configs)
-    assert callable(output_mapper), f'Invalid output mapper for function {method_name}, must be callable'
 
     async def handle_request(req):
-        print('reached handle_request')
+        print('reached handle_request')  # TODO: Debug prints. Should control.
         input_tuple = input_mapper(req)
         if inspect.isawaitable(input_tuple):  # Pattern: pass-on async property
             input_tuple = await input_tuple
         input_args, input_kwargs = input_tuple
-        print(input_args, input_kwargs)
+        print(input_args, input_kwargs)  # TODO: Debug prints. Should control.
 
         validation_result = input_validator(input_args, input_kwargs)
         if validation_result is not True:
@@ -57,9 +53,9 @@ def mk_route(function, **configs):
         raw_result = function(**input_kwargs)
         if inspect.isawaitable(raw_result):  # Pattern: pass-on async property
             raw_result = await raw_result
-            print(f'awaited result, {raw_result}')
+            print(f'awaited result, {raw_result}')  # TODO: Debug prints. Should control.
         else:
-            print(f'sync result, {raw_result}')
+            print(f'sync result, {raw_result}')  # TODO: Debug prints. Should control.
 
         return output_mapper(raw_result)
 

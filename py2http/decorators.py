@@ -1,5 +1,3 @@
-from inspect import signature, Signature
-
 from inspect import signature, Signature, Parameter
 
 from typing import Iterable, Callable, Union, Mapping
@@ -10,6 +8,173 @@ ParameterKind = type(Parameter.POSITIONAL_OR_KEYWORD)  # to get the enum type
 
 Params = Iterable[Parameter]
 HasParams = Union[Iterable[Parameter], Mapping[str, Parameter], Signature, Callable]
+
+# short hands for Parameter kinds
+PK = Parameter.POSITIONAL_OR_KEYWORD
+VP, VK = Parameter.VAR_POSITIONAL, Parameter.VAR_KEYWORD
+PO, KO = Parameter.POSITIONAL_ONLY, Parameter.KEYWORD_ONLY
+var_param_types = {VP, VK}
+
+
+class Literal:
+    """An object to indicate that the value should be considered literally"""
+
+    def __init__(self, val):
+        self.val = val
+
+
+# TODO: Could easily be extended to included an "explicit=True" param (in __init_subclass__ kwargs)
+#   that would indicate that decorator params need to be declared explicitly when
+#   the "in the class body" trick is used. That is, one would have to say `deco_param = DecoParam(...)`
+#   to declare such a param, instead of the current state which will consider all non-Literals
+#   as a DecoParam.
+class Decorator:
+    """ A "transparent" decorator meant to be used to subclass into specialized decorators.
+
+    The signature of the wrapped function is carried to the __call__ of the decorated instance.
+
+    To specialize (and do something else than just "transparent" wrapping, you need to subclass
+    Decorator and define your own `__call__` method. You may assume that
+
+    >>> from py2http.decorators import Decorator
+    >>> f = lambda x, y=1: x + y  # a function to decorate
+    >>> f(10)
+    11
+    >>> signature(f)
+    <Signature (x, y=1)>
+    >>>
+    >>> class LogCalls(Decorator):
+    ...     def __new__(cls, func=None, *, verb='calling'):
+    ...         return super().__new__(cls, func, verb=verb)
+    ...
+    ...     def __call__(self, *args, **kwargs):
+    ...         print(f'{self.verb} {self.func.__name__} with {args} and {kwargs}')
+    ...         return super().__call__(*args, **kwargs)
+    ...
+    >>> ff = LogCalls(f, verb='launching')  # doing it the "decorator way"
+    >>> assert ff(10) == 11
+    launching <lambda> with (10,) and {}
+    >>> signature(ff)
+    <Signature (x, y=1)>
+    >>> assert signature(ff) == signature(f)  # asserting same signature as the wrapped f
+    >>> signature(LogCalls)
+    <Signature (func=None, *, verb: = 'calling')>
+    >>>
+    >>> class ProcessOutput(Decorator):
+    ...     def __new__(cls, func=None, *, postproc=None):
+    ...         postproc = postproc or (lambda x: x)
+    ...         return super().__new__(cls, func, postproc=postproc)
+    ...
+    ...     def __call__(self, *args, **kwargs):
+    ...         return self.postproc(super().__call__(*args, **kwargs))
+    ...
+    >>>
+    >>>
+    >>> fff = ProcessOutput(postproc=str)(f)  # doing it the "decorator factory way"
+    >>> assert fff(10) == "11"
+    >>> assert signature(fff)  == signature(f)
+    >>> signature(ProcessOutput)
+    <Signature (func=None, *, postproc=None)>
+    """
+
+    def __new__(cls, func=None, **kwargs):
+        if func is None:
+            return partial(cls, **kwargs)
+        else:
+            return update_wrapper(super().__new__(cls), func)
+
+    def __init__(self, func=None, **kwargs):
+        self.func = func
+        for attr_name, attr_val in kwargs.items():
+            setattr(self, attr_name, attr_val)
+
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs)
+
+
+class Decora(Decorator):
+    """ A version of Decorator where you can define your subclasses by defininig attributes
+    of the subclass (instead of writing a manual __new__ method).
+
+    >>> from py2http.decorators import Decora, Literal
+    >>> f = lambda x, y=1: x + y
+    >>> f(10)
+    11
+    >>> signature(f)
+    <Signature (x, y=1)>
+    >>>
+    >>> class LogCalls(Decora):
+    ...     verb: str = 'calling'  # will be taken and included in the __init__
+    ...     decoy = None  # will be taken (but not actually used in __call__)
+    ...     i_am_normal = Literal(True)  # will not be included in the __init__
+    ...
+    ...     def __call__(self, *args, **kwargs):
+    ...         print(f'{self.verb} {self.func.__name__} with {args} and {kwargs}')
+    ...         return super().__call__(*args, **kwargs)
+    ...
+    >>> ff = LogCalls(f, verb='launching')  # doing it the "decorator way"
+    >>> assert ff(10) == 11
+    launching <lambda> with (10,) and {}
+    >>> signature(ff)
+    <Signature (x, y=1)>
+    >>> assert signature(ff) == signature(f)  # asserting same signature as the wrapped f
+    >>> signature(LogCalls)  # the signature of the decorator itself
+    <Signature (func=None, *, verb: str = 'calling', decoy=None)>
+    >>>
+    >>> # But you can still do it with __new__ if you want
+    >>> class ProcessOutput(Decora):
+    ...     def __new__(cls, func=None, *, postproc=None):
+    ...         postproc = postproc or (lambda x: x)
+    ...         return super().__new__(cls, func, postproc=postproc)
+    ...
+    ...     def __call__(self, *args, **kwargs):
+    ...         return self.postproc(super().__call__(*args, **kwargs))
+    ...
+    >>> fff = ProcessOutput(postproc=str)(f)  # doing it the "decorator factory way"
+    >>> assert fff(10) == "11"
+    >>> assert signature(fff)  == signature(f)
+    >>> signature(ProcessOutput)  # the signature of the decorator itself
+    <Signature (func=None, *, postproc=None)>
+    >>>
+    >>> # Verifying that LogCalls still has the right signature
+    >>> signature(LogCalls)  # the signature of the decorator itself
+    <Signature (func=None, *, verb: str = 'calling', decoy=None)>
+    """
+    _injected_deco_params = ()
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if '__new__' not in cls.__dict__:  # if __new__ hasn't been defined in the subclass...
+            params = ([Parameter('self', PK), Parameter('func', PK, default=None)])
+            cls_annots = getattr(cls, '__annotations__', {})
+            injected_deco_params = set()
+            for attr_name in (a for a in cls.__dict__ if not a.startswith('__')):
+                attr_obj = cls.__dict__[attr_name]  # get the attribute
+                if not isinstance(attr_obj, Literal):
+                    setattr(cls, attr_name, attr_obj)  # what we would have done anyway...
+                    # ... but also add a parameter to the list of params
+                    params.append(Parameter(attr_name, KO, default=attr_obj,
+                                            annotation=cls_annots.get(attr_name, Parameter.empty)))
+                    injected_deco_params.add(attr_name)
+                else:  # it is a Literal, so
+                    setattr(cls, attr_name, attr_obj.val)  # just assign the literal value
+            cls._injected_deco_params = injected_deco_params
+
+            def __new__(cls, func=None, **kwargs):
+                if func is None:
+                    return partial(cls, **kwargs)
+                else:
+                    self = Decorator.__new__(cls, func)
+                    return update_wrapper(self, func)
+
+            __new__.__signature__ = Signature(params)
+            cls.__new__ = __new__
+
+    def __init__(self, func=None, **kwargs):
+        if self._injected_deco_params and not set(kwargs).issubset(self._injected_deco_params):
+            raise TypeError("TypeError: __new__() got unexpected keyword arguments: "
+                            f"{kwargs.keys() - self._injected_deco_params}")
+        super().__init__(func, **kwargs)
 
 
 def copy_func(f):
@@ -132,10 +297,6 @@ def tuple_the_args(func):
         return vpless_func
     else:
         return copy_func(func)  # don't change anything (or should we wrap anyway, to be consistent?)
-
-
-VP, PK, VK = (Parameter.VAR_POSITIONAL, Parameter.POSITIONAL_OR_KEYWORD, Parameter.VAR_KEYWORD)
-var_param_types = {VP, VK}
 
 
 def ch_signature_to_all_pk(sig):
