@@ -1,5 +1,6 @@
 import inspect
 import re
+from warnings import warn
 
 
 def create_handler(input_class, methodname):
