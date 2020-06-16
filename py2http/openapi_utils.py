@@ -1,24 +1,15 @@
 from typing import Any
 
+oatype_for_pytype = {
+    str: 'string', int: 'number', list: 'array', dict: 'object', bool: 'boolean', Any: '{}'
+}
+
 
 def openapi_type_mapping(obj_type):
     if isinstance(obj_type, str):
         return obj_type
-    if obj_type == str:
-        return 'string'
-    if obj_type == int:
-        return 'number'
-    if obj_type == float:
-        return 'number'
-    if obj_type == list:
-        return 'array'
-    if obj_type == dict:
-        return 'object'
-    if obj_type == bool:
-        return 'boolean'
-    if obj_type == Any:
-        return '{}'
-    return None
+    else:
+        return oatype_for_pytype.get(obj_type, None)
 
 
 BINARY = 'binary'
@@ -38,6 +29,7 @@ def mk_openapi_template(config=None):
     }
 
 
+# TODO: new_path missing
 def add_paths_to_spec(paths_spec, new_paths):
     for pathname in new_paths.keys():
         for http_method in new_path[pathname].keys():
