@@ -2,6 +2,8 @@ from typing import Any
 
 
 def openapi_type_mapping(obj_type):
+    if isinstance(obj_type, str):
+        return obj_type
     if obj_type == str:
         return 'string'
     if obj_type == int:
@@ -49,11 +51,11 @@ def mk_openapi_path(pathname,
                     request_content_type='application/json',
                     request_dict=None,
                     response_content_type='application/json',
-                    response_object=None,
+                    response_dict=None,
                     path_fields=None):
     method = method.lower()
     if method not in ['get', 'put', 'post', 'delete']:
-        raise ValueError('HTTP method must be GET, PUT, POST, DELETE (case-insensitive)')
+        raise ValueError('HTTP method must be GET, PUT, POST, or DELETE (case-insensitive)')
     if not path_fields:
         path_fields = {}
     new_path = {pathname: {method: dict(path_fields)}}
@@ -78,9 +80,9 @@ def mk_openapi_path(pathname,
             }
         }
     }
-    if response_object:
-        new_path_spec['responses']['200']['content'][request_content_type] = mk_obj_schema(response_object)
-    return new_path_spec
+    if response_dict:
+        new_path_spec['responses']['200']['content'][request_content_type] = mk_obj_schema(response_dict)
+    return new_path
 
 
 def mk_obj_schema(request_object):
@@ -95,9 +97,9 @@ def mk_arg_schema(arg):
     arg_type = arg.get('type', Any)
     val_type = openapi_type_mapping(arg.get('type', Any))
     if not val_type:
-        raise ValueError(f'Request schema value {key} contains an invalid type. Only JSON-compatible types are allowed.')
+        raise ValueError(f'Request schema value {arg_type} is an invalid type. Only JSON-compatible types are allowed.')
     if val_type == 'object':
-        output = {'type': 'object', 'properties': mk_schema(request_dict)}
+        output = {'type': 'object', 'properties': mk_obj_schema(arg.get('properties', {}))}
     elif val_type == 'array':
         output = {'type': 'array'}
         sub_args = arg.get('items', None)

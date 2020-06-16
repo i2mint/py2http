@@ -4,6 +4,8 @@ import json
 from warnings import warn
 
 from py2http.default_configs import default_configs
+from py2http.openapi_utils import add_paths_to_spec, mk_openapi_path, mk_openapi_template
+from py2http.schema_tools import mk_input_schema_from_func
 
 
 def method_not_found(method_name):
@@ -36,6 +38,8 @@ def mk_route(function, **configs):
     input_mapper = mk_config('input_mapper', function, method_name, configs, default_configs)
     input_validator = mk_config('input_validator', function, method_name, configs, default_configs)
     output_mapper = mk_config('output_mapper', function, method_name, configs, default_configs)
+    request_schema = getattr(input_mapper, 'request_schema', mk_input_schema_from_func(function))
+    response_schema = getattr(output_mapper, 'response_schema', {})
 
     async def handle_request(req):
         print('reached handle_request')  # TODO: Debug prints. Should control.
@@ -72,10 +76,12 @@ def mk_route(function, **configs):
     if http_method not in ['get', 'put', 'post', 'delete']:
         http_method = 'post'
     web_mk_route = getattr(web, http_method)
-    route = mk_config('route', function, method_name, configs, default_configs)
-    if not route:
-        route = f'/{method_name}'
-    return web_mk_route(route, handle_request)
+    path = mk_config('route', function, method_name, configs, default_configs)
+    if not path:
+        path = f'/{method_name}'
+    route = web_mk_route(path, handle_request)
+    openapi_path = mk_openapi_path(path, http_method, request_dict=request_spec, response_dict=response_spec)
+    return route, openapi_path
 
 
 def handle_ping():
@@ -91,7 +97,19 @@ def run_http_service(functions, **configs):
 def mk_http_service(functions, **configs):
     middleware = mk_config('middleware', None, None, configs, default_configs)
     app = web.Application(middlewares=middleware)
-    routes = [mk_route(item, **configs) for item in functions]
+    routes = []
+    openapi_config = configs.get('openapi', {})
+    openapi_spec = mk_openapi_template(openapi_config)
+    for item in functions:
+        route, openapi_path = mk_route(item, **configs)
+        routes.append(route)
+        add_paths_to_spec(openapi_spec['paths'], openapi_path)
+
+    openapi_filename = openapi_config.get('filename', None)
+    if openapi_filename:
+        with open(openapi_filename, 'w') as fp:
+            json.dump(openapi_spec, fp)
+
     app.add_routes([web.get('/ping', handle_ping), *routes])
     return app
 
