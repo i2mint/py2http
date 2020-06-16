@@ -94,7 +94,6 @@ def mk_arg_schema(arg):
     output = {}
     arg_type = arg.get('type', Any)
     val_type = openapi_type_mapping(arg.get('type', Any))
-    print(f'arg_type: {arg_type}, val_type: {val_type}')
     if not val_type:
         raise ValueError(f'Request schema value {key} contains an invalid type. Only JSON-compatible types are allowed.')
     if val_type == 'object':
@@ -102,7 +101,6 @@ def mk_arg_schema(arg):
     elif val_type == 'array':
         output = {'type': 'array'}
         sub_args = arg.get('items', None)
-        print(f'arg: {arg}')
         if sub_args:
             output['items'] = mk_arg_schema(sub_args)
     elif arg_type == BINARY:

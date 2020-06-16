@@ -52,10 +52,8 @@ def mk_input_spec_from_func(func):
             if type(default) in json_types:
                 default_type = type(default)
         arg_type = default_type
-        print(f'default type: {default_type}')
         if sig.parameters[key].annotation != Signature.empty:
             arg_type = sig.parameters[key].annotation
-            print(f'arg type: {arg_type}')
             if type(arg_type) == _TypedDictMeta:
                 result[key]['type'] = 'object'
                 result[key]['properties'] = mk_sub_dict_spec_from_typed_dict(arg_type)

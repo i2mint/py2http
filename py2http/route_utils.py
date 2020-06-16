@@ -1,6 +1,6 @@
 import inspect
 import re
-from warnings import warn
+from typing import Iterable
 
 
 def create_handler(input_class, methodname):
@@ -17,14 +17,31 @@ def create_handler(input_class, methodname):
     return handler
 
 
+# TODO: Consider merging whitelist and regex.
+# TODO: Default ("everything but what starts with _") could be dangerous
+# TODO: See _proposal_mk_functions_from_class
 def mk_functions_from_class(input_class, whitelist=None, name_regex=None):
     def allowed_method(methodname):
         if whitelist and methodname in whitelist:
             return True
         if name_regex:
             return re.match(name_regex, methodname)
-        return methodname[0] != '_'
+        return not methodname.startswith('_')
+
     methods = [m for m in inspect.getmembers(input_class, predicate=callable) if
                allowed_method(m[0][0])]
 
+    return [create_handler(input_class, method) for method in methods]
+
+
+def _proposal_mk_functions_from_class(input_class, whitelist):
+    if isinstance(whitelist, Iterable):
+        whitelist = re.compile('(' + '|'.join(whitelist) + ')$').match
+    elif isinstance(whitelist, str):
+        whitelist = re.compile(whitelist).match
+    assert callable(whitelist), \
+        f"whitelist needs to be an iterable, string, or callable. Was: {whitelist}"
+
+    methods = [m for m in inspect.getmembers(input_class, predicate=callable) if
+               whitelist(m[0][0])]
     return [create_handler(input_class, method) for method in methods]
