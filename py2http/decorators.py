@@ -57,7 +57,7 @@ class Decorator:
     <Signature (x, y=1)>
     >>> assert signature(ff) == signature(f)  # asserting same signature as the wrapped f
     >>> signature(LogCalls)
-    <Signature (func=None, *, verb: = 'calling')>
+    <Signature (func=None, *, verb='calling')>
     >>>
     >>> class ProcessOutput(Decorator):
     ...     def __new__(cls, func=None, *, postproc=None):
@@ -74,18 +74,31 @@ class Decorator:
     >>> assert signature(fff)  == signature(f)
     >>> signature(ProcessOutput)
     <Signature (func=None, *, postproc=None)>
+    >>>
+    >>> ff = LogCalls()(f)  # defaults work when using as factory
+    >>> signature(ff)
+    <Signature (x, y=1)>
+    >>> ff(10)
+    calling <lambda> with (10,) and {}
+    11
+    >>> ff = LogCalls(f)  # defaults work when using as decorator
+    >>> ff(10)
+    calling <lambda> with (10,) and {}
+    11
+    >>> LogCalls(f, real_arg=False)  # rejects arguments that weren't "registered" by the __new__
+    Traceback (most recent call last):
+        ...
+    TypeError: __new__() got an unexpected keyword argument 'real_arg'
     """
-
     def __new__(cls, func=None, **kwargs):
         if func is None:
             return partial(cls, **kwargs)
         else:
-            return update_wrapper(super().__new__(cls), func)
-
-    def __init__(self, func=None, **kwargs):
-        self.func = func
-        for attr_name, attr_val in kwargs.items():
-            setattr(self, attr_name, attr_val)
+            self = super().__new__(cls)
+            self.func = func
+            for attr_name, attr_val in kwargs.items():
+                setattr(self, attr_name, attr_val)
+            return update_wrapper(self, func)
 
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs)
@@ -120,6 +133,23 @@ class Decora(Decorator):
     >>> signature(LogCalls)  # the signature of the decorator itself
     <Signature (func=None, *, verb: str = 'calling', decoy=None)>
     >>>
+    >>> ff = LogCalls()(f)  # defaults work when using as factory
+    >>> signature(ff)
+    <Signature (x, y=1)>
+    >>> ff(10)
+    calling <lambda> with (10,) and {}
+    11
+    >>> ff = LogCalls(f)  # defaults work when using as decorator
+    >>> ff(10)
+    calling <lambda> with (10,) and {}
+    11
+    >>>
+    >>> LogCalls(f, real_arg=False)  # rejects arguments that weren't "registered" by the __new__
+    Traceback (most recent call last):
+        ...
+    TypeError: TypeError: __new__() got unexpected keyword arguments: {'real_arg'}
+    >>>
+    >>> ####################################################
     >>> # But you can still do it with __new__ if you want
     >>> class ProcessOutput(Decora):
     ...     def __new__(cls, func=None, *, postproc=None):
@@ -160,20 +190,16 @@ class Decora(Decorator):
             cls._injected_deco_params = injected_deco_params
 
             def __new__(cls, func=None, **kwargs):
+                if cls._injected_deco_params and not set(kwargs).issubset(cls._injected_deco_params):
+                    raise TypeError("TypeError: __new__() got unexpected keyword arguments: "
+                                    f"{kwargs.keys() - cls._injected_deco_params}")
                 if func is None:
                     return partial(cls, **kwargs)
                 else:
-                    self = Decorator.__new__(cls, func)
-                    return update_wrapper(self, func)
+                    return Decorator.__new__(cls, func, **kwargs)
 
             __new__.__signature__ = Signature(params)
             cls.__new__ = __new__
-
-    def __init__(self, func=None, **kwargs):
-        if self._injected_deco_params and not set(kwargs).issubset(self._injected_deco_params):
-            raise TypeError("TypeError: __new__() got unexpected keyword arguments: "
-                            f"{kwargs.keys() - self._injected_deco_params}")
-        super().__init__(func, **kwargs)
 
 
 def copy_func(f):
