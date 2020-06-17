@@ -1,7 +1,9 @@
 from inspect import signature, Signature, Parameter
 from typing import Iterable, Callable, Union, Mapping
 from functools import partial, wraps, update_wrapper
+from json import JSONDecodeError
 from types import FunctionType
+from warnings import warn
 
 ParameterKind = type(Parameter.POSITIONAL_OR_KEYWORD)  # to get the enum type
 
@@ -491,32 +493,52 @@ def add_attrs(**attrs):
     return add_attrs_to_func
 
 
-def http_get(func):
-    func.http_method = 'get'
-    return func
+http_get = add_attrs(http_method='get')
+http_post = add_attrs(http_method='post')
+http_put = add_attrs(http_method='put')
+http_delete = add_attrs(http_method='delete')
 
 
-def http_post(func):
-    func.http_method = 'post'
-    return func
+def route(route_name):
+    return add_attrs(route=route_name)
 
 
-def http_put(func):
-    func.http_method = 'put'
-    return func
+def handle_json(func):
+    async def input_mapper(req):
+        try:
+            body = await req.json()
+        except JSONDecodeError:
+            warn('Invalid req body, expected JSON format.')
+            body = {}
+        if getattr(req, 'token', None):
+            req_body = dict(body, **req.token)
+        return func(req_body)
+    input_mapper.content_type = 'json'
+    return input_mapper
 
 
-def http_delete(func):
-    func.http_method = 'delete'
-    return func
+def handle_multipart(func):
+    async def input_mapper(req):
+        try:
+            body = await req.post()
+        except Exception:
+            warn('Invalid req body, expected multipart format.')
+            body = {}
+        if getattr(req, 'token', None):
+            req_body = dict(body, **req.token)
+        return func(req_body)
+    input_mapper.content_type = 'multipart'
+    return input_mapper
 
 
-def route(route):
-    def decorator(func):
-        func.route = route
-        return func
-
-    return decorator
+def handle_raw(func):
+    async def input_mapper(req):
+        raw_body = await req.text()
+        if getattr(req, 'token', None):
+            req_body = dict({}, text=raw_body, **req.token)
+        return func(req_body)
+    input_mapper.content_type = 'raw'
+    return input_mapper
 
 
 # TODO: stub

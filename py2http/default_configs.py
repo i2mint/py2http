@@ -1,24 +1,18 @@
 from aiohttp import web
-from json import JSONDecodeError
-from warnings import warn
+
+from py2http.decorators import handle_json
 
 
-async def default_input_mapper(req):
-    try:
-        body = await req.json()
-    except JSONDecodeError:
-        warn('Invalid req body, expected JSON format.')
-        body = {}
-    if getattr(req, 'token', None):
-        body = dict(body, **req.token)
-    return [], body
+@handle_json
+def default_input_mapper(req_body):
+    return req_body
 
 
-def default_input_validator(input_args, input_kwargs):
+def default_input_validator(input_kwargs):
     return True
 
 
-def default_output_mapper(output, input_args, input_kwargs):
+def default_output_mapper(output, input_kwargs):
     return web.json_response(output)
 
 
