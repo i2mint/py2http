@@ -1,7 +1,7 @@
 from typing import Any
 
 oatype_for_pytype = {
-    str: 'string', int: 'number', list: 'array', dict: 'object', bool: 'boolean', Any: '{}'
+    str: 'string', int: 'number', float: 'number', list: 'array', dict: 'object', bool: 'boolean', Any: '{}'
 }
 
 

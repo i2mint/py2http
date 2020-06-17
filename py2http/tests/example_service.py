@@ -1,7 +1,7 @@
 from py2http import run_http_service
 
 
-def add(a, b):
+def add(a, b: int = 0):
     return a + b
 
 
