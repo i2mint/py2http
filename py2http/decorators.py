@@ -1,9 +1,11 @@
 from inspect import signature, Signature, Parameter
 from typing import Iterable, Callable, Union, Mapping
 from functools import partial, wraps, update_wrapper
-from json import JSONDecodeError
+from json import JSONDecodeError, JSONEncoder
 from types import FunctionType
 from warnings import warn
+from aiohttp import web
+from bson import ObjectId
 
 ParameterKind = type(Parameter.POSITIONAL_OR_KEYWORD)  # to get the enum type
 
@@ -506,6 +508,7 @@ def mk_flat(cls, method, *, func_name="flat_func"):
 
     flat_func.__signature__ = Signature(parameters, return_annotation=sig2.return_annotation)
     flat_func.__name__ = func_name
+    flat_func.__dict__ = method.__dict__.copy()
 
     return flat_func
 
@@ -553,43 +556,59 @@ def route(route_name):
     return add_attrs(route=route_name)
 
 
-def handle_json(func):
+def handle_json_req(func):
     async def input_mapper(req):
         try:
             body = await req.json()
         except JSONDecodeError:
             warn('Invalid req body, expected JSON format.')
             body = {}
-        if getattr(req, 'token', None):
-            req_body = dict(body, **req.token)
-        return func(req_body)
+        kwargs = _get_req_input_kwargs(req, body)
+        return func(kwargs)
     input_mapper.content_type = 'json'
     return input_mapper
 
 
-def handle_multipart(func):
+def handle_multipart_req(func):
     async def input_mapper(req):
         try:
             body = await req.post()
         except Exception:
             warn('Invalid req body, expected multipart format.')
             body = {}
-        if getattr(req, 'token', None):
-            req_body = dict(body, **req.token)
-        return func(req_body)
+        kwargs = _get_req_input_kwargs(req, body)
+        return func(kwargs)
     input_mapper.content_type = 'multipart'
     return input_mapper
 
 
-def handle_raw(func):
+def handle_raw_req(func):
     async def input_mapper(req):
         raw_body = await req.text()
-        if getattr(req, 'token', None):
-            req_body = dict({}, text=raw_body, **req.token)
-        return func(req_body)
+        body = dict({}, text=raw_body)
+        kwargs = _get_req_input_kwargs(req, body)
+        return func(kwargs)
     input_mapper.content_type = 'raw'
     return input_mapper
 
+def send_json_resp(func):
+    class JsonRespEncoder(JSONEncoder):
+        def default(self, o):
+            if isinstance(o, ObjectId):
+                return str(o)
+            return JSONEncoder.default(self, o)
+    def output_mapper(output, input_kwargs):
+        mapped_output = func(output, input_kwargs)
+        return web.json_response(mapped_output, dumps=JsonRespEncoder().encode)
+    output_mapper.content_type = 'json'
+    return output_mapper
+
+def send_html_resp(func):
+    def output_mapper(output, input_kwargs):
+        mapped_output = func(output, input_kwargs)
+        return web.Response(text=mapped_output, content_type='text/html')
+    output_mapper.content_type = 'html'
+    return output_mapper
 
 # TODO: stub
 def mk_input_mapper(input_map):
@@ -597,3 +616,11 @@ def mk_input_mapper(input_map):
         return func
 
     return decorator
+
+def _get_req_input_kwargs(req, body):
+    kwargs = body
+    if getattr(req, 'query', None):
+        kwargs = dict(kwargs, **req.query)
+    if getattr(req, 'token', None):
+        kwargs = dict(kwargs, **req.token)
+    return kwargs
