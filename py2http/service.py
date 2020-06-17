@@ -102,11 +102,11 @@ def mk_route(function, **configs):
         method_name = function.__name__
         path = f'/{method_name}'
     route = web_mk_route(path, handle_request)
-    openapi_path = mk_openapi_path(path, http_method, request_dict=request_spec, response_dict=response_spec)
+    openapi_path = mk_openapi_path(path, http_method, request_dict=request_schema, response_dict=response_schema)
     return route, openapi_path
 
 
-def handle_ping():
+def handle_ping(req):
     return web.json_response({'ping': 'pong'})
 
 
