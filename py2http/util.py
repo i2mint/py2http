@@ -46,9 +46,45 @@ class TypeAsserter:
             warn(f"Unrecognized kind: {k}. The ones I recognize: {list(self.types_for_kind.keys())}")
 
 
-# default TypeAsserter used in this project
-assert_type = TypeAsserter(types_for_kind={
-    'input_mapper': Callable,
-    'input_validator': Callable,
-    'output_mapper': Callable,
-})
+def path_to_obj(root_obj, attr_path):
+    """Get an object from a root object and "attribute path" specification.
+
+    >>> class A:
+    ...     def foo(self, x): ...
+    ...     foo.x = 3
+    ...     class B:
+    ...         def bar(self, x): ...
+    ...
+    >>> obj = path_to_obj(A, ('foo',))
+    >>> assert callable(obj) and obj.__name__ == 'foo'
+    >>> path_to_obj(A, ('foo', 'x'))
+    3
+    >>> obj = path_to_obj(A, ('B', 'bar'))
+    >>> assert callable(obj) and obj.__qualname__ == 'A.B.bar'
+    """
+    obj = root_obj
+    for attr in attr_path:
+        obj = getattr(obj, attr)
+    return obj
+
+
+# TODO: I'd like to find a better way to do this. Using globals() here.
+#   See https://stackoverflow.com/questions/62416006/getting-the-attribute-path-of-a-python-object
+def obj_to_path(obj):
+    """Quasi-inverse of obj_to_path: Get a root_obj and attr_path from an object.
+    Obviously, would only be able to work with some types (only by-ref types?).
+
+    >>> class A:
+    ...     def foo(self, x): ...
+    ...     foo.x = 3
+    ...     class B:
+    ...         def bar(self, x): ...
+    ...
+    >>> for t in [(A, ('foo',)), (A, ('B',)), (A, ('B', 'bar'))]:
+    ...     assert obj_to_path(path_to_obj(*t)) == t
+    """
+    if hasattr(obj, '__qualname__') and hasattr(obj, '__globals__'):
+        root_name, *attr_path = obj.__qualname__.split('.')
+        return obj.__globals__[root_name], tuple(attr_path)
+    else:
+        return obj

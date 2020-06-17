@@ -1,7 +1,7 @@
 from typing import Any
 
 oatype_for_pytype = {
-    str: 'string', int: 'number', list: 'array', dict: 'object', bool: 'boolean', Any: '{}'
+    str: 'string', int: 'number', float: 'number', list: 'array', dict: 'object', bool: 'boolean', Any: '{}'
 }
 
 
@@ -32,7 +32,7 @@ def mk_openapi_template(config=None):
 # TODO: new_path missing
 def add_paths_to_spec(paths_spec, new_paths):
     for pathname in new_paths.keys():
-        for http_method in new_path[pathname].keys():
+        for http_method in new_paths[pathname].keys():
             if paths_spec.get(pathname, {}).get(http_method, None):
                 raise ValueError(f'HTTP method {http_method} already exists for path {pathname}')
         paths_spec[pathname] = new_paths[pathname]

@@ -7,11 +7,20 @@ from warnings import warn
 from py2http.default_configs import default_configs
 from py2http.openapi_utils import add_paths_to_spec, mk_openapi_path, mk_openapi_template
 from py2http.schema_tools import mk_input_schema_from_func
+from py2http.util import TypeAsserter
 
 
 def method_not_found(method_name):
     raise web.HTTPNotFound(text=json.dumps({'error': f'method {method_name} not found'}),
                            content_type='application/json')
+
+
+# default TypeAsserter used in this project
+assert_type = TypeAsserter(types_for_kind={
+    'input_mapper': Callable,
+    'input_validator': Callable,
+    'output_mapper': Callable,
+})
 
 
 def mk_config(key, func, configs, defaults, **options):
@@ -102,7 +111,7 @@ def mk_route(function, **configs):
         method_name = function.__name__
         path = f'/{method_name}'
     route = web_mk_route(path, handle_request)
-    openapi_path = mk_openapi_path(path, http_method, request_dict=request_spec, response_dict=response_spec)
+    openapi_path = mk_openapi_path(path, http_method, request_dict=request_schema, response_dict=response_schema)
     return route, openapi_path
 
 

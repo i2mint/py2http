@@ -90,6 +90,7 @@ class Decorator:
         ...
     TypeError: __new__() got an unexpected keyword argument 'real_arg'
     """
+
     def __new__(cls, func=None, **kwargs):
         if func is None:
             return partial(cls, **kwargs)
@@ -102,6 +103,54 @@ class Decorator:
 
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs)
+
+
+class DecoParameter(Parameter):
+    """A Parameter object that is meant to be the a parameter of a decorator factory.
+    Subclassing inspect.Parameter so that it can be distinguished from it if needed."""
+
+
+class DecoParam:
+    dflt_param_kind = Parameter.KEYWORD_ONLY
+
+    def __init__(self, default=Parameter.empty, annotation=Parameter.empty):
+        """Special object that will inject a DecoParameter into the class it's instantiated.
+
+        DecoParameter is a inspect.Parameter that was subclassed for the sole purpose of being able to
+        distinguish it from other possible Parameter objects.
+
+        DecoParameter (like inspect.Parameter) needs a name and kind, and optional default and annotation.
+
+        The name is taken from the variable name it's been assigned to.
+
+        :param default: Optional default for the param (it's optional, though appears not to be by signature)
+        :param annotation: Optional annotation for the param (it's optional, though appears not to be by signature)
+
+
+        >>> from py2http.decorators import Decora, DecoParam
+        >>>
+        >>> class C:
+        ...     w = DecoParam()
+        ...     x = DecoParam(annotation=int)
+        ...     y = DecoParam(default=42)
+        ...     z = DecoParam(default='hello', annotation=str)
+        ...
+        >>> C.w
+        <DecoParameter "w">
+        >>> C.z
+        <DecoParameter "z: str = 'hello'">
+        >>>
+        >>> from inspect import Signature
+        >>> Signature((C.w, C.x, C.y, C.z))
+        <Signature (*, w, x: int, y=42, z: str = 'hello')>
+
+        """
+        self.default = default
+        self.annotation = annotation
+
+    def __set_name__(self, owner, name):
+        setattr(owner, name, DecoParameter(name, self.dflt_param_kind,
+                                           default=self.default, annotation=self.annotation))
 
 
 class Decora(Decorator):
@@ -357,7 +406,7 @@ def ch_func_to_all_pk(func):
     (x, y=1, *args, **kwargs)
     >>> gg = ch_func_to_all_pk(g)
     >>> print(signature(gg))
-    (x, y=1, *args, **kwargs)
+    (x, y=1, args=(), **kwargs)
     """
     func = tuple_the_args(func)
     sig = signature(func)
@@ -365,6 +414,7 @@ def ch_func_to_all_pk(func):
     return func
 
 
+# TODO: Finish this function
 def flatten_callables(*callables, func_name=None):
     """
     Flatten a pipeline of calls into one function.
