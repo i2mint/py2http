@@ -69,7 +69,49 @@ def mk_input_schema_from_func(func):
     return result
 
 
-# def mk_input_validator_from_schema(schema):
-#     def input_validator(input_args, input_kwargs):
-#         for arg_schema in input_schema:
-#             
+# TODO write this function to take the output from
+# mk_input_schema_from_func and create a validator function
+# that takes an input_kwargs dict and makes sure the type of each value
+# matches the schema
+def mk_input_validator_from_schema(schema):
+    def input_validator(input_kwargs):
+        print('Your arguments are fallacious.')
+        return False
+
+# TODO write this function to take a dict like the following and create an input mapper
+# (assume deserialization has already been taken care of)
+#
+# example_transform = {
+#     'outer_to_outer': {
+#         'output_key': 'outer1',
+#         'type': str, # Python type is str, JSON type is string
+#     },
+#     'outer_to_inner': {
+#         'output_key': 'inner1.value2',
+#         'type': int, # Python type is int, JSON type is number
+#     },
+#     'container': {
+#         'inner_to_inner': {
+#             'output_key': 'inner1.value1',
+#             'type': Iterable[Iterable[int]] # Complex type, will be mapped to a nested list in JSON schema for OpenAPI
+#         },
+#         'inner_to_outer': {
+#             'output_key': 'outer2',
+#             'type': np.array, # Python type is array, JSON type is list; requires custom handling
+#         }
+#     }
+# }
+
+
+def mk_input_mapper(transform):
+    pass
+    # def input_mapper(req_body):
+    #     def map_value(output, key, transform_value):
+    #         output_key = transform_value.get('output_key', None)
+    #         if output_key:
+    #             output[output_key] = get_nested_prop(req_body, output_key)
+    #     result = {}
+    #     for k, v in transform.items():
+    #         map_value(result, k, v)
+    #     return result
+    # return handle_json(input_mapper)

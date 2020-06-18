@@ -72,14 +72,11 @@ def mk_route(function, **configs):
     response_schema = getattr(output_mapper, 'response_schema', {})
 
     async def handle_request(req):
-        print('reached handle_request')  # TODO: Debug prints. Should control.
-        input_tuple = input_mapper(req)
-        if inspect.isawaitable(input_tuple):  # Pattern: pass-on async property
-            input_tuple = await input_tuple
-        input_args, input_kwargs = input_tuple
-        print(input_args, input_kwargs)  # TODO: Debug prints. Should control.
+        input_kwargs = input_mapper(req)
+        if inspect.isawaitable(input_kwargs):  # Pattern: pass-on async property
+            input_kwargs = await input_kwargs
 
-        validation_result = input_validator(input_args, input_kwargs)
+        validation_result = input_validator(input_kwargs)
         if validation_result is not True:
             raise web.HTTPBadRequest(text=json.dumps({'error': validation_result}),
                                      content_type='application/json')
@@ -87,19 +84,12 @@ def mk_route(function, **configs):
         raw_result = function(**input_kwargs)
         if inspect.isawaitable(raw_result):  # Pattern: pass-on async property
             raw_result = await raw_result
-            print(f'awaited result, {raw_result}')  # TODO: Debug prints. Should control.
-        else:
-            print(f'sync result, {raw_result}')  # TODO: Debug prints. Should control.
 
-        final_result = output_mapper(raw_result, input_args, input_kwargs)
+        final_result = output_mapper(raw_result, input_kwargs)
         if inspect.isawaitable(final_result):
             final_result = await final_result
         if not isinstance(final_result, web.Response):
-            print('making it a response')
             final_result = web.json_response(final_result)
-        else:
-            print('correctly identified response type')
-        print(f'final result: {type(final_result)}')
         return final_result
 
     http_method = mk_config('http_method', function, configs, default_configs).lower()
@@ -115,7 +105,9 @@ def mk_route(function, **configs):
     return route, openapi_path
 
 
-def handle_ping():
+def handle_ping(req):
+    # the req param is required for this function to work as an aiohttp route
+    # even though it's not used, so don't remove it
     return web.json_response({'ping': 'pong'})
 
 
