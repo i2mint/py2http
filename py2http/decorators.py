@@ -35,6 +35,24 @@ class Decorator:
     To specialize (and do something else than just "transparent" wrapping, you need to subclass
     Decorator and define your own `__call__` method. You may assume that
 
+    The decorator pattern is a significant reuse tool, and indeed we use them a lot in i2i tooling.
+    The standard way is to write decorators (and decorator factories) the functional was,
+    but writing them as classes has introspection (therefore debuggability) advantages.
+
+    The approach comes with other kinds of problems though.
+    One of them is signature transfer (both for the decorator and the decorator factory).
+    Taken care of here.
+
+    Another wish (not really a problem) is to be able to use both `deco(func, params)`
+    and `deco(params(func))` forms. Also taken care of here.
+
+    Another problem is an increased boilerplate in specifying the decorator mechanics.
+    For example: If you want to have a proper signature (not just **kwargs),
+    you need to overwrite `__new__` for the sole purpose of specifying the arguments
+    (names, and optional annotations and defaults).
+    This problem is not taken care of here, but you can check out `Decora`,
+    a subclass of Decorator, that does.
+
     >>> from py2http.decorators import Decorator
     >>> f = lambda x, y=1: x + y  # a function to decorate
     >>> f(10)
@@ -153,21 +171,219 @@ class DecoParam:
                                            default=self.default, annotation=self.annotation))
 
 
+from typing import Optional
+import re
+
+token_p = re.compile('\w+')
+
+
+# TODO: Research how to keep the params in the order they were declared.
+# TODO: Test the params order rule that is claimed.
+class ParamsSpecifier:
+    """A tool to specify params (that is, lists of inspect.Parameter instances that
+    are used in callable signatures.
+
+    But wait! you may not need this!
+
+    Often the cleanest way to make a signature, or list of Parameters is to define an empty function
+    with that signature, and extract it from there.
+
+    See `Decora` for the original intended use of ParamsSpecifier.
+
+    >>> from inspect import signature, Signature, Parameter
+    >>> def f(a, b: int, c: float = 0.0, d: str='hi'): ...
+    >>> sig = signature(f)
+    >>> sig
+    <Signature (a, b: int, c: float = 0.0, d: str = 'hi')>
+    >>> list(sig.parameters.values())
+    [<Parameter "a">, <Parameter "b: int">, <Parameter "c: float = 0.0">, <Parameter "d: str = 'hi'">]
+
+    The reason for the existence of ParamsSpecifier was to do some magic around giving class-based
+    decorators a signature. The reasons of this magic may be outdated soon.
+
+    >>> from py2http.decorators import ParamsSpecifier
+    >>> from inspect import Parameter, Signature
+    >>> KO = Parameter.KEYWORD_ONLY
+    >>>
+    >>> class MyParams(ParamsSpecifier):
+    ...     b = 3
+    ...     z: float
+    ...     c: int = 2
+    ...
+    >>> params = MyParams()()
+    >>> expected_params = [
+    ...     {'name': 'z', 'kind': KO, 'default': None, 'annotation': float},
+    ...     {'name': 'b', 'kind': KO, 'default': 3},
+    ...     {'name': 'c', 'kind': KO, 'default': 2, 'annotation': int}]
+    >>> assert params == expected_params
+
+    See that the params are all valid kwargs to inspect.Parameter, by making a signature from them
+    >>> Signature(Parameter(**p) for p in params)
+    <Signature (*, z: float = None, b=3, c: int = 2)>
+
+    Let's now get another params specifier.
+
+    >>> get_new_params = MyParams(
+    ...     _annotations=dict(b=int, a=str),
+    ...     _names='a wol',
+    ...     another='here')
+    >>> params = get_new_params()
+    >>> expected_params = [
+    ...     {'name': 'z', 'kind': KO, 'default': None, 'annotation': float},
+    ...     {'name': 'b', 'kind': KO, 'default': 3, 'annotation': int},
+    ...     {'name': 'c', 'kind': KO, 'default': 2, 'annotation': int},
+    ...     {'name': 'another', 'kind': KO, 'default': 'here'},
+    ...     {'name': 'a', 'kind': KO, 'default': None, 'annotation': str},
+    ...     {'name': 'wol', 'kind': KO, 'default': None}]
+
+    One thing to note in the expected_params is the order.
+    Indeed, the order is not the order that is taken (because couldn't figure out otherwise)
+    is as such:
+    - First the class-level attributes that are annotated, but not given a default
+        (though a blanket _dflt_default default will be given to them all).
+        Here order is not assured.
+    - Second the reset of the class-level attributes, in the order they were defined.
+    - Third the instance argument params given by the _names argument, in the order they were listed.
+    - Finally the instance argument name_and_dflts params, in the order they were listed.
+
+    Remember, all this is meant to provide ways to specify signatures.
+
+    >>> Signature(Parameter(**p) for p in params)
+    <Signature (*, z: float = None, b: int = 3, c: int = 2, another='here', a: str = None, wol=None)>
+
+    Now, not that ParamsSpecifier is the tool for this, but to demo what ParamsSpecifier's
+    params are, we'll give one last example where we take a function, make a ParamsSpecifier
+    from it, and add a different kind of default
+
+    >>> def f(a, b: int, c: float = 0.0, d: str='hi'): ...
+    >>> param_maker = ParamsSpecifier.from_func(f, _dflt_default='a different dflt')
+    >>> Signature(Parameter(**p) for p in param_maker())
+    <Signature (*, a='a different dflt', b: int = 'a different dflt', c: float = 0.0, d: str = 'hi')>
+    """
+
+    # _name_and_dflts = {}
+
+    def __init__(self,
+                 _annotations: Optional[dict] = None,
+                 _names: str = '',
+                 _dflt_default=None,
+                 _kind=Parameter.KEYWORD_ONLY,
+                 **name_and_dflts):
+        _annotations = _annotations or {}
+        names = token_p.findall(_names)
+        assert set(names).isdisjoint(name_and_dflts), \
+            "In order to provide an expected order, we're imposing that _names and **name_and_dflts be disjoint"
+        name_and_dflts.update(dict.fromkeys(names, _dflt_default))
+        self._dflt_default = _dflt_default
+        self._kind = _kind
+
+        if hasattr(self, '__annotations__'):
+            self.__annotations__.update(_annotations)
+        else:
+            self.__annotations__ = _annotations
+
+        reserved = {'_annotations', '_names', '_dflt_default', 'from_func',
+                    '_extract_params', '_to_signature', '_kind', 'to_parameter_obj_list'}
+        _name_and_dflts = {k: v for k, v in self.__class__.__dict__.items()
+                           if not k.startswith('__') and k not in reserved}
+        _name_and_dflts.update(name_and_dflts or {})
+        self._name_and_dflts = _name_and_dflts
+
+        annots = set(getattr(self, '__annotations__', {}))
+        annots |= set(getattr(self.__class__, '__annotations__', {}))
+
+        _reserved = reserved.intersection(set(_name_and_dflts) | set(annots))
+        if _reserved:
+            raise ValueError(f"Sorry, {_reserved} are reserved names")
+
+    @classmethod
+    def from_func(cls, func, _dflt_default=None):
+        params = list(signature(func).parameters.values())
+        _annotations = {x.name: x.annotation for x in params if x.annotation is not Parameter.empty}
+        _name_and_dflts = dict()
+        for x in params:
+            dflt = x.default
+            if dflt is Parameter.empty:
+                dflt = _dflt_default
+            _name_and_dflts.update({x.name: dflt})
+        _name_and_dflts = {x.name: x.default if x.default is not Parameter.empty else _dflt_default
+                           for x in params}
+        return cls(_annotations=_annotations, _dflt_default=_dflt_default, **_name_and_dflts)
+
+    def _extract_params(self):
+        _name_and_dflts = self._name_and_dflts
+        annots = getattr(self, '__annotations__', {})
+        for name in (set(annots) - set(_name_and_dflts)):  # annots_not_in_attrs
+            yield dict(name=name, kind=self._kind, default=self._dflt_default, annotation=annots[name])
+        for name, default in _name_and_dflts.items():
+            d = dict(name=name, kind=self._kind, default=default)
+            if name in annots:
+                d.update(annotation=annots[name])
+            yield d
+
+    def to_parameter_obj_list(self):
+        return list(Parameter(**p) for p in self())
+
+    def _to_signature(self):
+        return Signature(Parameter(**p) for p in self())
+
+    def __call__(self):
+        return list(self._extract_params())
+
+    def __repr__(self):
+        return f"{self()}"
+
+
 class Decora(Decorator):
     """ A version of Decorator where you can define your subclasses by defininig attributes
     of the subclass (instead of writing a manual __new__ method).
 
-    >>> from py2http.decorators import Decora, Literal
+    Here's a typical use, as a decorator factory...
+
+    >>> from py2http.decorators import Decora, ParamsSpecifier
+    >>>
+    >>>
+    >>> class whatevs(ParamsSpecifier):
+    ...     minus = 3
+    ...     times: float
+    ...     repeat: int = 2
+    >>>
+    >>> class Deco(Decora):
+    ...     my_params = whatevs()
+    ...
+    ...     def __call__(self, *args, **kwargs):
+    ...         func_result = super().__call__(*args, **kwargs)
+    ...         return func_result[0], [func_result[1] * self.times - self.minus] * self.repeat
+    >>>
+    >>> def f(w: float, x: int=0, greet='hi'):
+    ...     return greet, w + x
+    >>>
+    >>>
+    >>>
+    >>> g = Deco(times=3)(f)
+    >>> assert g(0) == ('hi', [-3] * 2)
+    >>> assert g(10) == ('hi', [27] * 2)
+    >>> assert g(10, x=1, greet='hello') == ('hello', [30, 30])
+    >>>
+    >>> g = Deco(f, times=1, minus=2, repeat=3)
+    >>> assert g(0) == ('hi', [-2, -2, -2])
+    >>> g = Deco(times=0, minus=3, repeat=1)(f)
+    >>> assert g(10) == ('hi', [-3])
+    >>> g = Deco(times=2, minus=0, repeat=1)(f)
+    >>> assert g(10) == ('hi', [20])
     >>> f = lambda x, y=1: x + y
     >>> f(10)
     11
     >>> signature(f)
     <Signature (x, y=1)>
     >>>
+
+    More examples (of different forms)
+
     >>> class LogCalls(Decora):
-    ...     verb: str = 'calling'  # will be taken and included in the __init__
-    ...     decoy = None  # will be taken (but not actually used in __call__)
-    ...     i_am_normal = Literal(True)  # will not be included in the __init__
+    ...     class DecoParams(ParamsSpecifier):
+    ...         verb: str = 'calling'  # will be taken and included in the __init__
+    ...         decoy = None  # will be taken (but not actually used in __call__)
     ...
     ...     def __call__(self, *args, **kwargs):
     ...         print(f'{self.verb} {self.func.__name__} with {args} and {kwargs}')
@@ -198,8 +414,9 @@ class Decora(Decorator):
         ...
     TypeError: TypeError: __new__() got unexpected keyword arguments: {'real_arg'}
     >>>
-    >>> ####################################################
-    >>> # But you can still do it with __new__ if you want
+
+    But you can still do it with __new__ if you want
+
     >>> class ProcessOutput(Decora):
     ...     def __new__(cls, func=None, *, postproc=None):
     ...         postproc = postproc or (lambda x: x)
@@ -217,26 +434,27 @@ class Decora(Decorator):
     >>> # Verifying that LogCalls still has the right signature
     >>> signature(LogCalls)  # the signature of the decorator itself
     <Signature (func=None, *, verb: str = 'calling', decoy=None)>
+
     """
     _injected_deco_params = ()
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         if '__new__' not in cls.__dict__:  # if __new__ hasn't been defined in the subclass...
-            params = ([Parameter('self', PK), Parameter('func', PK, default=None)])
-            cls_annots = getattr(cls, '__annotations__', {})
-            injected_deco_params = set()
-            for attr_name in (a for a in cls.__dict__ if not a.startswith('__')):
-                attr_obj = cls.__dict__[attr_name]  # get the attribute
-                if not isinstance(attr_obj, Literal):
-                    setattr(cls, attr_name, attr_obj)  # what we would have done anyway...
-                    # ... but also add a parameter to the list of params
-                    params.append(Parameter(attr_name, KO, default=attr_obj,
-                                            annotation=cls_annots.get(attr_name, Parameter.empty)))
-                    injected_deco_params.add(attr_name)
-                else:  # it is a Literal, so
-                    setattr(cls, attr_name, attr_obj.val)  # just assign the literal value
-            cls._injected_deco_params = injected_deco_params
+            params = []
+            # cls_annots = getattr(cls, '__annotations__', {})
+            # injected_deco_params = set()
+            for attr_name, attr_obj in cls.__dict__.items():
+                setattr(cls, attr_name, attr_obj)
+                if isinstance(attr_obj, type) and issubclass(attr_obj, ParamsSpecifier):
+                    attr_obj = attr_obj()
+                if isinstance(attr_obj, ParamsSpecifier):
+                    params.extend(attr_obj.to_parameter_obj_list())
+
+            for p in params:
+                setattr(cls, p.name, p.default)
+            params = [Parameter('self', PK), Parameter('func', PK, default=None)] + params
+            cls._injected_deco_params = [p.name for p in params]
 
             def __new__(cls, func=None, **kwargs):
                 if cls._injected_deco_params and not set(kwargs).issubset(cls._injected_deco_params):
