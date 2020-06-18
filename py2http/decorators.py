@@ -776,12 +776,14 @@ def mk_flat(cls, method, *, func_name="flat_func"):
         for1 = {k: kwargs[k] for k in kwargs if k in sig1.parameters}
         for2 = {k: kwargs[k] for k in kwargs if k in sig2.parameters}
         instance = cls(**for1)  # TODO: implement caching option
-        print(f'method: {method}')
         return getattr(instance, method.__name__)(**for2)
 
     flat_func.__dict__ = method.__dict__.copy()
     flat_func.__signature__ = Signature(parameters, return_annotation=sig2.return_annotation)
     flat_func.__name__ = func_name
+
+    final_sig = signature(flat_func)
+    print(f'signature of output function: {final_sig.parameters}')
 
     return flat_func
 
@@ -838,7 +840,6 @@ def handle_json_req(func):
             body = {}
         kwargs = _get_req_input_kwargs(req, body)
         return func(kwargs)
-
     input_mapper.content_type = 'json'
     return input_mapper
 
@@ -852,7 +853,6 @@ def handle_multipart_req(func):
             body = {}
         kwargs = _get_req_input_kwargs(req, body)
         return func(kwargs)
-
     input_mapper.content_type = 'multipart'
     return input_mapper
 
@@ -863,7 +863,6 @@ def handle_raw_req(func):
         body = dict({}, text=raw_body)
         kwargs = _get_req_input_kwargs(req, body)
         return func(kwargs)
-
     input_mapper.content_type = 'raw'
     return input_mapper
 
