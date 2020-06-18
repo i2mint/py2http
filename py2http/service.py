@@ -2,7 +2,6 @@ from aiohttp import web
 import inspect
 import json
 from typing import Callable
-from warnings import warn
 
 from py2http.default_configs import default_configs
 from py2http.openapi_utils import add_paths_to_spec, mk_openapi_path, mk_openapi_template
@@ -63,12 +62,16 @@ def mk_config(key, func, configs, defaults, **options):
     return result
 
 
-def mk_route(function, **configs):
+def mk_route(func, **configs):
     # TODO: perhaps collections.abc.Mapping instead of dict?
-    input_mapper = mk_config('input_mapper', function, configs, default_configs)
-    input_validator = mk_config('input_validator', function, configs, default_configs)
-    output_mapper = mk_config('output_mapper', function, configs, default_configs)
-    request_schema = getattr(input_mapper, 'request_schema', mk_input_schema_from_func(function))
+    input_mapper = mk_config('input_mapper', func, configs, default_configs)
+    input_validator = mk_config('input_validator', func, configs, default_configs)
+    output_mapper = mk_config('output_mapper', func, configs, default_configs)
+    header_inputs = mk_config('header_inputs', func, configs, default_configs)
+    exclude_request_keys = header_inputs.keys()
+    request_schema = getattr(input_mapper,
+                             'request_schema',
+                             mk_input_schema_from_func(func, exclude_keys=exclude_request_keys))
     response_schema = getattr(output_mapper, 'response_schema', {})
 
     async def handle_request(req):
@@ -81,7 +84,7 @@ def mk_route(function, **configs):
             raise web.HTTPBadRequest(text=json.dumps({'error': validation_result}),
                                      content_type='application/json')
 
-        raw_result = function(**input_kwargs)
+        raw_result = func(**input_kwargs)
         if inspect.isawaitable(raw_result):  # Pattern: pass-on async property
             raw_result = await raw_result
 
@@ -92,16 +95,21 @@ def mk_route(function, **configs):
             final_result = web.json_response(final_result)
         return final_result
 
-    http_method = mk_config('http_method', function, configs, default_configs).lower()
+    http_method = mk_config('http_method', func, configs, default_configs).lower()
     if http_method not in ['get', 'put', 'post', 'delete']:
         http_method = 'post'
     web_mk_route = getattr(web, http_method)
-    path = mk_config('route', function, configs, default_configs)
+    method_name = mk_config('name', func, configs, default_configs)
+    if not method_name:
+        method_name = func.__name__
+    path = mk_config('route', func, configs, default_configs)
     if not path:
-        method_name = function.__name__
         path = f'/{method_name}'
     route = web_mk_route(path, handle_request)
-    openapi_path = mk_openapi_path(path, http_method, request_dict=request_schema, response_dict=response_schema)
+    openapi_path = mk_openapi_path(path, http_method,
+                                   request_dict=request_schema,
+                                   response_dict=response_schema,
+                                   path_fields={'x-method_name': method_name})
     return route, openapi_path
 
 
@@ -111,20 +119,23 @@ def handle_ping(req):
     return web.json_response({'ping': 'pong'})
 
 
-def run_http_service(functions, **configs):
-    app = mk_http_service(functions, **configs)
+def run_http_service(funcs, **configs):
+    app = mk_http_service(funcs, **configs)
     port = mk_config('port', None, configs, default_configs)
     web.run_app(app, port=port)
 
 
-def mk_http_service(functions, **configs):
+def mk_http_service(funcs, **configs):
     middleware = mk_config('middleware', None, configs, default_configs)
     app = web.Application(middlewares=middleware)
     routes = []
-    openapi_config = configs.get('openapi', {})
+    openapi_config = mk_config('openapi', None, configs, default_configs)
     openapi_spec = mk_openapi_template(openapi_config)
-    for item in functions:
-        route, openapi_path = mk_route(item, **configs)
+    header_inputs = mk_config('header_inputs', None, configs, default_configs)
+    if header_inputs:
+        openapi_spec['x-header-inputs'] = header_inputs
+    for func in funcs:
+        route, openapi_path = mk_route(func, **configs)
         routes.append(route)
         add_paths_to_spec(openapi_spec['paths'], openapi_path)
 

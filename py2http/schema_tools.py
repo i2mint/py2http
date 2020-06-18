@@ -1,5 +1,5 @@
 from inspect import signature, Signature
-from typing import Any, Iterable, _TypedDictMeta, T_co
+from typing import Any, _TypedDictMeta, T_co
 
 complex_type_mapping = {}
 json_types = [list, str, int, float, dict, bool]
@@ -14,7 +14,7 @@ def mk_sub_dict_schema_from_typed_dict(typed_dict):
             properties[key]['items'] = mk_sub_list_schema_from_iterable(value)
         elif value in json_types:
             properties[key]['type'] = value
-        elif type(value) == _TypedDictMeta:
+        elif isinstance(value, _TypedDictMeta):
             properties[key]['type'] = 'object'
             properties[key]['properties'] = mk_sub_dict_schema_from_typed_dict(value)
         else:
@@ -38,10 +38,14 @@ def mk_sub_list_schema_from_iterable(iterable_type):
     return result
 
 
-def mk_input_schema_from_func(func):
+def mk_input_schema_from_func(func, exclude_keys=None):
+    if not exclude_keys:
+        exclude_keys = {}
     result = {}
     sig = signature(func)
     for key in sig.parameters:
+        if key in exclude_keys:
+            continue
         default = None
         default_type = Any
         result[key] = {'required': True}
@@ -54,11 +58,11 @@ def mk_input_schema_from_func(func):
         arg_type = default_type
         if sig.parameters[key].annotation != Signature.empty:
             arg_type = sig.parameters[key].annotation
-            if type(arg_type) == _TypedDictMeta:
+            if isinstance(arg_type, _TypedDictMeta):
                 result[key]['type'] = 'object'
                 result[key]['properties'] = mk_sub_dict_schema_from_typed_dict(arg_type)
                 continue
-            elif getattr(arg_type, '_name', None) == 'Iterable':
+            if getattr(arg_type, '_name', None) == 'Iterable':
                 result[key]['items'] = mk_sub_list_schema_from_iterable(arg_type)
                 arg_type = list
             elif arg_type not in json_types and not complex_type_mapping.get(arg_type):

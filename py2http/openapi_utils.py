@@ -1,5 +1,7 @@
 from typing import Any
 
+from glom import glom
+
 oatype_for_pytype = {
     str: 'string', int: 'number', float: 'number', list: 'array', dict: 'object', bool: 'boolean', Any: '{}'
 }
@@ -38,6 +40,46 @@ def add_paths_to_spec(paths_spec, new_paths):
         paths_spec[pathname] = new_paths[pathname]
 
 
+def set_auth(openapi_spec, auth_type='jwt', *, login_details=None):
+    """
+    :param openapi_spec: An OpenAPI formatted server specification
+    :param auth_type: Either 'jwt' or 'api_key'
+    :param login_details: Optional - {
+        'url': the login url,
+        'inputs': a list of strings e.g. ['account', 'email', 'password']
+        'outputs': a list of strings e.g. ['jwt', 'refresh_token']
+    }
+    ""
+
+    """
+    if auth_type not in ['jwt', 'api_key']:
+        raise ValueError('auth_type must be either \'jwt\' or \'api_key\'')
+    if not login_details:
+        login_details = {}
+    if not openapi_spec['components']:
+        openapi_spec['components'] = {}
+    if not openapi_spec['components']['securitySchemes']:
+        openapi_spec['components']['securitySchemes'] = {}
+    if not openapi_spec['security']:
+        openapi_spec['security'] = {}
+    if auth_type == 'jwt':
+        openapi_spec['components']['securitySchemes']['bearerAuth'] = {
+            'type': 'http',
+            'scheme': 'bearer',
+            'bearerFormat': 'JWT',
+        }
+        if login_details:
+            openapi_spec['components']['securitySchemes']['bearerAuth']['x-login'] = login_details
+        openapi_spec['security']['bearerAuth'] = []
+    else:
+        openapi_spec['components']['securitySchemes']['apiKeyAuth'] = {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization',
+        }
+        openapi_spec['security']['apiKey'] = []
+
+
 def mk_openapi_path(pathname,
                     method='post',
                     request_content_type='application/json',
@@ -53,7 +95,6 @@ def mk_openapi_path(pathname,
     new_path = {pathname: {method: dict(path_fields)}}
     new_path_spec = new_path[pathname][method]
     if request_dict:
-        content_type = request_content_type
         new_path_spec['requestBody'] = {
             'required': True,
             'content': {
@@ -102,3 +143,24 @@ def mk_arg_schema(arg):
     else:
         output = {'type': val_type}
     return output
+
+
+# TODO Where to document the format of header inputs to be consumed by http2py
+# configs = {
+#     'header_inputs': {
+#         'account': {
+#             'header': 'Authorization',
+#             'type': 'string',
+#             'encoding': 'jwt',
+#         },
+#         'email': {
+#             'header': 'Authorization',
+#             'type': 'string',
+#             'encoding': 'jwt',
+#         },
+#         'api_key': {
+#             'header': 'x-api-key',
+#             'type': 'string', # no encoding, defaults to raw
+#         }
+#     }
+# }

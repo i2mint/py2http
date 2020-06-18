@@ -556,10 +556,10 @@ def route(route_name):
 def handle_json(func):
     async def input_mapper(req):
         try:
-            body = await req.json()
+            req_body = await req.json()
         except JSONDecodeError:
             warn('Invalid req body, expected JSON format.')
-            body = {}
+            req_body = {}
         if getattr(req, 'token', None):
             req_body = dict(body, **req.token)
         return func(req_body)
@@ -570,12 +570,12 @@ def handle_json(func):
 def handle_multipart(func):
     async def input_mapper(req):
         try:
-            body = await req.post()
+            req_body = await req.post()
         except Exception:
             warn('Invalid req body, expected multipart format.')
-            body = {}
+            req_body = {}
         if getattr(req, 'token', None):
-            req_body = dict(body, **req.token)
+            req_body = dict(req_body, **req.token)
         return func(req_body)
     input_mapper.content_type = 'multipart'
     return input_mapper
@@ -584,8 +584,9 @@ def handle_multipart(func):
 def handle_raw(func):
     async def input_mapper(req):
         raw_body = await req.text()
+        req_body = {'text': raw_body}
         if getattr(req, 'token', None):
-            req_body = dict({}, text=raw_body, **req.token)
+            req_body = dict(req_body, **req.token)
         return func(req_body)
     input_mapper.content_type = 'raw'
     return input_mapper
