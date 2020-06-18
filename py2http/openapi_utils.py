@@ -45,8 +45,10 @@ def set_auth(openapi_spec, auth_type='jwt', *, login_details=None):
     :param openapi_spec: An OpenAPI formatted server specification
     :param auth_type: Either 'jwt' or 'api_key'
     :param login_details: Optional - {
-        'url': the login url,
-        'inputs': a list of strings e.g. ['account', 'email', 'password']
+        'login_url': the login url
+        'refresh_url': the refresh url, if applicable
+        'login_inputs': a list of strings e.g. ['account', 'email', 'password']
+        'refresh_inputs': a list of strings e.g. ['account', 'refresh_token']
         'outputs': a list of strings e.g. ['jwt', 'refresh_token']
     }
     ""
@@ -87,6 +89,8 @@ def mk_openapi_path(pathname,
                     response_content_type='application/json',
                     response_dict=None,
                     path_fields=None):
+    # TODO: correctly handle input args in URL (params and query)
+    # TODO: allow args in header (specific to path, not just for whole service)
     method = method.lower()
     if method not in ['get', 'put', 'post', 'delete']:
         raise ValueError('HTTP method must be GET, PUT, POST, or DELETE (case-insensitive)')
