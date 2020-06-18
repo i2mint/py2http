@@ -636,6 +636,62 @@ def ch_func_to_all_pk(func):
     return func
 
 
+from py2http.signatures import set_signature_of_func
+
+
+def methodizer(func=None, *, instance_attrs=()):
+    """A decorator to get method versions of functions.
+
+    :param func:
+    :param instance_attrs:
+    :return:
+
+    >>> def f(a, b, x):
+    ...     return x * (a + b)
+    ...
+    >>>
+    >>> def g(x, y=1):
+    ...     return x * y
+    ...
+    >>>
+    >>> class A:
+    ...     def __init__(self, x=0):
+    ...         self.x = x
+    ...
+    ...     f = methodize(f)
+    ...     g = methodize(g)
+    ...
+    ...
+    >>>
+    >>> a = A(x=3)
+    >>> assert a.f(b=1, a=2) == 9
+    {'b': 1, 'a': 2, 'x': 3} (a, b, x)
+    >>> assert a.g() == 3
+    {'x': 3} (x, y=1)
+    >>> assert a.g(y=10) == 30
+    {'y': 10, 'x': 3} (x, y=1)
+
+    """
+    if func is None:
+        return partial(methodizer, instance_attrs=instance_attrs)
+    else:
+        func = ch_func_to_all_pk(func)
+        func_param_keys = signature(func).parameters.keys()
+        self_argnames = func_param_keys & instance_attrs
+        method_argnames = func_param_keys - self_argnames
+
+        def method(self, **kwargs):
+            kwargs_from_self = {a: getattr(self, a) for a in self_argnames}
+            kwargs.update(kwargs_from_self)
+            return func(**kwargs)
+
+        set_signature_of_func(method, ['self'] + list(method_argnames))
+
+        method.__name__ = func.__name__
+
+        return method
+
+
 # TODO: Finish this function
 def flatten_callables(*callables, func_name=None):
     """
@@ -783,6 +839,7 @@ def handle_json_req(func):
             body = {}
         kwargs = _get_req_input_kwargs(req, body)
         return func(kwargs)
+
     input_mapper.content_type = 'json'
     return input_mapper
 
@@ -796,6 +853,7 @@ def handle_multipart_req(func):
             body = {}
         kwargs = _get_req_input_kwargs(req, body)
         return func(kwargs)
+
     input_mapper.content_type = 'multipart'
     return input_mapper
 
@@ -806,8 +864,10 @@ def handle_raw_req(func):
         body = dict({}, text=raw_body)
         kwargs = _get_req_input_kwargs(req, body)
         return func(kwargs)
+
     input_mapper.content_type = 'raw'
     return input_mapper
+
 
 def send_json_resp(func):
     class JsonRespEncoder(JSONEncoder):
@@ -815,18 +875,23 @@ def send_json_resp(func):
             if isinstance(o, ObjectId):
                 return str(o)
             return JSONEncoder.default(self, o)
+
     def output_mapper(output, input_kwargs):
         mapped_output = func(output, input_kwargs)
         return web.json_response(mapped_output, dumps=JsonRespEncoder().encode)
+
     output_mapper.content_type = 'json'
     return output_mapper
+
 
 def send_html_resp(func):
     def output_mapper(output, input_kwargs):
         mapped_output = func(output, input_kwargs)
         return web.Response(text=mapped_output, content_type='text/html')
+
     output_mapper.content_type = 'html'
     return output_mapper
+
 
 # TODO: stub
 def mk_input_mapper(input_map):
@@ -834,6 +899,7 @@ def mk_input_mapper(input_map):
         return func
 
     return decorator
+
 
 def _get_req_input_kwargs(req, body):
     kwargs = body
