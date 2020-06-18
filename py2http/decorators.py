@@ -635,7 +635,6 @@ def ch_func_to_all_pk(func):
     func.__signature__ = ch_signature_to_all_pk(sig)
     return func
 
-
 from py2http.signatures import set_signature_of_func
 
 
@@ -780,9 +779,9 @@ def mk_flat(cls, method, *, func_name="flat_func"):
         print(f'method: {method}')
         return getattr(instance, method.__name__)(**for2)
 
+    flat_func.__dict__ = method.__dict__.copy()
     flat_func.__signature__ = Signature(parameters, return_annotation=sig2.return_annotation)
     flat_func.__name__ = func_name
-    flat_func.__dict__ = method.__dict__.copy()
 
     return flat_func
 
