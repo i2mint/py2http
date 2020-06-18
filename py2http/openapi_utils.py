@@ -20,7 +20,7 @@ BINARY = 'binary'
 def mk_openapi_template(config=None):
     if not config:
         config = {}
-    return {
+    openapi_spec = {
         'openapi': '3.0.2',
         'info': {
             'title': config.get('title', 'default'),
@@ -29,6 +29,12 @@ def mk_openapi_template(config=None):
         'servers': [{'url': config.get('base_url', 'http://localhost:3030/')}],
         'paths': {},
     }
+    auth_config = config.get('auth', None)
+    if auth_config:
+        auth_type = auth_config.get('auth_type', 'jwt')
+        login_details = auth_config.get('login_details', None)
+        set_auth(openapi_spec, auth_type, login_details=login_details)
+    return openapi_spec
 
 
 # TODO: new_path missing
@@ -58,11 +64,11 @@ def set_auth(openapi_spec, auth_type='jwt', *, login_details=None):
         raise ValueError('auth_type must be either \'jwt\' or \'api_key\'')
     if not login_details:
         login_details = {}
-    if not openapi_spec['components']:
+    if not openapi_spec.get('components'):
         openapi_spec['components'] = {}
-    if not openapi_spec['components']['securitySchemes']:
+    if not openapi_spec['components'].get('securitySchemes'):
         openapi_spec['components']['securitySchemes'] = {}
-    if not openapi_spec['security']:
+    if not openapi_spec.get('security'):
         openapi_spec['security'] = {}
     if auth_type == 'jwt':
         openapi_spec['components']['securitySchemes']['bearerAuth'] = {

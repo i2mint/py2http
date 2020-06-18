@@ -120,7 +120,7 @@ def handle_ping(req):
 
 
 def run_http_service(funcs, **configs):
-    app = mk_http_service(funcs, **configs)
+    app = mk_http_service(funcs, **configs)[0]
     port = mk_config('port', None, configs, default_configs)
     web.run_app(app, port=port)
 
@@ -129,12 +129,14 @@ def mk_http_service(funcs, **configs):
     middleware = mk_config('middleware', None, configs, default_configs)
     app = web.Application(middlewares=middleware)
     routes = []
-    openapi_config = mk_config('openapi', None, configs, default_configs)
+    openapi_config = mk_config('openapi', None, configs, default_configs, type=dict)
     openapi_spec = mk_openapi_template(openapi_config)
     header_inputs = mk_config('header_inputs', None, configs, default_configs)
     if header_inputs:
         openapi_spec['x-header-inputs'] = header_inputs
     for func in funcs:
+        sig = inspect.signature(func)
+        print(f'mk_route func args: {sig.parameters}')
         route, openapi_path = mk_route(func, **configs)
         routes.append(route)
         add_paths_to_spec(openapi_spec['paths'], openapi_path)
@@ -145,7 +147,7 @@ def mk_http_service(funcs, **configs):
             json.dump(openapi_spec, fp)
 
     app.add_routes([web.get('/ping', handle_ping), *routes])
-    return app
+    return app, openapi_spec
 
 
 def run_many_services(apps, **configs):

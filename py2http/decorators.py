@@ -777,12 +777,14 @@ def mk_flat(cls, method, *, func_name="flat_func"):
         for1 = {k: kwargs[k] for k in kwargs if k in sig1.parameters}
         for2 = {k: kwargs[k] for k in kwargs if k in sig2.parameters}
         instance = cls(**for1)  # TODO: implement caching option
-        print(f'method: {method}')
         return getattr(instance, method.__name__)(**for2)
 
     flat_func.__signature__ = Signature(parameters, return_annotation=sig2.return_annotation)
     flat_func.__name__ = func_name
     flat_func.__dict__ = method.__dict__.copy()
+
+    final_sig = signature(flat_func)
+    print(f'signature of output function: {final_sig.parameters}')
 
     return flat_func
 
@@ -833,7 +835,7 @@ def route(route_name):
 def handle_json_req(func):
     async def input_mapper(req):
         try:
-            req_body = await req.json()
+            body = await req.json()
         except JSONDecodeError:
             warn('Invalid req body, expected JSON format.')
             body = {}
@@ -846,7 +848,7 @@ def handle_json_req(func):
 def handle_multipart_req(func):
     async def input_mapper(req):
         try:
-            req_body = await req.post()
+            body = await req.post()
         except Exception:
             warn('Invalid req body, expected multipart format.')
             body = {}

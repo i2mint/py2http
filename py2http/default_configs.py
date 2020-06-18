@@ -21,7 +21,9 @@ default_configs = {
     'input_mapper': default_input_mapper,
     'input_validator': default_input_validator,
     'output_mapper': default_output_mapper,
+    'header_inputs': {},
     'middleware': [],
     'port': 3030,
     'http_method': 'post',
+    'openapi': {}
 }
