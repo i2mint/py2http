@@ -88,7 +88,7 @@ def set_auth(openapi_spec, auth_type='jwt', *, login_details=None):
         openapi_spec['security']['apiKey'] = []
 
 
-def mk_openapi_path(pathname,
+def mk_openapi_path(pathname='/',
                     method='post',
                     request_content_type='application/json',
                     request_dict=None,
@@ -119,12 +119,14 @@ def mk_openapi_path(pathname,
     new_path_spec['responses'] = {
         '200': {
             'content': {
-                response_content_type: {}
+                response_content_type: {
+                    'schema': {}
+                }
             }
         }
     }
     if response_dict:
-        new_path_spec['responses']['200']['content'][request_content_type] = mk_obj_schema(response_dict)
+        new_path_spec['responses']['200']['content'][request_content_type]['schema'] = mk_arg_schema(response_dict)
     return new_path
 
 

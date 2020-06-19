@@ -5,7 +5,7 @@ from typing import Callable
 
 from py2http.default_configs import default_configs
 from py2http.openapi_utils import add_paths_to_spec, mk_openapi_path, mk_openapi_template
-from py2http.schema_tools import mk_input_schema_from_func
+from py2http.schema_tools import mk_input_schema_from_func, mk_output_schema_from_func
 from py2http.util import TypeAsserter
 
 
@@ -63,6 +63,13 @@ def mk_config(key, func, configs, defaults, **options):
 
 
 def mk_route(func, **configs):
+    """
+    Generate an aiohttp route object and an OpenAPI path specification for a function
+
+    :param func: The function
+
+    :Keyword Arguments: The configuration settings
+    """
     # TODO: perhaps collections.abc.Mapping instead of dict?
     input_mapper = mk_config('input_mapper', func, configs, default_configs)
     input_validator = mk_config('input_validator', func, configs, default_configs)
@@ -72,7 +79,14 @@ def mk_route(func, **configs):
     request_schema = getattr(input_mapper,
                              'request_schema',
                              mk_input_schema_from_func(func, exclude_keys=exclude_request_keys))
-    response_schema = getattr(output_mapper, 'response_schema', {})
+    response_schema = getattr(output_mapper,
+                              'response_schema',
+                              mk_output_schema_from_func(output_mapper))
+    if not response_schema:
+        response_schema = getattr(func,
+                                  'response_schema',
+                                  mk_output_schema_from_func(func))
+    print(f'response_schema: {response_schema}')
 
     async def handle_request(req):
         input_kwargs = input_mapper(req)
