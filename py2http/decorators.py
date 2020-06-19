@@ -635,14 +635,16 @@ def ch_func_to_all_pk(func):
     func.__signature__ = ch_signature_to_all_pk(sig)
     return func
 
+
 from py2http.signatures import set_signature_of_func
 
 
-def methodizer(func=None, *, instance_attrs=()):
+# TODO: generalize instance_attrs to instance_params
+def methodizer(func=None, *, instance_params=()):
     """A decorator to get method versions of functions.
 
     :param func:
-    :param instance_attrs:
+    :param instance_params:
     :return:
 
     >>> from py2http.decorators import methodizer
@@ -654,7 +656,7 @@ def methodizer(func=None, *, instance_attrs=()):
     >>> def g(x, y=1):
     ...     return x * y
     ...
-    >>> methodize = methodizer(instance_attrs=('x', 'non_existing_attr'))
+    >>> methodize = methodizer(instance_params=('x', 'non_existing_attr'))
     >>>
     >>> class A:
     ...     def __init__(self, x=0):
@@ -671,11 +673,11 @@ def methodizer(func=None, *, instance_attrs=()):
 
     """
     if func is None:
-        return partial(methodizer, instance_attrs=instance_attrs)
+        return partial(methodizer, instance_params=instance_params)
     else:
         func = ch_func_to_all_pk(func)
         func_param_keys = signature(func).parameters.keys()
-        self_argnames = func_param_keys & instance_attrs
+        self_argnames = func_param_keys & instance_params
         method_argnames = func_param_keys - self_argnames
 
         def method(self, **kwargs):
@@ -688,6 +690,76 @@ def methodizer(func=None, *, instance_attrs=()):
         method.__name__ = func.__name__
 
         return method
+
+
+from warnings import warn
+
+
+def _handle_exisisting_method_name(cls, method, if_method_exists):
+    if hasattr(cls, method.__name__):
+        msg = f"{cls} already has a method named {method.__name__}"
+        if if_method_exists == 'raise':
+            raise ValueError(msg)
+        elif if_method_exists == 'warn':
+            warn(msg + " ... Will overwrite anyway.")
+        elif if_method_exists != 'ignore':
+            raise ValueError(f"if_method_exists value not recognized: {if_method_exists}")
+
+
+# TODO: Not working yet
+#   - signatures have different orders every time (need to use ordered containers)
+#   - Values not computed correctly
+def inject_methodized_funcs(cls=None, *, funcs=(), instance_params=None, if_method_exists='raise'):
+    """
+
+    :param cls:
+    :param funcs:
+    :param instance_params:
+    :param if_method_exists:
+    :return:
+
+    >>> from inspect import signature
+    >>>
+    >>>
+    >>> def f(a, b, x):
+    ...     return x * (a + b)
+    ...
+    >>> def g(x, y=1):
+    ...     return x * y
+    ...
+    >>>
+    >>> def h(a, x, c, **kwargs):
+    ...     return f"{a}-{x}-{c}: {list(kwargs.keys())}"
+    ...
+    >>> @inject_methodized_funcs(funcs=(f, g, h))
+    ... class C:
+    ...     def __init__(self, x, a=0, bob=True):
+    ...         self.x = x
+    ...         self.a = a
+    ...         self.bob = bob
+    ...
+    >>>
+    >>>
+    >>> c = C(x=10)
+    >>> for m in ('f', 'g', 'h'):
+    ...     print(f"{C.__name__}.{m}{signature(getattr(c, m))}")
+    ...
+    C.f(b, x)
+    C.g(y, x)
+    C.h(kwargs, c, x)
+    """
+    raise NotImplementedError("Not working yet: Come back to it!")
+    if cls is None:
+        return partial(inject_methodized_funcs,
+                       funcs=funcs, instance_params=instance_params, if_method_exists=if_method_exists)
+    else:
+        if instance_params is None:
+            instance_params = [x.name for x in list(signature(cls).parameters.values())[1:]]
+        methodize = methodizer(instance_params=instance_params)
+        for method in map(methodize, funcs):
+            _handle_exisisting_method_name(cls, method, if_method_exists)
+            setattr(cls, method.__name__, method)
+        return cls
 
 
 # TODO: Finish this function
@@ -839,6 +911,7 @@ def handle_json_req(func):
             body = {}
         kwargs = _get_req_input_kwargs(req, body)
         return func(kwargs)
+
     input_mapper.content_type = 'json'
     return input_mapper
 
@@ -852,6 +925,7 @@ def handle_multipart_req(func):
             body = {}
         kwargs = _get_req_input_kwargs(req, body)
         return func(kwargs)
+
     input_mapper.content_type = 'multipart'
     return input_mapper
 
@@ -862,6 +936,7 @@ def handle_raw_req(func):
         body = dict({}, text=raw_body)
         kwargs = _get_req_input_kwargs(req, body)
         return func(kwargs)
+
     input_mapper.content_type = 'raw'
     return input_mapper
 
