@@ -66,10 +66,30 @@ def mk_input_schema_from_func(func, exclude_keys=None):
                 result[key]['items'] = mk_sub_list_schema_from_iterable(arg_type)
                 arg_type = list
             elif arg_type not in json_types and not complex_type_mapping.get(arg_type):
-                arg_type = str(default_type)
+                arg_type = default_type
         else:
             arg_type = default_type
         result[key]['type'] = arg_type
+    return result
+
+
+def mk_output_schema_from_func(func):
+    result = {}
+    sig = signature(func)
+    output_type = sig.return_annotation
+    print(f'output_type: {output_type}')
+    if output_type in [Signature.empty, Any]:
+        return {}
+    if isinstance(output_type, _TypedDictMeta):
+        result['type'] = 'object'
+        result['properties'] = mk_sub_dict_schema_from_typed_dict(output_type)
+    elif getattr(output_type, '_name', None) == 'Iterable':
+        result['type'] = list
+        result['items'] = mk_sub_list_schema_from_iterable(output_type)
+    elif output_type not in json_types and not complex_type_mapping.get(output_type):
+        return {}
+    else:
+        result['type'] = output_type
     return result
 
 
