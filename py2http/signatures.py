@@ -10,6 +10,195 @@ _empty = Parameter.empty
 
 from inspect import _empty
 
+from typing import Union, Callable, Iterable
+from typing import Mapping as MappingType
+
+ParamsType = Iterable[Parameter]
+ParamsAble = Union[ParamsType, MappingType[str, Parameter], Callable]
+SignatureAble = Union[Signature, Callable, ParamsType, MappingType[str, Parameter]]
+
+
+def assure_signature(obj: SignatureAble):
+    if isinstance(obj, Signature):
+        return obj
+    elif isinstance(obj, Callable):
+        return Signature.from_callable(obj)
+    elif isinstance(obj, Iterable):
+        try:
+            params = assure_params(obj)
+            return Signature(parameters=params)
+        except TypeError:
+            raise TypeError(f"Don't know how to make that object into a Signature: {obj}")
+
+
+def assure_params(obj: ParamsAble):
+    if isinstance(obj, Iterable):
+        if isinstance(obj, Mapping):
+            obj = obj.values()
+        obj = list(obj)
+        if len(obj) == 0 or isinstance(obj[0], Parameter):
+            return obj
+        elif isinstance(obj[0], dict):
+            return [Parameter(**x) for x in obj]
+    else:
+        if isinstance(obj, Callable):
+            obj = Signature.from_callable(obj)
+        if isinstance(obj, Signature):
+            return list(obj.parameters.values())
+    # if function didn't return at this point, it didn't find a match, so raise
+    raise TypeError(
+        f"Don't know how to make that object into an iterable of inspect.Parameter objects: {obj}")
+
+
+class MissingArgValFor(object):
+    """A simple class to wrap an argument name, indicating that it was missing somewhere.
+    >>> MissingArgValFor('argname')
+    MissingArgValFor("argname")
+    """
+
+    def __init__(self, argname: str):
+        assert isinstance(argname, str)
+        self.argname = argname
+
+    def __repr__(self):
+        return f'MissingArgValFor("{self.argname}")'
+
+
+# TODO: Look into the handling of the Parameter.VAR_KEYWORD kind in params
+def extract_arguments(params: ParamsAble,
+                      *,
+                      include_all_when_var_keywords_in_params=False,
+                      assert_no_missing_position_only_args=False,
+                      **kwargs
+                      ):
+    """Extract arguments needed to satisfy the params of a callable, dealing with the dirty details.
+
+    Returns an (param_args, param_kwargs, remaining_kwargs) tuple where
+    - param_args are the values of kwargs that are PO (POSITION_ONLY) as defined by params,
+    - param_kwargs are those names that are both in params and not in param_args, and
+    - remaining_kwargs are the remaining.
+
+    Intended usage: When you need to call a function `func` that has some position-only arguments,
+    but you have a kwargs dict of arguments in your hand. You can't just to `func(**kwargs)`.
+    But you can (now) do
+    ```
+    args, kwargs, remaining = kwargs_to_args_kwargs(kwargs, func)  # extract from kwargs what you need for func
+    # ... check if remaing is empty (or not) depending on your paranoia, and then call the func:
+    func(*args, **kwargs)
+    ```
+    (And if you doing that a lot: Do put it in a decorator!)
+
+    See this function too: kwargs_to_args_kwargs.without_remainding
+
+    :param params: Specifies what PO arguments should be extracted.
+        Could be a callable, Signature, iterable of Parameters...
+    :param kwargs: The kwargs to extract the args from
+    :return: A (param_args, param_kwargs, remaining_kwargs) tuple.
+
+    The most frequent case you'll encounter is when there's no POSITION_ONLY args, your param_args will be empty
+    and you param_kwargs will contain all the arguments that match params, in the order of these params.
+
+    >>> from inspect import signature
+    >>> def f(a, b, c=None, d=0): ...
+    >>> extract_arguments(f, b=2, a=1, c=3, d=4, extra='stuff')
+    ((), {'a': 1, 'b': 2, 'c': 3, 'd': 4}, {'extra': 'stuff'})
+
+    But sometimes you do have POSITION_ONLY arguments.
+    What extract_arguments will do for you is return the value of these as the first element of
+    the triple.
+    >>> def f(a, b, c=None, /, d=0): ...
+    >>> extract_arguments(f, b=2, a=1, c=3, d=4, extra='stuff')
+    ((1, 2, 3), {'d': 4}, {'extra': 'stuff'})
+
+    Note above how we get `(1, 2, 3)`, the order defined by the func's signature,
+    instead of `(2, 1, 3)`, the order defined by the kwargs.
+    So it's the params (e.g. function signature) that determine the order, not kwargs.
+    When using to call a function, this is especially crucial if we use POSITION_ONLY arguments.
+
+    See also that the third output, the remaining_kwargs, as `{'extra': 'stuff'}` since
+    it was not in the params of the function.
+    Even if you include a VAR_KEYWORD kind of argument in the function, it won't change
+    this behavior.
+
+    >>> def f(a, b, c=None, /, d=0, **kws): ...
+    >>> extract_arguments(f, b=2, a=1, c=3, d=4, extra='stuff')
+    ((1, 2, 3), {'d': 4}, {'extra': 'stuff'})
+
+    This is because we don't want to assume that all the kwargs can actually be
+    included in a call to the function behind the params.
+    Instead, the user can chose whether to include the remainder by doing a:
+    ```
+    param_kwargs.update(remaining_kwargs)
+    ```
+    et voilà.
+
+    That said, we do understand that it may be a common pattern, so we'll do that extra step for you
+    if you specify `include_all_when_var_keywords_in_params=True`.
+
+    >>> def f(a, b, c=None, /, d=0, **kws): ...
+    >>> extract_arguments(f, b=2, a=1, c=3, d=4, extra='stuff',
+    ...                     include_all_when_var_keywords_in_params=True)
+    ((1, 2, 3), {'d': 4, 'extra': 'stuff'}, {})
+
+    And what happens if the kwargs doesn't contain all the POSITION_ONLY arguments?
+
+    >>> def f(a, b, c=None, /, d=0): ...
+    >>> extract_arguments(f, b=2, d='is a kw arg', e='is not an arg at all')
+    ((MissingArgValFor("a"), 2, MissingArgValFor("c")), {'d': 'is a kw arg'}, {'e': 'is not an arg at all'})
+
+    A few more examples...
+
+    Let's call `extract_arguments` with params being not a function,
+    but, a Signature instance, a mapping whose values are Parameter instances,
+    or an iterable of Parameter instances...
+
+    >>> def func(a, b,  /, c=None, *, d=0, **kws): ...
+    >>> sig = Signature.from_callable(func)
+    >>> param_map = sig.parameters
+    >>> param_iterable = param_map.values()
+    >>> kwargs = dict(b=2, a=1, c=3, d=4, extra='stuff')
+    >>> assert extract_arguments(sig, **kwargs) == extract_arguments(func, **kwargs)
+    >>> assert extract_arguments(param_map, **kwargs) == extract_arguments(func, **kwargs)
+    >>> assert extract_arguments(param_iterable, **kwargs) == extract_arguments(func, **kwargs)
+
+    Edge case:
+    No params specified? No problem. You'll just get empty args and kwargs. Everything in the remainder
+    >>> extract_arguments(params=(), b=2, a=1, c=3, d=0)
+    ((), {}, {'b': 2, 'a': 1, 'c': 3, 'd': 0})
+    """
+
+    params = assure_params(params)
+    if not params:
+        return (), {}, {k: v for k, v in kwargs.items()}
+
+    params_names = tuple(p.name for p in params)
+    names_for_args = [p.name for p in params if p.kind == Parameter.POSITIONAL_ONLY]
+    param_kwargs_names = [x for x in params_names if x not in set(names_for_args)]
+    remaining_names = [x for x in kwargs if x not in params_names]
+
+    param_args = tuple(kwargs.get(k, MissingArgValFor(k)) for k in names_for_args)
+    param_kwargs = {k: kwargs[k] for k in param_kwargs_names if k in kwargs}
+    remaining_kwargs = {k: kwargs[k] for k in remaining_names}
+
+    if include_all_when_var_keywords_in_params:
+        if next((p.name for p in params if p.kind == Parameter.VAR_KEYWORD), None) is not None:
+            param_kwargs.update(remaining_kwargs)
+            remaining_kwargs = {}
+
+    if assert_no_missing_position_only_args:
+        missing_argnames = tuple(x.argname for x in param_args if isinstance(x, MissingArgValFor))
+        assert missing_argnames, f"There were some missing positional only argnames: {missing_argnames}"
+
+    return param_args, param_kwargs, remaining_kwargs
+
+
+def _extract_arguments_without_remaining(params, **kwargs):
+    param_args, param_kwargs, _ = extract_arguments(params, **kwargs)
+    return param_args, param_kwargs
+
+
+extract_arguments.without_remaining = _extract_arguments_without_remaining
+
 
 class Param(Parameter):
     # aliases

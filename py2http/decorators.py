@@ -635,7 +635,6 @@ def ch_func_to_all_pk(func):
     func.__signature__ = ch_signature_to_all_pk(sig)
     return func
 
-
 from py2http.signatures import set_signature_of_func
 
 
@@ -646,13 +645,16 @@ def methodizer(func=None, *, instance_attrs=()):
     :param instance_attrs:
     :return:
 
+    >>> from py2http.decorators import methodizer
+    >>>
+    >>>
     >>> def f(a, b, x):
     ...     return x * (a + b)
     ...
-    >>>
     >>> def g(x, y=1):
     ...     return x * y
     ...
+    >>> methodize = methodizer(instance_attrs=('x', 'non_existing_attr'))
     >>>
     >>> class A:
     ...     def __init__(self, x=0):
@@ -661,15 +663,11 @@ def methodizer(func=None, *, instance_attrs=()):
     ...     f = methodize(f)
     ...     g = methodize(g)
     ...
-    ...
     >>>
     >>> a = A(x=3)
     >>> assert a.f(b=1, a=2) == 9
-    {'b': 1, 'a': 2, 'x': 3} (a, b, x)
     >>> assert a.g() == 3
-    {'x': 3} (x, y=1)
     >>> assert a.g(y=10) == 30
-    {'y': 10, 'x': 3} (x, y=1)
 
     """
     if func is None:
@@ -779,7 +777,7 @@ def mk_flat(cls, method, *, func_name="flat_func"):
         instance = cls(**for1)  # TODO: implement caching option
         return getattr(instance, method.__name__)(**for2)
 
-        flat_func.__dict__ = method.__dict__.copy()
+    flat_func.__dict__ = method.__dict__.copy()
     flat_func.__signature__ = Signature(parameters, return_annotation=sig2.return_annotation)
     flat_func.__name__ = func_name
 
