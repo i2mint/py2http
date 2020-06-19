@@ -136,7 +136,6 @@ def mk_http_service(funcs, **configs):
         openapi_spec['x-header-inputs'] = header_inputs
     for func in funcs:
         sig = inspect.signature(func)
-        print(f'mk_route func args: {sig.parameters}')
         route, openapi_path = mk_route(func, **configs)
         routes.append(route)
         add_paths_to_spec(openapi_spec['paths'], openapi_path)

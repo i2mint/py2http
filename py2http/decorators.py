@@ -779,12 +779,11 @@ def mk_flat(cls, method, *, func_name="flat_func"):
         instance = cls(**for1)  # TODO: implement caching option
         return getattr(instance, method.__name__)(**for2)
 
+        flat_func.__dict__ = method.__dict__.copy()
     flat_func.__signature__ = Signature(parameters, return_annotation=sig2.return_annotation)
     flat_func.__name__ = func_name
-    flat_func.__dict__ = method.__dict__.copy()
 
     final_sig = signature(flat_func)
-    print(f'signature of output function: {final_sig.parameters}')
 
     return flat_func
 
