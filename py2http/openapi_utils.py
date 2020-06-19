@@ -155,6 +155,60 @@ def mk_arg_schema(arg):
     return output
 
 
+from py2http.schema_tools import mk_input_schema_from_func
+
+
+def func_to_openapi_spec(func,
+                         exclude_keys=None,
+                         pathname=None,
+                         method='post',
+                         request_content_type='application/json',
+                         #                     request_dict=None,
+                         response_content_type='application/json',
+                         response_dict=None,
+                         path_fields=None):
+    pathname = pathname or func.__name__  # TODO: need safer get_name func, and name collision management
+    request_dict = mk_input_schema_from_func(func, exclude_keys)
+    return mk_openapi_path(pathname,
+                           method=method,
+                           request_content_type=request_content_type,
+                           request_dict=request_dict,
+                           response_content_type=response_content_type,
+                           response_dict=response_dict,
+                           path_fields=path_fields)
+
+
+from inspect import Parameter, Signature
+
+PK = Parameter.POSITIONAL_OR_KEYWORD
+
+
+def _params_from_props(openapi_props):
+    for name, p in openapi_props.items():
+        yield Parameter(name=name, kind=PK,
+                        default=p.get('default', Parameter.empty),
+                        annotation=p.get('type', Parameter.empty))
+
+
+def add_annots_from_openapi_props(func, openapi_props):
+    func.__signature__ = Signature(_params_from_props(openapi_props))
+    return func
+
+# Wish for sigfrom and/or mkwith decorators to be able to do func_to_openapi_spec like this:
+#
+# @sigfrom(mk_input_schema_from_func, mk_openapi_path, exclude='request_dict', dflts={'pathname': None})
+# def func_to_openapi_spec(*args, **kwargs):
+#     kws1, kws2 = extract_kwargs(mk_input_schema_from_func, mk_openapi_path)
+#     kws1['pathname'] = kws1['pathname'] or kws1['func'].__name__
+#     request_dict = mk_input_schema_from_func(**kws1)
+#     return mk_openapi_path(request_dict=request_dict, **kws2)
+#
+# @sigfrom(mk_input_schema_from_func, mk_openapi_path, exclude='request_dict', dflts={'pathname': None})
+# def func_to_openapi_spec(*args, **kwargs):
+#     pathname = pathname or func.__name__
+#     request_dict = mk_input_schema_from_func(func, exclude_keys)
+#     return mk_openapi_path(request_dict=request_dict, **kws2)
+
 # TODO Where to document the format of header inputs to be consumed by http2py
 # configs = {
 #     'header_inputs': {
