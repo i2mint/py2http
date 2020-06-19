@@ -854,7 +854,6 @@ def mk_flat(cls, method, *, func_name="flat_func"):
     flat_func.__name__ = func_name
 
     final_sig = signature(flat_func)
-    print(f'signature of output function: {final_sig.parameters}')
 
     return flat_func
 
