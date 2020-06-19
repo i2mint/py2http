@@ -62,6 +62,41 @@ def mk_config(key, func, configs, defaults, **options):
     return result
 
 
+from collections import namedtuple
+
+
+# TODO: Just to try out a smoother interface. Delete if never used.
+
+def mk_config_nt(keys, *args, **kwargs):
+    """Return a namedtuple of objects created by mk_config for several keys (and same configs).
+
+    Advantages:
+
+    Can use ths way:
+
+    ```
+    args, validator, postproc = mk_config_nt(['args', 'validator', 'postproc'], **configs)
+    ```
+
+    Or this way (useful when we're dealing with many items):
+
+    ```
+    c = mk_config_nt(['args', 'validator', 'postproc'], **configs)
+    c.args
+    c.validator
+    c.postproc
+    ```
+
+    Namedtuple attribute access is as fast as a dict (if not faster in 3.8).
+    One disadvantage, over a custom object is that it's contents are immutable
+    (if we use the `c.attr` form -- the unpacking form is fine since we're dealing
+    with copies).
+
+    """
+    ConfigNT = namedtuple('ConfigNT', field_names=keys)
+    return ConfigNT(**{k: mk_config(k, *args, **kwargs) for k in keys})
+
+
 def mk_route(func, **configs):
     """
     Generate an aiohttp route object and an OpenAPI path specification for a function
@@ -71,10 +106,21 @@ def mk_route(func, **configs):
     :Keyword Arguments: The configuration settings
     """
     # TODO: perhaps collections.abc.Mapping instead of dict?
-    input_mapper = mk_config('input_mapper', func, configs, default_configs)
-    input_validator = mk_config('input_validator', func, configs, default_configs)
-    output_mapper = mk_config('output_mapper', func, configs, default_configs)
-    header_inputs = mk_config('header_inputs', func, configs, default_configs)
+
+    # 1: Replacement proposal
+    input_mapper, input_validator, output_mapper, header_inputs = mk_config_nt(
+        ['input_mapper', 'input_validator', 'output_mapper', 'header_inputs'],
+        func, configs, default_configs)
+    # input_mapper, input_validator, output_mapper, header_inputs = mk_configs(
+    #     ['input_mapper', 'input_validator', 'output_mapper', 'header_inputs'],
+    #     func, configs, default_configs
+    # )
+    # 1: To replace this   # TODO: Test and choose
+    # input_mapper = mk_config('input_mapper', func, configs, default_configs)
+    # input_validator = mk_config('input_validator', func, configs, default_configs)
+    # output_mapper = mk_config('output_mapper', func, configs, default_configs)
+    # header_inputs = mk_config('header_inputs', func, configs, default_configs)
+
     exclude_request_keys = header_inputs.keys()
     request_schema = getattr(input_mapper,
                              'request_schema',
@@ -86,6 +132,8 @@ def mk_route(func, **configs):
         response_schema = getattr(func,
                                   'response_schema',
                                   mk_output_schema_from_func(func))
+
+    # TODO: Remove print (and implement conditional logging)
     print(f'response_schema: {response_schema}')
 
     async def handle_request(req):
@@ -113,9 +161,11 @@ def mk_route(func, **configs):
     if http_method not in ['get', 'put', 'post', 'delete']:
         http_method = 'post'
     web_mk_route = getattr(web, http_method)
+
     method_name = mk_config('name', func, configs, default_configs)
     if not method_name:
         method_name = func.__name__
+
     path = mk_config('route', func, configs, default_configs)
     if not path:
         path = f'/{method_name}'
@@ -134,7 +184,7 @@ def handle_ping(req):
 
 
 def run_http_service(funcs, **configs):
-    app = mk_http_service(funcs, **configs)[0]
+    app = mk_http_service(funcs, **configs)
     port = mk_config('port', None, configs, default_configs)
     web.run_app(app, port=port)
 
@@ -142,6 +192,16 @@ def run_http_service(funcs, **configs):
 def mk_http_service(funcs, **configs):
     middleware = mk_config('middleware', None, configs, default_configs)
     app = web.Application(middlewares=middleware)
+    routes, openapi_spec = mk_routes_and_openapi_specs(funcs, configs)
+    app.add_routes([web.get('/ping', handle_ping), *routes])
+    app.openapi_spec = openapi_spec
+    return app
+
+
+# TODO: Make signature explicit instead of using configs
+#   What it needs from config is only: openapi_spec and a header_inputs
+#   Make the user of this function get those from general configs
+def mk_routes_and_openapi_specs(funcs, configs):
     routes = []
     openapi_config = mk_config('openapi', None, configs, default_configs, type=dict)
     openapi_spec = mk_openapi_template(openapi_config)
@@ -149,18 +209,15 @@ def mk_http_service(funcs, **configs):
     if header_inputs:
         openapi_spec['x-header-inputs'] = header_inputs
     for func in funcs:
-        sig = inspect.signature(func)
+        # sig = inspect.signature(func)  # commenting out because not used
         route, openapi_path = mk_route(func, **configs)
         routes.append(route)
         add_paths_to_spec(openapi_spec['paths'], openapi_path)
-
     openapi_filename = openapi_config.get('filename', None)
     if openapi_filename:
         with open(openapi_filename, 'w') as fp:
             json.dump(openapi_spec, fp)
-
-    app.add_routes([web.get('/ping', handle_ping), *routes])
-    return app, openapi_spec
+    return routes, openapi_spec
 
 
 def run_many_services(apps, **configs):
