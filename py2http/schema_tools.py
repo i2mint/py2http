@@ -66,18 +66,25 @@ def mk_input_schema_from_func(func, exclude_keys=None, include_func_params=False
     ...     '''Adds numbers'''
     ...     return a + b
     ...
-    >>>
-    >>> def mult(x, y: int):
-    ...     return x * y
-    ...
     >>> got = mk_input_schema_from_func(add)
     >>> expected = {
-    ...     'a': {'required': True, 'type': typing.Any},
+    ...     'a': {'required': True, 'default': None, 'type': typing.Any},
     ...     'b': {'required': False, 'default': 0.0, 'type': float}}
-    >>> assert got == expected
+    >>> assert got == expected, f"\\n  expected {expected}\\n  got {got}"
     >>>
+    >>>
+    >>> # TODO: Look into this one: it results in a x default=None (there should be no default)
+    >>> #       and a type for y (there should be no type, unless by convention)
+    >>> def mult(x: float, y=1, z: int=1):
+    ...     return (x * y) ** z
+    ...
     >>> got = mk_input_schema_from_func(mult)
-    >>> expected = {'x': {'required': True, 'type': typing.Any}, 'y': {'required': True, 'type': <class 'int'>}}
+    >>> expected = {
+    ...     'x': {'required': True, 'default': None, 'type': float},
+    ...     'y': {'required': False, 'default': 1, 'type': int},
+    ...     'z': {'required': False, 'type': int, 'default': 1}
+    ...     }
+    >>> assert got == expected, f"\\n  expected {expected}\\n  got {got}"
     """
     if not exclude_keys:
         exclude_keys = {}
@@ -86,16 +93,18 @@ def mk_input_schema_from_func(func, exclude_keys=None, include_func_params=False
     for key, param in params.items():
         if key in exclude_keys:
             continue
+
         default = None  # TODO: Not used. Check why
         default_type = Any
         p = {'required': True}
         if param.default != Signature.empty:
             default = param.default
             p['required'] = False
-            p['default'] = default
             if type(default) in json_types:
-                default_type = type(default)
-        arg_type = default_type  # TODO: Not used. Check why
+                default_type = type(default)  # TODO: perhaps you meant json_types[type(default)] ?
+        p['default'] = default
+
+        arg_type = default_type  # TODO: Not used. Check why (seems the if clause does covers all)
         if param.annotation != Signature.empty:
             arg_type = param.annotation
             if isinstance(arg_type, _TypedDictMeta):
@@ -108,7 +117,7 @@ def mk_input_schema_from_func(func, exclude_keys=None, include_func_params=False
             elif arg_type not in json_types and not complex_type_mapping.get(arg_type):
                 arg_type = default_type
         else:
-            arg_type = default_type
+            arg_type = default_type  # TODO: Think. Could be a convention, but no applicable in all cases.
         p['type'] = arg_type
 
         if include_func_params:
