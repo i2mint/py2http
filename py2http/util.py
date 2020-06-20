@@ -1,6 +1,16 @@
 from typing import Callable
 
 
+class ModuleNotFoundIgnore:
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is ModuleNotFoundError:
+            pass
+        return True
+
+
 class TypeAsserter:
     """Makes a callable that asserts that a value `v` has the expected type(s) that it's kind `k` should be
 

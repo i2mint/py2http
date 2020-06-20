@@ -134,7 +134,7 @@ def mk_route(func, **configs):
                                   mk_output_schema_from_func(func))
 
     # TODO: Remove print (and implement conditional logging)
-    print(f'response_schema: {response_schema}')
+    # print(f'response_schema: {response_schema}')
 
     async def handle_request(req):
         input_kwargs = input_mapper(req)
@@ -194,7 +194,9 @@ def mk_http_service(funcs, **configs):
     app = web.Application(middlewares=middleware)
     routes, openapi_spec = mk_routes_and_openapi_specs(funcs, configs)
     app.add_routes([web.get('/ping', handle_ping), *routes])
+    # adding a few more attributes
     app.openapi_spec = openapi_spec
+    app.dflt_port = mk_config('port', None, configs, default_configs)
     return app
 
 

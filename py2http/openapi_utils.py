@@ -178,24 +178,6 @@ def func_to_openapi_spec(func,
                            response_content_type=response_content_type,
                            response_dict=response_dict,
                            path_fields=path_fields)
-
-
-from inspect import Parameter, Signature
-
-PK = Parameter.POSITIONAL_OR_KEYWORD
-
-
-def _params_from_props(openapi_props):
-    for name, p in openapi_props.items():
-        yield Parameter(name=name, kind=PK,
-                        default=p.get('default', Parameter.empty),
-                        annotation=p.get('type', Parameter.empty))
-
-
-def add_annots_from_openapi_props(func, openapi_props):
-    func.__signature__ = Signature(_params_from_props(openapi_props))
-    return func
-
 # Wish for sigfrom and/or mkwith decorators to be able to do func_to_openapi_spec like this:
 #
 # @sigfrom(mk_input_schema_from_func, mk_openapi_path, exclude='request_dict', dflts={'pathname': None})
@@ -210,6 +192,26 @@ def add_annots_from_openapi_props(func, openapi_props):
 #     pathname = pathname or func.__name__
 #     request_dict = mk_input_schema_from_func(func, exclude_keys)
 #     return mk_openapi_path(request_dict=request_dict, **kws2)
+
+
+# TODO: What's below is meant for http2py, and lives/maintains there.
+#   Copied below (but commented out) for reference. Can delete if never used.
+# from inspect import Parameter, Signature
+#
+# PK = Parameter.POSITIONAL_OR_KEYWORD
+#
+#
+# def _params_from_props(openapi_props):
+#     for name, p in openapi_props.items():
+#         yield Parameter(name=name, kind=PK,
+#                         default=p.get('default', Parameter.empty),
+#                         annotation=p.get('type', Parameter.empty))
+#
+#
+# def add_annots_from_openapi_props(func, openapi_props):
+#     func.__signature__ = Signature(_params_from_props(openapi_props))
+#     return func
+#
 
 # TODO Where to document the format of header inputs to be consumed by http2py
 # configs = {

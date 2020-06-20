@@ -77,7 +77,7 @@ def mk_output_schema_from_func(func):
     result = {}
     sig = signature(func)
     output_type = sig.return_annotation
-    print(f'output_type: {output_type}')
+    # print(f'output_type: {output_type}')  # TODO: Remove: Use conditional logging instead
     if output_type in [Signature.empty, Any]:
         return {}
     if isinstance(output_type, _TypedDictMeta):
