@@ -7,16 +7,8 @@ from warnings import warn
 from aiohttp import web
 from bson import ObjectId
 
-ParameterKind = type(Parameter.POSITIONAL_OR_KEYWORD)  # to get the enum type
-
-Params = Iterable[Parameter]
-HasParams = Union[Iterable[Parameter], Mapping[str, Parameter], Signature, Callable]
-
-# short hands for Parameter kinds
-PK = Parameter.POSITIONAL_OR_KEYWORD
-VP, VK = Parameter.VAR_POSITIONAL, Parameter.VAR_KEYWORD
-PO, KO = Parameter.POSITIONAL_ONLY, Parameter.KEYWORD_ONLY
-var_param_types = {VP, VK}
+from py2http.types import (WriteOpResult, ParameterKind, Params, HasParams,
+                           PK, VP, VK, PO, KO, var_param_types)
 
 
 class Literal:
@@ -962,6 +954,39 @@ def send_html_resp(func):
 
     output_mapper.content_type = 'html'
     return output_mapper
+
+
+def format_db_write(content_type='json'):
+    def mk_output_mapper(func):
+        def output_mapper(output, input_kwargs) -> WriteOpResult:
+            mapped_output = {'n': 0, 'ok': 0}
+            inserted_id = getattr(output, 'inserted_id', getattr(output, 'upserted_id', None))
+            inserted_ids = getattr(output, 'inserted_ids', getattr(output, 'upserted_ids', None))
+            deleted_count = getattr(output, 'deleted_count', None)
+            raw_result = getattr(output, 'raw_result', None)
+            if inserted_id:
+                mapped_output['inserted_ids'] = [inserted_id]
+                mapped_output['n'] = 1
+                mapped_output['ok'] = 1
+            elif inserted_ids:
+                mapped_output['inserted_ids'] = inserted_ids
+                mapped_output['n'] = len(inserted_ids)
+                mapped_output['ok'] = 1
+            elif deleted_count:
+                mapped_output['n'] = deleted_count
+                mapped_output['ok'] = 1
+            elif raw_result:
+                n = raw_result.get('nModified', 0)
+                ok = raw_result.get('ok')
+                mapped_output = {'n': n, 'ok': ok}
+            return mapped_output
+        if content_type == 'html':
+            output_mapper = send_html_resp(output_mapper)
+        else:
+            output_mapper = send_json_resp(output_mapper)
+        func.output_mapper = output_mapper
+        return func
+    return mk_output_mapper
 
 
 # TODO: stub

@@ -37,7 +37,6 @@ def mk_openapi_template(config=None):
     return openapi_spec
 
 
-# TODO: new_path missing
 def add_paths_to_spec(paths_spec, new_paths):
     for pathname in new_paths.keys():
         for http_method in new_paths[pathname].keys():

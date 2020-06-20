@@ -61,7 +61,6 @@ def mk_config(key, func, configs, defaults, **options):
         result = defaults.get(key, None)
     return result
 
-
 from collections import namedtuple
 
 
@@ -106,11 +105,15 @@ def mk_route(func, **configs):
     :Keyword Arguments: The configuration settings
     """
     # TODO: perhaps collections.abc.Mapping instead of dict?
+    input_mapper = mk_config('input_mapper', func, configs, default_configs)
+    input_validator = mk_config('input_validator', func, configs, default_configs)
+    output_mapper = mk_config('output_mapper', func, configs, default_configs)
+    header_inputs = mk_config('header_inputs', func, configs, default_configs, type=dict)
 
     # 1: Replacement proposal
-    input_mapper, input_validator, output_mapper, header_inputs = mk_config_nt(
-        ['input_mapper', 'input_validator', 'output_mapper', 'header_inputs'],
-        func, configs, default_configs)
+    # input_mapper, input_validator, output_mapper, header_inputs = mk_config_nt(
+    #     ['input_mapper', 'input_validator', 'output_mapper', 'header_inputs'],
+    #     func, configs, default_configs)
     # input_mapper, input_validator, output_mapper, header_inputs = mk_configs(
     #     ['input_mapper', 'input_validator', 'output_mapper', 'header_inputs'],
     #     func, configs, default_configs
@@ -120,7 +123,6 @@ def mk_route(func, **configs):
     # input_validator = mk_config('input_validator', func, configs, default_configs)
     # output_mapper = mk_config('output_mapper', func, configs, default_configs)
     # header_inputs = mk_config('header_inputs', func, configs, default_configs)
-
     exclude_request_keys = header_inputs.keys()
     request_schema = getattr(input_mapper,
                              'request_schema',
@@ -132,9 +134,6 @@ def mk_route(func, **configs):
         response_schema = getattr(func,
                                   'response_schema',
                                   mk_output_schema_from_func(func))
-
-    # TODO: Remove print (and implement conditional logging)
-    # print(f'response_schema: {response_schema}')
 
     async def handle_request(req):
         input_kwargs = input_mapper(req)
