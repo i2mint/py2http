@@ -1,4 +1,4 @@
-from inspect import signature, Signature
+from inspect import signature, Signature, Parameter
 from typing import Any, _TypedDictMeta, T_co
 
 complex_type_mapping = {}
@@ -38,39 +38,84 @@ def mk_sub_list_schema_from_iterable(iterable_type):
     return result
 
 
-def mk_input_schema_from_func(func, exclude_keys=None):
+# def pyparam_to_jdict(param):
+#     def gen():
+#         for a in ('name', 'kind', 'default', 'annotation'):
+#             v = getattr(param, a, Parameter.empty)
+#             if v is not Parameter.empty:
+#                 yield (a, v)
+#
+#     return dict(gen())
+
+# changes: simplified from sig.parameters[key] to looping over items of parameters
+# changes: added include_func_params and handling
+# changes: added docs and doctests
+def mk_input_schema_from_func(func, exclude_keys=None, include_func_params=False):
+    """Make the openAPI input schema for a function.
+
+    :param func: A callable
+    :param exclude_keys: keys to exclude in the schema
+    :param include_func_params: Boolean indicating whether the python Parameter objects should
+        also be included (under the field `x-py-param`)
+    :return: An openAPI input schema dict
+
+    >>> from py2http.schema_tools import mk_input_schema_from_func
+    >>> import typing
+    >>>
+    >>> def add(a, b: float = 0.0) -> float:
+    ...     '''Adds numbers'''
+    ...     return a + b
+    ...
+    >>>
+    >>> def mult(x, y: int):
+    ...     return x * y
+    ...
+    >>> got = mk_input_schema_from_func(add)
+    >>> expected = {
+    ...     'a': {'required': True, 'type': typing.Any},
+    ...     'b': {'required': False, 'default': 0.0, 'type': float}}
+    >>> assert got == expected
+    >>>
+    >>> got = mk_input_schema_from_func(mult)
+    >>> expected = {'x': {'required': True, 'type': typing.Any}, 'y': {'required': True, 'type': <class 'int'>}}
+    """
     if not exclude_keys:
         exclude_keys = {}
-    result = {}
-    sig = signature(func)
-    for key in sig.parameters:
+    input_schema = {}
+    params = signature(func).parameters
+    for key, param in params.items():
         if key in exclude_keys:
             continue
-        default = None
+        default = None  # TODO: Not used. Check why
         default_type = Any
-        result[key] = {'required': True}
-        if sig.parameters[key].default != Signature.empty:
-            default = sig.parameters[key].default
-            result[key]['required'] = False
-            result[key]['default'] = default
+        p = {'required': True}
+        if param.default != Signature.empty:
+            default = param.default
+            p['required'] = False
+            p['default'] = default
             if type(default) in json_types:
                 default_type = type(default)
-        arg_type = default_type
-        if sig.parameters[key].annotation != Signature.empty:
-            arg_type = sig.parameters[key].annotation
+        arg_type = default_type  # TODO: Not used. Check why
+        if param.annotation != Signature.empty:
+            arg_type = param.annotation
             if isinstance(arg_type, _TypedDictMeta):
-                result[key]['type'] = 'object'
-                result[key]['properties'] = mk_sub_dict_schema_from_typed_dict(arg_type)
+                p['type'] = 'object'
+                p['properties'] = mk_sub_dict_schema_from_typed_dict(arg_type)
                 continue
             if getattr(arg_type, '_name', None) == 'Iterable':
-                result[key]['items'] = mk_sub_list_schema_from_iterable(arg_type)
+                p['items'] = mk_sub_list_schema_from_iterable(arg_type)
                 arg_type = list
             elif arg_type not in json_types and not complex_type_mapping.get(arg_type):
                 arg_type = default_type
         else:
             arg_type = default_type
-        result[key]['type'] = arg_type
-    return result
+        p['type'] = arg_type
+
+        if include_func_params:
+            p['x-py-param'] = param
+        # map key to this p info
+        input_schema[key] = p
+    return input_schema
 
 
 def mk_output_schema_from_func(func):
@@ -101,6 +146,7 @@ def mk_input_validator_from_schema(schema):
     def input_validator(input_kwargs):
         print('Your arguments are fallacious.')
         return False
+
 
 # TODO write this function to take a dict like the following and create an input mapper
 # (assume deserialization has already been taken care of)
