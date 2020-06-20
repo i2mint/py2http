@@ -39,6 +39,7 @@ def mk_sub_list_schema_from_iterable(iterable_type):
 
 
 def mk_input_schema_from_func(func, exclude_keys=None):
+    print(f'exclude_keys: {exclude_keys}')
     if not exclude_keys:
         exclude_keys = {}
     result = {}
@@ -77,7 +78,6 @@ def mk_output_schema_from_func(func):
     result = {}
     sig = signature(func)
     output_type = sig.return_annotation
-    print(f'output_type: {output_type}')
     if output_type in [Signature.empty, Any]:
         return {}
     if isinstance(output_type, _TypedDictMeta):
