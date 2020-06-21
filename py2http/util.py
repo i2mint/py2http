@@ -1,4 +1,127 @@
-from typing import Callable
+from typing import Optional, Callable, Union, Iterable
+from inspect import Parameter, signature
+
+
+class Missing:
+    """A class to use as a value to indicate that something was missing"""
+
+    def __init__(self, val=None):
+        self.val = val
+
+
+class Skip:
+    """Class to indicate if one should skip an item"""
+
+
+def obj_to_items_gen(obj,
+                     attrs: Iterable[str],
+                     on_missing_attr: Union[Callable, Skip, None] = Missing,
+                     kv_trans: Optional[Callable] = lambda k, v: (k, v) if v is not Parameter.empty else None):
+    """Make a generator of (k, v) items extracted from an input object, given an iterable of attributes to extract
+
+    :param obj: A python object
+    :param attrs: The iterable of attributes to extract from obj
+    :param on_missing_val: What to do if an attribute is missing:
+        - Skip: Skip the item
+        - Callable: Call a function with the attribute as an input
+        - anything else: Just return that as a value
+    :param kv_trans:
+    :return: A generator
+    """
+
+    def gen():
+        for k in attrs:
+            v = getattr(obj, k, Missing)
+            if v is Missing:
+                if on_missing_attr is obj_to_items_gen.Skip:
+                    continue  # skip this
+                elif callable(on_missing_attr):
+                    yield k, on_missing_attr(k)
+                else:
+                    yield k, on_missing_attr
+
+            yield k, getattr(obj, k, on_missing_attr)
+
+    if kv_trans is not None:
+        assert callable(kv_trans)
+        assert list(signature(kv_trans).parameters) == ['k', 'v'], f"kv_trans must have signature (k, v)"
+        _gen = gen
+
+        def gen():
+            for k, v in _gen():
+                x = kv_trans(k=k, v=v)
+                if x is not None:
+                    yield x
+
+    return gen
+
+
+obj_to_items_gen.Skip = Skip
+
+
+class _pyparam_kv_trans:
+    """A collection of kv_trans functions for pyparam_to_dict"""
+
+    @staticmethod
+    def skip_empties(k, v):
+        return (k, v) if v is not Parameter.empty else None
+
+    @staticmethod
+    def with_str_kind(k, v):
+        if v is Parameter.empty:
+            return None
+        elif k == 'kind':
+            return k, str(v)
+        else:
+            return k, v
+
+
+def pyparam_to_dict(param, kv_trans: Callable = _pyparam_kv_trans.skip_empties):
+    """Get dict from a Parameter object
+
+    :param param: A inspect.Parameter instance
+    :param kv_trans: A callable that will be called on the (k, v) attribute items of the Parameter instance
+    :return: A dict extracted from this Parameter
+
+    >>> from inspect import Parameter, Signature, signature
+    >>> from functools import partial
+    >>>
+    >>> def mult(x: float, /, y=1, *, z: int=1): ...
+    >>> params_dicts = map(pyparam_to_dict, signature(mult).parameters.values())
+    >>> # see that we can recover the original signature from these dicts
+    >>> assert Signature(map(lambda kw: Parameter(**kw), params_dicts)) == signature(mult)
+
+    Now what about the kv_trans? It's default is made to return None when a value is equal to
+    `Parameter.empty` (which is the way the inspect module distinguishes the `None` object from
+    "it's just not there".
+
+    But we could provide our own kv_trans, which should be a function taking `(k, v)` pair
+    (those k and v arg names are imposed!) and returns... well, what ever you want to return
+    really. But you if return None, the `(k, v)` item will be skipped.
+
+    Look here how using `kv_trans=pyparam_to_dict.kv_trans.with_str_kind` does the job
+    of skipping `Parameter.empty` items, but also cast the `kind` value to a string,
+    so that it can be jsonizable.
+
+    >>> params_to_jdict = partial(pyparam_to_dict, kv_trans=pyparam_to_dict.kv_trans.with_str_kind)
+    >>> got = list(map(params_to_jdict, signature(mult).parameters.values()))
+    >>> expected = [
+    ...     {'name': 'x', 'kind': 'POSITIONAL_ONLY', 'annotation': float},
+    ...     {'name': 'y', 'kind': 'POSITIONAL_OR_KEYWORD', 'default': 1},
+    ...     {'name': 'z', 'kind': 'KEYWORD_ONLY', 'default': 1, 'annotation': int}]
+    >>> assert got == expected, f"\\n  got={got}\\n  expected={expected}"
+
+    """
+    gen = obj_to_items_gen(
+        param,
+        attrs=('name', 'kind', 'default', 'annotation'),
+        on_missing_attr=None,
+        kv_trans=kv_trans)
+
+    return dict(gen())
+
+
+pyparam_to_dict.kv_trans = _pyparam_kv_trans
 
 
 class ModuleNotFoundIgnore:
