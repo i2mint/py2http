@@ -18,6 +18,17 @@ ParamsAble = Union[ParamsType, MappingType[str, Parameter], Callable]
 SignatureAble = Union[Signature, Callable, ParamsType, MappingType[str, Parameter]]
 
 
+def assure_callable(obj: SignatureAble):
+    if isinstance(obj, Callable):
+        return obj
+    else:
+        def f(*args, **kwargs):
+            """Empty function made just to carry a signature"""
+
+        f.__signature__ = assure_signature(obj)
+        return f
+
+
 def assure_signature(obj: SignatureAble):
     if isinstance(obj, Signature):
         return obj
