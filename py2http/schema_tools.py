@@ -38,15 +38,6 @@ def mk_sub_list_schema_from_iterable(iterable_type):
     return result
 
 
-# def pyparam_to_jdict(param):
-#     def gen():
-#         for a in ('name', 'kind', 'default', 'annotation'):
-#             v = getattr(param, a, Parameter.empty)
-#             if v is not Parameter.empty:
-#                 yield (a, v)
-#
-#     return dict(gen())
-
 # changes: simplified from sig.parameters[key] to looping over items of parameters
 # changes: added include_func_params and handling
 # changes: added docs and doctests

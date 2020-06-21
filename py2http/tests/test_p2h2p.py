@@ -1,12 +1,12 @@
 from py2http.service import mk_http_service
 from http2py.py2request import mk_request_function
 from py2http.util import ModuleNotFoundIgnore
-# from py2http.tests.utils_for_testing import run_server
+from py2http.tests.utils_for_testing import run_server
 from inspect import signature
 
 
 def mk_app_launcher(app, **kwargs):
-    with ModuleNotFoundIgnore:
+    with ModuleNotFoundIgnore():
         from aiohttp.web import Application, run_app
         if isinstance(app, Application):
             def app_launcher(app):
@@ -45,11 +45,19 @@ def p2h2p_app(funcs, p2h_configs=None, h2p_configs=None):
 
 
 # equivalence tests ############################################
-inputs_for_func = ...  #
+
+def conditional_logger(verbose=False):
+    if verbose:
+        clog = print
+    else:
+        def clog(*args, **kwargs):
+            pass  # do nothing
+    return clog
 
 
 def test_p2h2p(funcs, inputs_for_func=None, p2h_configs=None, h2p_configs=None,
-               check_signatures=False, wait_before_entering=2):
+               check_signatures=False, wait_before_entering=2,
+               verbose=False):
     """
 
     :param funcs: An iterable of callables
@@ -60,10 +68,13 @@ def test_p2h2p(funcs, inputs_for_func=None, p2h_configs=None, h2p_configs=None,
     :param wait_before_entering:
     :return:
     """
+    clog = conditional_logger(verbose)
     inputs_for_func = inputs_for_func or {}
     app = p2h2p_app(funcs, p2h_configs=p2h_configs, h2p_configs=h2p_configs)
     with run_server(mk_app_launcher(app), wait_before_entering=wait_before_entering):
+        clog(f"Server running: {app}")
         for f, ff in zip(funcs, app.w_funcs):
+            clog(f"{signature(f)} -- {signature(ff)}")
             if check_signatures:
                 assert signature(f) == signature(ff)
             for args, kwargs in inputs_for_func.get(f):
@@ -91,7 +102,6 @@ def example_test(base_url=dflt_base_url):
 
 
 if __name__ == '__main__':
-    from py2http.tests.utils_for_testing import run_server
     from py2http.tests.example_service import example_functions, run_http_service
 
 
