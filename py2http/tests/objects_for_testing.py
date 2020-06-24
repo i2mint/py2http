@@ -5,6 +5,35 @@ See also: https://github.com/i2mint/py2mint/blob/master/py2mint/tests/objects_fo
 """
 
 
+###############################################################################
+# Empty callables, meant to give an example of different kinds of callables ###
+# Note that x can be applied to a number, string, or list #####################
+def f(x):
+    """Note that x can be applied to a number, string, or list"""
+    return x * 2
+
+
+class C:
+    @classmethod
+    def c(cls, x):
+        return f(x)
+
+    @staticmethod
+    def s(x):
+        return f(x)
+
+    # instance method
+    def i(self, x):
+        return f(x)
+
+    # making an instance itself callable
+    def __call__(self, x):
+        return f(x)
+
+
+###############################################################################
+
+
 def add(a, b: float = 0.0) -> float:
     """Adds numbers"""
     return a + b
