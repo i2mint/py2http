@@ -895,12 +895,7 @@ def route(route_name):
 
 def handle_json_req(func):
     async def input_mapper(req):
-        try:
-            body = await req.json()
-        except JSONDecodeError:
-            warn('Invalid req body, expected JSON format.')
-            body = {}
-        kwargs = _get_req_input_kwargs(req, body)
+        kwargs = await _get_req_input_kwargs(req, req.json)
         return func(kwargs)
 
     input_mapper.content_type = 'json'
@@ -909,12 +904,7 @@ def handle_json_req(func):
 
 def handle_multipart_req(func):
     async def input_mapper(req):
-        try:
-            body = await req.post()
-        except Exception:
-            warn('Invalid req body, expected multipart format.')
-            body = {}
-        kwargs = _get_req_input_kwargs(req, body)
+        kwargs = await _get_req_input_kwargs(req, req.post)
         return func(kwargs)
 
     input_mapper.content_type = 'multipart'
@@ -923,9 +913,7 @@ def handle_multipart_req(func):
 
 def handle_raw_req(func):
     async def input_mapper(req):
-        raw_body = await req.text()
-        body = dict({}, text=raw_body)
-        kwargs = _get_req_input_kwargs(req, body)
+        kwargs = await _get_req_input_kwargs(req, req.text)
         return func(kwargs)
 
     input_mapper.content_type = 'raw'
@@ -997,8 +985,13 @@ def mk_input_mapper(input_map):
     return decorator
 
 
-def _get_req_input_kwargs(req, body):
-    kwargs = body
+async def _get_req_input_kwargs(req, get_body_func):
+    kwargs = {}
+    if req.has_body:
+        body = await get_body_func()
+        if isinstance(body, str):
+            body = dict({}, text=body)
+        kwargs = body
     if getattr(req, 'query', None):
         kwargs = dict(kwargs, **req.query)
     if getattr(req, 'token', None):
