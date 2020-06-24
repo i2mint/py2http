@@ -1,4 +1,4 @@
-import pytest  # TODO: Figure out how to make it a pytest...
+# import pytest  # TODO: Figure out how to make it a pytest...
 import requests
 
 dflt_port = '3030'
@@ -7,6 +7,7 @@ dflt_base_url = dflt_root_url + ':' + dflt_port
 
 
 def example_test(base_url=dflt_base_url):
+    print('starting test')
     add_result = requests.post(f'{base_url}/add', json={'a': 10, 'b': 5})
     assert str(add_result.json()) == '15'
 
@@ -15,6 +16,7 @@ def example_test(base_url=dflt_base_url):
 
     no_args_result = requests.post(f'{base_url}/no_args', json={})
     assert str(no_args_result.json()) == 'no args'
+    print('ending test')
 
 
 if __name__ == '__main__':
@@ -28,3 +30,4 @@ if __name__ == '__main__':
 
     with run_server(run_example_service, wait_before_entering=0.5):
         example_test()
+
