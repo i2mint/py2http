@@ -2,7 +2,7 @@ import requests
 from py2http.service import mk_http_service, mk_routes_and_openapi_specs, run_http_service
 from http2py.py2request import mk_request_function
 from py2http.util import ModuleNotFoundIgnore
-from py2http.tests.utils_for_testing import run_server
+from py2http.tests.utils_for_testing import conditional_logger, run_server
 from inspect import signature
 from collections.abc import Iterable
 
@@ -49,14 +49,6 @@ def run_service(funcs, configs):
 
 # equivalence tests ############################################
 
-def conditional_logger(verbose=False):
-    if verbose:
-        clog = print
-    else:
-        def clog(*args, **kwargs):
-            pass  # do nothing
-    return clog
-
 
 def test_p2h2p(funcs, inputs_for_func=None, p2h_configs=None, h2p_configs=None,
                check_signatures=False, wait_before_entering=2,
@@ -73,8 +65,7 @@ def test_p2h2p(funcs, inputs_for_func=None, p2h_configs=None, h2p_configs=None,
     """
     clog = conditional_logger(verbose)
     client_funcs = get_client_funcs(funcs, p2h_configs=p2h_configs, h2p_configs=h2p_configs)
-    with run_server(run_service, wait_before_entering=wait_before_entering, funcs=funcs, configs=p2h_configs):
-        clog(f"Server running")
+    with run_server(run_service, wait_before_entering=wait_before_entering, verbose=verbose, funcs=funcs, configs=p2h_configs):
         for f, cf in zip(funcs, client_funcs):
             clog(f"{signature(f)} -- {signature(cf)}")
             if check_signatures:
@@ -83,6 +74,7 @@ def test_p2h2p(funcs, inputs_for_func=None, p2h_configs=None, h2p_configs=None,
                 for args, kwargs in inputs_for_func.get(f):
                     f_output = f(*args, **kwargs)
                     cf_output = cf(*args, **kwargs)
+                    clog(f_output, cf_output.json())
                     assert f_output == cf_output
 
 
@@ -120,8 +112,8 @@ if __name__ == '__main__':
         power
     ]
     inputs_for_func= { 
-        square: zip([12], {}),
-        power: zip([10, 5], {})
+        square: zip([(10,)], [{}]),
+        power: zip([(10,), (5,)], [{}, {}])
     }
     test_p2h2p(funcs=funcs, 
                inputs_for_func=inputs_for_func, 
