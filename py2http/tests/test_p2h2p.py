@@ -1,8 +1,11 @@
-from py2http.service import mk_http_service
+import requests
+from py2http.service import mk_http_service, mk_routes_and_openapi_specs, run_http_service
 from http2py.py2request import mk_request_function
 from py2http.util import ModuleNotFoundIgnore
 from py2http.tests.utils_for_testing import run_server
 from inspect import signature
+from collections.abc import Iterable
+
 
 
 def mk_app_launcher(app, **kwargs):
@@ -36,12 +39,12 @@ def _w_funcs(funcs, openapi_spec, **h2p_configs):
             func_to_path(func), openapi_spec, **h2p_configs)
 
 
-def p2h2p_app(funcs, p2h_configs=None, h2p_configs=None):
-    app = mk_http_service(funcs, **(p2h_configs or {}))
-    w_funcs = list(_w_funcs(funcs, app.openapi_spec, **(h2p_configs or {})))
-    app.funcs = funcs
-    app.w_funcs = w_funcs
-    return app
+def get_client_funcs(funcs, p2h_configs=None, h2p_configs=None):
+    routes, openapi_spec = mk_routes_and_openapi_specs(funcs, p2h_configs or {})
+    return list(_w_funcs(funcs, openapi_spec, **(h2p_configs or {})))
+    
+def run_service(funcs, configs):
+    return run_http_service(funcs, **(configs or {}))
 
 
 # equivalence tests ############################################
@@ -69,21 +72,20 @@ def test_p2h2p(funcs, inputs_for_func=None, p2h_configs=None, h2p_configs=None,
     :return:
     """
     clog = conditional_logger(verbose)
-    inputs_for_func = inputs_for_func or {}
-    app = p2h2p_app(funcs, p2h_configs=p2h_configs, h2p_configs=h2p_configs)
-    with run_server(mk_app_launcher(app), wait_before_entering=wait_before_entering):
-        clog(f"Server running: {app}")
-        for f, ff in zip(funcs, app.w_funcs):
-            clog(f"{signature(f)} -- {signature(ff)}")
+    client_funcs = get_client_funcs(funcs, p2h_configs=p2h_configs, h2p_configs=h2p_configs)
+    with run_server(run_service, wait_before_entering=wait_before_entering, funcs=funcs, configs=p2h_configs):
+        clog(f"Server running")
+        for f, cf in zip(funcs, client_funcs):
+            clog(f"{signature(f)} -- {signature(cf)}")
             if check_signatures:
-                assert signature(f) == signature(ff)
-            for args, kwargs in inputs_for_func.get(f):
-                f_output = f(*args, **kwargs)
-                ff_output = ff(*args, **kwargs)
-                assert f_output == ff_output
+                assert signature(f) == signature(cf)
+            if isinstance(inputs_for_func, Iterable):
+                for args, kwargs in inputs_for_func.get(f):
+                    f_output = f(*args, **kwargs)
+                    cf_output = cf(*args, **kwargs)
+                    assert f_output == cf_output
 
 
-import requests
 
 dflt_port = '3030'
 dflt_root_url = "http://localhost"
@@ -100,14 +102,27 @@ def example_test(base_url=dflt_base_url):
     no_args_result = requests.post(f'{base_url}/no_args', json={})
     assert str(no_args_result.json()) == 'no args'
 
+def square(x):
+    return x*x
+def power(x, p):
+    result = 1
+    for i in range(abs(p)):
+        result = result*x if p > 0 else result/x
+    return result
 
 if __name__ == '__main__':
-    from py2http.tests.example_service import example_functions, run_http_service
 
+    # with run_server(run_example_service, wait_before_entering=0.5):
+    #     example_test()
 
-    def run_example_service():
-        return run_http_service(example_functions)
-
-
-    with run_server(run_example_service, wait_before_entering=0.5):
-        example_test()
+    funcs = [
+        square,
+        power
+    ]
+    inputs_for_func= { 
+        square: zip([12], {}),
+        power: zip([10, 5], {})
+    }
+    test_p2h2p(funcs=funcs, 
+               inputs_for_func=inputs_for_func, 
+               verbose=True)
