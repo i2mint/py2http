@@ -1,5 +1,105 @@
 from typing import Optional, Callable, Union, Iterable
 from inspect import Parameter, signature
+from multiprocessing.context import Process
+from time import sleep
+from functools import wraps, partial
+from warnings import warn, simplefilter
+
+
+def conditional_logger(verbose=False, log_func=print):
+    if verbose:
+        return log_func
+    else:
+        def clog(*args, **kwargs):
+            pass  # do nothing
+
+        return clog
+
+
+class CreateProcess:
+    """A context manager to launch a parallel process and close it on exit.
+    """
+
+    def __init__(self, proc_func: Callable, process_name=None, wait_before_entering=0, verbose=False,
+                 args=(), **kwargs):
+        """
+        Essentially, this context manager will call
+        ```
+            proc_func(*args, **kwargs)
+        ```
+        in an independent process.
+
+        :param proc_func: A function that will be launched in the process
+        :param process_name: The name of the process.
+        :param wait_before_entering: A pause (in seconds) before returning from the enter phase.
+            (in case the outside should wait before assuming everything is ready)
+        :param verbose: If True, will print some info on the starting/stoping of the process
+        :param args: args that will be given as arguments to the proc_func call
+        :param kwargs: The kwargs that will be given as arguments to the proc_func call
+
+        The following should print 'Hello console!' in the console.
+        >>> with CreateProcess(print, verbose=True, args=('Hello console!',)) as p:
+        ...     print("-------> Hello module!")
+        Starting process: print...
+        ... print process started.
+        -------> Hello module!
+        Terminating process: print...
+        ... print process terminated
+        """
+        self.proc_func = proc_func
+        self.process_name = process_name or getattr(proc_func, '__name__', '')
+        self.wait_before_entering = float(wait_before_entering)
+        self.verbose = verbose
+        self.args = args
+        self.kwargs = kwargs
+        self.clog = conditional_logger(verbose)
+        self.process = None
+        self.exception_info = None
+
+    def process_is_running(self):
+        return self.process is not None and self.process.is_alive()
+
+    def __enter__(self):
+        self.process = Process(target=self.proc_func, args=self.args,
+                               kwargs=self.kwargs, name=self.process_name)
+        self.clog(f"Starting process: {self.process_name}...")
+        try:
+            self.process.start()
+            if self.process_is_running():
+                self.clog(f"... {self.process_name} process started.")
+                sleep(self.wait_before_entering)
+                return self
+            else:
+                raise RuntimeError("Process is not running")
+        except Exception:
+            raise RuntimeError(
+                f"Something went wrong when trying to launch process {self.process_name}")
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.process is not None and self.process.is_alive():
+            self.clog(f"Terminating process: {self.process_name}...")
+            self.process.terminate()
+        self.clog(f"... {self.process_name} process terminated")
+        if exc_type is not None:
+            self.exception_info = dict(exc_type=exc_type, exc_val=exc_val, exc_tb=exc_tb)
+
+
+def deprecate(func=None, *, msg=None):
+    """Decorator to emit a DeprecationWarning when the decorated function is called."""
+    if func is None:
+        return partial(deprecate, msg=msg)
+    else:
+        assert callable(func), f"func should be callable. Was {func}"
+        msg = msg or f"{func.__qualname__} is being deprecated."
+
+        @wraps(func)
+        def deprecated_func(*args, **kwargs):
+            simplefilter('always', DeprecationWarning)  # turn off filter
+            warn(msg, category=DeprecationWarning, stacklevel=2)
+            simplefilter('default', DeprecationWarning)  # reset filter
+            return func(*args, **kwargs)
+
+        return deprecated_func
 
 
 class Missing:
@@ -125,13 +225,43 @@ pyparam_to_dict.kv_trans = _pyparam_kv_trans
 
 
 class ModuleNotFoundIgnore:
+    """Context manager to ignore ModuleNotFoundErrors.
+
+    When all goes well, code is executed normally:
+    >>> with ModuleNotFoundIgnore():
+    ...     import os.path  # test when the module exists
+    ...     # The following code is reached and executed
+    ...     print('hi there!')
+    ...     print(str(os.path.join)[:14] + '...')  # code is reached
+    hi there!
+    <function join...
+
+    But if you try to import a module that doesn't exist on your system,
+    the block will be skipped from that point onward, silently.
+    >>> with ModuleNotFoundIgnore():
+    ...     import do.i.exist
+    ...     # The following code is NEVER reached or executed
+    ...     print(do.i.exist)
+    ...     t = 0 / 0
+
+
+    But if there's any other kind of error (other than ModuleNotFoundError that is,
+    the error will be raised normally.
+    >>> with ModuleNotFoundIgnore():
+    ...     t = 0/0
+    Traceback (most recent call last):
+      ...
+    ZeroDivisionError: division by zero"""
+
     def __enter__(self):
         pass
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type is ModuleNotFoundError:
-            pass
-        return True
+            return True
+
+        # else:
+        #     return True
 
 
 class TypeAsserter:

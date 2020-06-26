@@ -465,6 +465,7 @@ class Decora(Decorator):
             cls.__new__ = __new__
 
 
+# TODO: Copied to py2mint.deco: Consider referencing from there
 def copy_func(f):
     """Copy a function (not sure it works with all types of callables)"""
     g = FunctionType(f.__code__, f.__globals__, name=f.__name__,
@@ -476,6 +477,7 @@ def copy_func(f):
     return g
 
 
+# TODO: Copied to py2mint.deco: Consider referencing from there
 def transparently_wrapped(func):
     @wraps(func)
     def transparently_wrapped_func(*args, **kwargs):
@@ -484,6 +486,7 @@ def transparently_wrapped(func):
     return transparently_wrapped_func
 
 
+# TODO: Copied to py2mint.deco: Consider referencing from there
 def params_of(obj: HasParams):
     if isinstance(obj, Signature):
         obj = list(obj.parameters.values())
@@ -558,6 +561,7 @@ def params_replacer(replace: Union[dict, Callable[[Parameter], dict]],
         yield p
 
 
+# TODO: Copied to py2mint.deco: Consider referencing from there
 def tuple_the_args(func):
     """A decorator that will change a VAR_POSITIONAL (*args) argument to a tuple (args)
     argument of the same name.
@@ -587,6 +591,7 @@ def tuple_the_args(func):
         return copy_func(func)  # don't change anything (or should we wrap anyway, to be consistent?)
 
 
+# TODO: Copied to py2mint.deco: Consider referencing from there
 def ch_signature_to_all_pk(sig):
     def changed_params():
         for p in sig.parameters.values():
@@ -598,6 +603,7 @@ def ch_signature_to_all_pk(sig):
     return Signature(list(changed_params()), return_annotation=sig.return_annotation)
 
 
+# TODO: Copied to py2mint.deco: Consider referencing from there
 def ch_func_to_all_pk(func):
     """Returns a copy of the function where all arguments are of the PK kind.
     (PK: Positional_or_keyword)
@@ -968,12 +974,14 @@ def format_db_write(content_type='json'):
                 ok = raw_result.get('ok')
                 mapped_output = {'n': n, 'ok': ok}
             return mapped_output
+
         if content_type == 'html':
             output_mapper = send_html_resp(output_mapper)
         else:
             output_mapper = send_json_resp(output_mapper)
         func.output_mapper = output_mapper
         return func
+
     return mk_output_mapper
 
 

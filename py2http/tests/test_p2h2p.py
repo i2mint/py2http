@@ -2,10 +2,9 @@ import requests
 from py2http.service import mk_http_service, mk_routes_and_openapi_specs, run_http_service
 from http2py.py2request import mk_request_function
 from py2http.util import ModuleNotFoundIgnore
-from py2http.tests.utils_for_testing import conditional_logger, run_server
+from py2http.util import conditional_logger, CreateProcess
 from inspect import signature
 from collections.abc import Iterable
-
 
 
 def mk_app_launcher(app, **kwargs):
@@ -42,8 +41,17 @@ def _w_funcs(funcs, openapi_spec, **h2p_configs):
 def get_client_funcs(funcs, p2h_configs=None, h2p_configs=None):
     routes, openapi_spec = mk_routes_and_openapi_specs(funcs, p2h_configs or {})
     return list(_w_funcs(funcs, openapi_spec, **(h2p_configs or {})))
-    
-def run_service(funcs, configs):
+
+
+def p2h2p_app(funcs, p2h_configs=None, h2p_configs=None):
+    app = mk_http_service(funcs, **(p2h_configs or {}))
+    w_funcs = list(_w_funcs(funcs, app.openapi_spec, **(h2p_configs or {})))
+    app.funcs = funcs
+    app.w_funcs = w_funcs
+    return app
+
+
+def run_service(funcs, configs=None):
     return run_http_service(funcs, **(configs or {}))
 
 
@@ -65,7 +73,8 @@ def test_p2h2p(funcs, inputs_for_func=None, p2h_configs=None, h2p_configs=None,
     """
     clog = conditional_logger(verbose)
     client_funcs = get_client_funcs(funcs, p2h_configs=p2h_configs, h2p_configs=h2p_configs)
-    with run_server(run_service, wait_before_entering=wait_before_entering, verbose=verbose, funcs=funcs, configs=p2h_configs):
+    with CreateProcess(run_service, wait_before_entering=wait_before_entering, verbose=verbose,
+                       funcs=funcs, configs=p2h_configs) as proc:
         for f, cf in zip(funcs, client_funcs):
             clog(f"{signature(f)} -- {signature(cf)}")
             if check_signatures:
@@ -76,7 +85,6 @@ def test_p2h2p(funcs, inputs_for_func=None, p2h_configs=None, h2p_configs=None,
                     cf_output = cf(*args, **kwargs)
                     clog(f_output, cf_output.json())
                     assert f_output == cf_output
-
 
 
 dflt_port = '3030'
@@ -94,16 +102,19 @@ def example_test(base_url=dflt_base_url):
     no_args_result = requests.post(f'{base_url}/no_args', json={})
     assert str(no_args_result.json()) == 'no args'
 
+
 def square(x):
-    return x*x
+    return x * x
+
+
 def power(x, p):
     result = 1
     for i in range(abs(p)):
-        result = result*x if p > 0 else result/x
+        result = result * x if p > 0 else result / x
     return result
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     # with run_server(run_example_service, wait_before_entering=0.5):
     #     example_test()
 
@@ -111,10 +122,10 @@ if __name__ == '__main__':
         square,
         power
     ]
-    inputs_for_func= { 
+    inputs_for_func = {
         square: zip([(10,)], [{}]),
         power: zip([(10,), (5,)], [{}, {}])
     }
-    test_p2h2p(funcs=funcs, 
-               inputs_for_func=inputs_for_func, 
+    test_p2h2p(funcs=funcs,
+               inputs_for_func=inputs_for_func,
                verbose=True)
