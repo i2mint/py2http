@@ -1,6 +1,5 @@
 from typing import Any
-
-from glom import glom
+from py2http.util import conditional_logger, CreateProcess, lazyprop
 
 oatype_for_pytype = {
     str: 'string', int: 'number', float: 'number', list: 'array', dict: 'object', bool: 'boolean', Any: '{}'
@@ -15,6 +14,29 @@ def openapi_type_mapping(obj_type):
 
 
 BINARY = 'binary'
+
+
+class OpenApiExtractor:
+    def __init__(self, openapi_spec, func_to_path=None):
+        self.openapi_spec = openapi_spec
+        if func_to_path is None:
+            def func_to_path(
+                    func):  # TODO: Fragile. Need to make func <-> path more robust (e.g. include in openapi_spec)
+                return '/' + func.__name__
+        self.func_to_path = func_to_path
+
+    def paths_and_methods_items(self):
+        for path, path_info in self.openapi_spec['paths'].items():
+            for method, path_method_info in path_info.items():
+                yield (path, method), path_method_info
+
+    @lazyprop
+    def info_for_path_and_method(self):
+        return dict(self.paths_and_methods_items())
+
+    def func_and_info(self, *funcs):
+        for func in funcs:
+            pass
 
 
 def mk_openapi_template(config=None):
@@ -177,6 +199,7 @@ def func_to_openapi_spec(func,
                            response_content_type=response_content_type,
                            response_dict=response_dict,
                            path_fields=path_fields)
+
 # Wish for sigfrom and/or mkwith decorators to be able to do func_to_openapi_spec like this:
 #
 # @sigfrom(mk_input_schema_from_func, mk_openapi_path, exclude='request_dict', dflts={'pathname': None})

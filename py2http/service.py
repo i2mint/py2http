@@ -1,5 +1,7 @@
+from functools import partial
+
 from aiohttp import web
-import inspect
+from inspect import isawaitable, signature
 import json
 from typing import Callable
 
@@ -22,6 +24,7 @@ assert_type = TypeAsserter(types_for_kind={
 })
 
 
+# TODO: Revise logic and use more appropriate tools (ChainMap, glom) and interface.
 def mk_config(key, func, configs, defaults, **options):
     """
     Get a config value for a function. First checks the properties of the function,
@@ -61,40 +64,11 @@ def mk_config(key, func, configs, defaults, **options):
         result = defaults.get(key, None)
     return result
 
+
 from collections import namedtuple
 
 
 # TODO: Just to try out a smoother interface. Delete if never used.
-
-def mk_config_nt(keys, *args, **kwargs):
-    """Return a namedtuple of objects created by mk_config for several keys (and same configs).
-
-    Advantages:
-
-    Can use ths way:
-
-    ```
-    args, validator, postproc = mk_config_nt(['args', 'validator', 'postproc'], **configs)
-    ```
-
-    Or this way (useful when we're dealing with many items):
-
-    ```
-    c = mk_config_nt(['args', 'validator', 'postproc'], **configs)
-    c.args
-    c.validator
-    c.postproc
-    ```
-
-    Namedtuple attribute access is as fast as a dict (if not faster in 3.8).
-    One disadvantage, over a custom object is that it's contents are immutable
-    (if we use the `c.attr` form -- the unpacking form is fine since we're dealing
-    with copies).
-
-    """
-    ConfigNT = namedtuple('ConfigNT', field_names=keys)
-    return ConfigNT(**{k: mk_config(k, *args, **kwargs) for k in keys})
-
 
 def mk_route(func, **configs):
     """
@@ -104,25 +78,15 @@ def mk_route(func, **configs):
 
     :Keyword Arguments: The configuration settings
     """
-    # TODO: perhaps collections.abc.Mapping instead of dict?
-    input_mapper = mk_config('input_mapper', func, configs, default_configs)
-    input_validator = mk_config('input_validator', func, configs, default_configs)
-    output_mapper = mk_config('output_mapper', func, configs, default_configs)
-    header_inputs = mk_config('header_inputs', func, configs, default_configs, type=dict)
 
-    # 1: Replacement proposal
-    # input_mapper, input_validator, output_mapper, header_inputs = mk_config_nt(
-    #     ['input_mapper', 'input_validator', 'output_mapper', 'header_inputs'],
-    #     func, configs, default_configs)
-    # input_mapper, input_validator, output_mapper, header_inputs = mk_configs(
-    #     ['input_mapper', 'input_validator', 'output_mapper', 'header_inputs'],
-    #     func, configs, default_configs
-    # )
-    # 1: To replace this   # TODO: Test and choose
-    # input_mapper = mk_config('input_mapper', func, configs, default_configs)
-    # input_validator = mk_config('input_validator', func, configs, default_configs)
-    # output_mapper = mk_config('output_mapper', func, configs, default_configs)
-    # header_inputs = mk_config('header_inputs', func, configs, default_configs)
+    # TODO: perhaps collections.abc.Mapping initialized with func, configs, etc.
+    config_for = partial(mk_config, func=func, configs=configs, defaults=default_configs)
+
+    input_mapper = config_for('input_mapper')
+    input_validator = config_for('input_validator')
+    output_mapper = config_for('output_mapper')
+    header_inputs = config_for('header_inputs', type=dict)
+
     exclude_request_keys = header_inputs.keys()
     request_schema = getattr(input_mapper,
                              'request_schema',
@@ -137,7 +101,7 @@ def mk_route(func, **configs):
 
     async def handle_request(req):
         input_kwargs = input_mapper(req)
-        if inspect.isawaitable(input_kwargs):  # Pattern: pass-on async property
+        if isawaitable(input_kwargs):  # Pattern: pass-on async property
             input_kwargs = await input_kwargs
 
         validation_result = input_validator(input_kwargs)
@@ -146,34 +110,37 @@ def mk_route(func, **configs):
                                      content_type='application/json')
 
         raw_result = func(**input_kwargs)
-        if inspect.isawaitable(raw_result):  # Pattern: pass-on async property
+        if isawaitable(raw_result):  # Pattern: pass-on async property
             raw_result = await raw_result
 
         final_result = output_mapper(raw_result, input_kwargs)
-        if inspect.isawaitable(final_result):
+        if isawaitable(final_result):
             final_result = await final_result
         if not isinstance(final_result, web.Response):
             final_result = web.json_response(final_result)
         return final_result
 
-    http_method = mk_config('http_method', func, configs, default_configs).lower()
+    http_method = config_for('http_method').lower()
     if http_method not in ['get', 'put', 'post', 'delete']:
         http_method = 'post'
     web_mk_route = getattr(web, http_method)
 
-    method_name = mk_config('name', func, configs, default_configs)
-    if not method_name:
-        method_name = func.__name__
+    method_name = config_for('name') or func.__name__
+    path = config_for('route') or f'/{method_name}'
 
-    path = mk_config('route', func, configs, default_configs)
-    if not path:
-        path = f'/{method_name}'
     route = web_mk_route(path, handle_request)
-    openapi_path = mk_openapi_path(path, http_method,
+
+    path_fields = dict({'x-method_name': method_name}, **extra_path_info(func))
+    openapi_path = mk_openapi_path(path,
+                                   http_method,
                                    request_dict=request_schema,
                                    response_dict=response_schema,
-                                   path_fields={'x-method_name': method_name})
+                                   path_fields=path_fields)
     return route, openapi_path
+
+
+def extra_path_info(func, ):
+    return {}
 
 
 def handle_ping(req):
@@ -184,7 +151,7 @@ def handle_ping(req):
 
 def run_http_service(funcs, **configs):
     app = mk_http_service(funcs, **configs)
-    port = mk_config('port', None, configs, default_configs)
+    port = configs.get('port', app.dflt_port)
     web.run_app(app, port=port)
 
 
@@ -227,3 +194,56 @@ def run_many_services(apps, **configs):
         app.add_subapp(route, subapp)
     port = mk_config('port', None, configs, default_configs)
     web.run_app(app, port=port)
+
+
+##########################################################################################
+###### Old pieces of code, kept around until we're sure we don't want them any more #######
+
+
+def mk_config_nt(keys, *args, **kwargs):
+    """Return a namedtuple of objects created by mk_config for several keys (and same configs).
+
+    Advantages:
+
+    Can use ths way:
+
+    ```
+    args, validator, postproc = mk_config_nt(['args', 'validator', 'postproc'], **configs)
+    ```
+
+    Or this way (useful when we're dealing with many items):
+
+    ```
+    c = mk_config_nt(['args', 'validator', 'postproc'], **configs)
+    c.args
+    c.validator
+    c.postproc
+    ```
+
+    Namedtuple attribute access is as fast as a dict (if not faster in 3.8).
+    One disadvantage, over a custom object is that it's contents are immutable
+    (if we use the `c.attr` form -- the unpacking form is fine since we're dealing
+    with copies).
+
+    """
+    ConfigNT = namedtuple('ConfigNT', field_names=keys)
+    return ConfigNT(**{k: mk_config(k, *args, **kwargs) for k in keys})
+
+    # input_mapper = mk_config('input_mapper', func, configs, default_configs)
+    # input_validator = mk_config('input_validator', func, configs, default_configs)
+    # output_mapper = mk_config('output_mapper', func, configs, default_configs)
+    # header_inputs = mk_config('header_inputs', func, configs, default_configs, type=dict)
+
+    # 1: Replacement proposal
+    # input_mapper, input_validator, output_mapper, header_inputs = mk_config_nt(
+    #     ['input_mapper', 'input_validator', 'output_mapper', 'header_inputs'],
+    #     func, configs, default_configs)
+    # input_mapper, input_validator, output_mapper, header_inputs = mk_configs(
+    #     ['input_mapper', 'input_validator', 'output_mapper', 'header_inputs'],
+    #     func, configs, default_configs
+    # )
+    # 1: To replace this   # TODO: Test and choose
+    # input_mapper = mk_config('input_mapper', func, configs, default_configs)
+    # input_validator = mk_config('input_validator', func, configs, default_configs)
+    # output_mapper = mk_config('output_mapper', func, configs, default_configs)
+    # header_inputs = mk_config('header_inputs', func, configs, default_configs)

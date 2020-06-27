@@ -11,6 +11,17 @@ from py2http.types import (WriteOpResult, ParameterKind, Params, HasParams,
                            PK, VP, VK, PO, KO, var_param_types)
 
 
+def ignore_extra_arguments(func):
+    sig = signature(func)
+
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):
+        t = sig.bind(*args, **kwargs)
+        return func(*t.args, **t.kwargs)
+
+    return wrapped_func
+
+
 class Literal:
     """An object to indicate that the value should be considered literally"""
 

@@ -5,6 +5,79 @@ from time import sleep
 from functools import wraps, partial
 from warnings import warn, simplefilter
 
+from glom import Spec  # NOTE: Third-party
+
+
+class lazyprop:
+    """
+    A descriptor implementation of lazyprop (cached property).
+    Made based on David Beazley's "Python Cookbook" book and enhanced with boltons.cacheutils ideas.
+
+    >>> class Test:
+    ...     def __init__(self, a):
+    ...         self.a = a
+    ...     @lazyprop
+    ...     def len(self):
+    ...         print('generating "len"')
+    ...         return len(self.a)
+    >>> t = Test([0, 1, 2, 3, 4])
+    >>> t.__dict__
+    {'a': [0, 1, 2, 3, 4]}
+    >>> t.len
+    generating "len"
+    5
+    >>> t.__dict__
+    {'a': [0, 1, 2, 3, 4], 'len': 5}
+    >>> t.len
+    5
+    >>> # But careful when using lazyprop that no one will change the value of a without deleting the property first
+    >>> t.a = [0, 1, 2]  # if we change a...
+    >>> t.len  # ... we still get the old cached value of len
+    5
+    >>> del t.len  # if we delete the len prop
+    >>> t.len  # ... then len being recomputed again
+    generating "len"
+    3
+    """
+
+    def __init__(self, func):
+        self.__doc__ = getattr(func, '__doc__')
+        self.__isabstractmethod__ = getattr(func, '__isabstractmethod__', False)
+        self.func = func
+
+    def __get__(self, instance, cls):
+        if instance is None:
+            return self
+        else:
+            value = instance.__dict__[self.func.__name__] = self.func(instance)
+            return value
+
+    def __repr__(self):
+        cn = self.__class__.__name__
+        return '<%s func=%s>' % (cn, self.func)
+
+
+def if_not_empty(obj, if_empty_val=None):
+    if obj != Parameter.empty:
+        return obj
+    else:
+        return if_empty_val
+
+
+none_if_not_empty = partial(if_not_empty, if_not_empty=None)
+
+func_info_spec = Spec({
+    'name': '__name__',
+    'qualname': '__qualname__',
+    'module': '__module__',
+    'return_annotation': (signature, 'return_annotation', none_if_not_empty),
+    'params': (signature, 'parameters')}
+)
+
+
+def py_obj_info(obj):
+    return func_info_spec.glom(obj)
+
 
 def conditional_logger(verbose=False, log_func=print):
     if verbose:
@@ -20,7 +93,7 @@ class CreateProcess:
     """A context manager to launch a parallel process and close it on exit.
     """
 
-    def __init__(self, proc_func: Callable, process_name=None, wait_before_entering=0, verbose=False,
+    def __init__(self, proc_func: Callable, process_name=None, wait_before_entering=1, verbose=False,
                  args=(), **kwargs):
         """
         Essentially, this context manager will call
