@@ -4,8 +4,8 @@ from py2http.decorators import handle_json_req, send_json_resp
 
 
 @handle_json_req
-def default_input_mapper(req_body):
-    return req_body
+def default_input_mapper(input_kwargs):
+    return input_kwargs
 
 
 def default_input_validator(input_kwargs):

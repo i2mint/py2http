@@ -76,7 +76,6 @@ def test_p2h2p(funcs, inputs_for_func=None, p2h_configs=None, h2p_configs=None,
                 for args, kwargs in inputs_for_func.get(f):
                     f_output = f(*args, **kwargs)
                     cf_output = cf(*args, **kwargs)
-                    clog(f_output, cf_output.json())
                     assert f_output == cf_output
 
 
@@ -100,34 +99,28 @@ def square(x):
     return x * x
 
 
-def power(x, p):
+def power(x, p=1):
     result = 1
     for i in range(abs(p)):
         result = result * x if p > 0 else result / x
     return result
 
+def test_types(str='', int=0, float=0.0, list=[], dict={}, bool=True):
+    pass
+
 
 if __name__ == '__main__':
-    # with run_server(run_example_service, wait_before_entering=0.5):
-    #     example_test()
 
     funcs = [
         square,
-        power
+        power,
+        test_types
     ]
     inputs_for_func = {
         square: zip([(10,)], [{}]),
-        power: zip([(10,), (5,)], [{}, {}])
+        power: zip([(10,), (5,)], [{'p': 1}, {'p': 2}]),
     }
 
-
-    def json_response(r):
-        return r.json()
-
-
-    h2p_configs = dict(output_trans=json_response)
-
     test_p2h2p(funcs=funcs,
-               inputs_for_func=inputs_for_func,
-               h2p_configs=h2p_configs,
+            #    inputs_for_func=inputs_for_func,
                verbose=True)
