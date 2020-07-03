@@ -114,7 +114,7 @@ if __name__ == '__main__':
     funcs = [
         square,
         power,
-        test_types
+        # test_types
     ]
     inputs_for_func = {
         square: zip([(10,)], [{}]),
@@ -122,5 +122,5 @@ if __name__ == '__main__':
     }
 
     test_p2h2p(funcs=funcs,
-            #    inputs_for_func=inputs_for_func,
+               inputs_for_func=inputs_for_func,
                verbose=True)
