@@ -1,64 +1,122 @@
 from functools import reduce
 from inspect import Signature, Parameter, _ParameterKind, signature
-from typing import Any
-from collections import UserDict
-
-from collections.abc import Mapping
-from typing import Union, Callable
+from typing import Any, Union, Callable, Iterable
+from typing import Mapping as MappingType
 
 _empty = Parameter.empty
-
-from inspect import _empty
-
-from typing import Union, Callable, Iterable
-from typing import Mapping as MappingType
 
 ParamsType = Iterable[Parameter]
 ParamsAble = Union[ParamsType, MappingType[str, Parameter], Callable]
 SignatureAble = Union[Signature, Callable, ParamsType, MappingType[str, Parameter]]
+HasParams = Union[Iterable[Parameter], MappingType[str, Parameter], Signature, Callable]
+
+# short hands for Parameter kinds
+PK = Parameter.POSITIONAL_OR_KEYWORD
+VP, VK = Parameter.VAR_POSITIONAL, Parameter.VAR_KEYWORD
+PO, KO = Parameter.POSITIONAL_ONLY, Parameter.KEYWORD_ONLY
+var_param_types = {VP, VK}
 
 
-def assure_callable(obj: SignatureAble):
+# TODO: Couldn't make this work. See https://www.python.org/dev/peps/pep-0562/
+# deprecated_names = {'assure_callable', 'assure_signature', 'assure_params'}
+#
+#
+# def __getattr__(name):
+#     print(name)
+#     if name in deprecated_names:
+#         from warnings import warn
+#         warn(f"{name} is deprecated (see code for new name -- look for aliases)", DeprecationWarning)
+#     raise AttributeError(f"module {__name__} has no attribute {name}")
+
+
+def ensure_callable(obj: SignatureAble):
     if isinstance(obj, Callable):
         return obj
     else:
         def f(*args, **kwargs):
             """Empty function made just to carry a signature"""
 
-        f.__signature__ = assure_signature(obj)
+        f.__signature__ = ensure_signature(obj)
         return f
 
 
-def assure_signature(obj: SignatureAble):
+assure_callable = ensure_callable  # alias for backcompatibility
+
+
+def ensure_signature(obj: SignatureAble):
     if isinstance(obj, Signature):
         return obj
     elif isinstance(obj, Callable):
         return Signature.from_callable(obj)
     elif isinstance(obj, Iterable):
         try:
-            params = assure_params(obj)
+            params = ensure_params(obj)
             return Signature(parameters=params)
         except TypeError:
             raise TypeError(f"Don't know how to make that object into a Signature: {obj}")
+    elif obj is None:
+        return Signature(parameters=())
+    # if you get this far...
+    raise TypeError(f"Don't know how to make that object into a Signature: {obj}")
 
 
-def assure_params(obj: ParamsAble):
+assure_signature = ensure_signature  # alias for backcompatibility
+
+
+def ensure_param(p):
+    if isinstance(p, Parameter):
+        return p
+    elif isinstance(p, dict):
+        return Parameter(**p)
+    elif isinstance(p, str):
+        return Parameter(name=p, kind=PK)
+    elif isinstance(p, Iterable):
+        name, *r = p
+        dflt_and_annotation = dict(zip(['default', 'annotation'], r))
+        return Parameter(name, PK, **dflt_and_annotation)
+    else:
+        raise TypeError(f"Don't know how to make {p} into a Parameter object")
+
+
+def ensure_params(obj: ParamsAble):
+    """Get an interable of Parameter instances from an object.
+
+    :param obj:
+    :return:
+
+    From a callable:
+    >>> def f(w, /, x: float = 1, y=1, *, z: int = 1): ...
+    >>> ensure_params(f)
+    [<Parameter "w">, <Parameter "x: float = 1">, <Parameter "y=1">, <Parameter "z: int = 1">]
+
+    From an iterable of strings, dicts, or tuples
+    >>> ensure_params(['a',
+    ...     ('b', Parameter.empty, int), # if you want an annotation without a default use Parameter.empty
+    ...     ('c', 2),  # if you just want a default, make it the second element of your tuple
+    ...     dict(name='d', kind=Parameter.VAR_KEYWORD)])  # all kinds are by default PK: Use dict to specify otherwise.
+    [<Parameter "a">, <Parameter "b: int">, <Parameter "c=2">, <Parameter "**d">]
+    """
     if isinstance(obj, Iterable):
         if isinstance(obj, Mapping):
             obj = obj.values()
         obj = list(obj)
-        if len(obj) == 0 or isinstance(obj[0], Parameter):
+        if len(obj) == 0:
             return obj
-        elif isinstance(obj[0], dict):
-            return [Parameter(**x) for x in obj]
+        else:
+            return [ensure_param(p) for p in obj]
     else:
         if isinstance(obj, Callable):
             obj = Signature.from_callable(obj)
+        elif obj is None:
+            obj = {}
         if isinstance(obj, Signature):
             return list(obj.parameters.values())
     # if function didn't return at this point, it didn't find a match, so raise
     raise TypeError(
         f"Don't know how to make that object into an iterable of inspect.Parameter objects: {obj}")
+
+
+assure_params = ensure_params  # alias for backcompatibility
 
 
 class MissingArgValFor(object):
@@ -94,12 +152,12 @@ def extract_arguments(params: ParamsAble,
     But you can (now) do
     ```
     args, kwargs, remaining = kwargs_to_args_kwargs(kwargs, func)  # extract from kwargs what you need for func
-    # ... check if remaing is empty (or not) depending on your paranoia, and then call the func:
+    # ... check if remaing is empty (or not, depending on your paranoia), and then call the func:
     func(*args, **kwargs)
     ```
     (And if you doing that a lot: Do put it in a decorator!)
 
-    See this function too: kwargs_to_args_kwargs.without_remainding
+    See Also: kwargs_to_args_kwargs.without_remainding
 
     :param params: Specifies what PO arguments should be extracted.
         Could be a callable, Signature, iterable of Parameters...
@@ -178,7 +236,7 @@ def extract_arguments(params: ParamsAble,
     ((), {}, {'b': 2, 'a': 1, 'c': 3, 'd': 0})
     """
 
-    params = assure_params(params)
+    params = ensure_params(params)
     if not params:
         return (), {}, {k: v for k, v in kwargs.items()}
 
@@ -198,7 +256,7 @@ def extract_arguments(params: ParamsAble,
 
     if assert_no_missing_position_only_args:
         missing_argnames = tuple(x.argname for x in param_args if isinstance(x, MissingArgValFor))
-        assert missing_argnames, f"There were some missing positional only argnames: {missing_argnames}"
+        assert not missing_argnames, f"There were some missing positional only argnames: {missing_argnames}"
 
     return param_args, param_kwargs, remaining_kwargs
 
@@ -209,6 +267,102 @@ def _extract_arguments_without_remaining(params, **kwargs):
 
 
 extract_arguments.without_remaining = _extract_arguments_without_remaining
+
+from collections.abc import Mapping
+from typing import Optional, Iterable
+from dataclasses import dataclass
+
+
+@dataclass
+class Command:
+    """A dataclass that holds a `(caller, args, kwargs)` triple and allows one to execute `caller(*args, **kwargs)`
+
+    :param caller: A callable that will be called with (*args, **kwargs) argument
+    :param args: A tuple
+    :param kwargs:
+    """
+    caller: callable
+    args: Iterable = ()
+    kwargs: Optional[dict] = None
+
+    def __post_init__(self):
+        assert isinstance(self.args, Iterable)
+        self.kwargs = self.kwargs or {}
+        assert isinstance(self.kwargs, Mapping)
+
+    def __call__(self):
+        return self.caller(*self.args, **self.kwargs)
+
+
+def extract_commands(funcs, *,
+                     mk_command: Callable[[Callable, tuple, dict], Any] = Command,
+                     **kwargs):
+    """
+
+    :param funcs:
+    :param mk_command:
+    :param kwargs:
+    :return:
+
+    >>> def add(a, b: float = 0.0) -> float:
+    ...     return a + b
+    >>> def mult(x: float, y=1):
+    ...     return x * y
+    >>> def formula1(w, /, x: float, y=1, *, z: int = 1):
+    ...     return ((w + x) * y) ** z
+    >>> commands = extract_commands((add, mult, formula1), a=1, b=2, c=3, d=4, e=5, w=6, x=7)
+    >>> for command in commands:
+    ...     print(f"Calling {command.caller.__name__} with args={command.args} and kwargs={command.kwargs}")
+    ...     print(command())
+    ...
+    Calling add with args=() and kwargs={'a': 1, 'b': 2}
+    3
+    Calling mult with args=() and kwargs={'x': 7}
+    7
+    Calling formula1 with args=(6,) and kwargs={'x': 7}
+    13
+    """
+    extract = partial(extract_arguments,
+                      include_all_when_var_keywords_in_params=False,
+                      assert_no_missing_position_only_args=True)
+
+    if callable(funcs):
+        funcs = [funcs]
+
+    for func in funcs:
+        func_args, func_kwargs, _ = extract(func, **kwargs)
+        yield mk_command(func, func_args, func_kwargs)
+
+
+def commands_dict(funcs, *,
+                  mk_command: Callable[[Callable, tuple, dict], Any] = Command,
+                  **kwargs):
+    """
+
+    :param funcs:
+    :param mk_command:
+    :param kwargs:
+    :return:
+
+    >>> def add(a, b: float = 0.0) -> float:
+    ...     return a + b
+    >>> def mult(x: float, y=1):
+    ...     return x * y
+    >>> def formula1(w, /, x: float, y=1, *, z: int = 1):
+    ...     return ((w + x) * y) ** z
+    >>> d = commands_dict((add, mult, formula1), a=1, b=2, c=3, d=4, e=5, w=6, x=7)
+    >>> d[add]()
+    3
+    >>> d[mult]()
+    7
+    >>> d[formula1]()
+    13
+
+    """
+    if callable(funcs):
+        funcs = [funcs]
+    it = extract_commands(funcs, mk_command=mk_command, **kwargs)
+    return dict(zip(funcs, it))
 
 
 class Param(Parameter):
@@ -223,25 +377,60 @@ class Param(Parameter):
         super().__init__(name, kind, default=default, annotation=annotation)
 
 
-class Params(UserDict):
+# TODO: Not really using this or ParamsDict competitor -- consider extending or deprecating
+class Params(tuple):
+    """
+
+    >>> def foo(a, b: int, c=None, d: str='hi') -> int: ...
+    >>> def bar(b: int, e=0): ...
+    >>> Params.from_obj(foo) + Params.from_obj(bar)
+    (<Parameter "a">, <Parameter "b: int">, <Parameter "c=None">, <Parameter "d: str = 'hi'">, <Parameter "e=0">)
+    """
+
+    @classmethod
+    def from_obj(cls, obj=None):
+        if obj is None:
+            return cls()
+        elif isinstance(obj, Params):
+            return cls(x for x in obj)
+        else:
+            return cls(ensure_params(obj))
+
+    # TODO: Will only work in nice situations -- extend to work in more situations
+    def __add__(self, params):
+        existing_params = set(self)
+        existing_names = {p.name for p in existing_params}
+        new_params = [p for p in Params(params) if p not in existing_params]
+        if existing_names.intersection(p.name for p in new_params):
+            raise ValueError(
+                "You can't add two Params instances if they use the same names but "
+                "different kind, annotation, or default. This was obtained when you tried to add"
+                f"{self} and {params}")
+
+        return Params(list(self) + [p for p in Params(params) if p not in existing_params])
+
+
+# TODO: Not really using this or Params competitor -- consider extending or deprecating
+class ParamsDict(dict):
     """
 
     >>> def foo(a, b: int, c=None, d: str='hi') -> int: ...
     >>> def bar(b: float, d='hi'): ...
-    >>> Params(foo)
+    >>> ParamsDict(foo)
     {'a': <Parameter "a">, 'b': <Parameter "b: int">, 'c': <Parameter "c=None">, 'd': <Parameter "d: str = 'hi'">}
-    >>> p = Params(bar)
-    >>> Params(p['b'])
+    >>> p = ParamsDict(bar)
+    >>> ParamsDict(p['b'])
     {'b': <Parameter "b: float">}
-    >>> Params()
+    >>> ParamsDict()
     {}
-    >>> Params([p['d'], p['b']])
+    >>> ParamsDict([p['d'], p['b']])
     {'d': <Parameter "d='hi'">, 'b': <Parameter "b: float">}
     """
 
-    def __init__(self, obj=None, validate=True):
+    def __init__(self, obj=None):
         if obj is None:
             params_dict = dict()
+
         elif callable(obj):
             params_dict = dict(signature(obj).parameters)
         elif isinstance(obj, Parameter):
@@ -253,24 +442,6 @@ class Params(UserDict):
                 params_dict = {x.name: x for x in obj}
 
         super().__init__(params_dict)
-        # if validate:
-        #     self.validate()
-
-    @staticmethod
-    def foo(obj=None):
-        if obj is None:
-            params_dict = dict()
-        elif callable(obj):
-            params_dict = dict(signature(obj).parameters)
-        elif isinstance(obj, Parameter):
-            params_dict = {obj.name: obj}
-        else:
-            try:
-                params_dict = dict(obj)
-            except TypeError:
-                params_dict = {x.name: x for x in obj}
-
-        return params_dict
 
     @classmethod
     def from_signature(cls, sig):
@@ -283,8 +454,9 @@ class Params(UserDict):
         >>> def foo(a, b: int, c=None, d: str='hi') -> int: ...
         >>> sig = signature(foo)
         >>> assert isinstance(sig, Signature)
-        >>> params = Params.from_signature(sig)
+        >>> params = ParamsDict.from_signature(sig)
         >>> params
+        {'a': <Parameter "a">, 'b': <Parameter "b: int">, 'c': <Parameter "c=None">, 'd': <Parameter "d: str = 'hi'">}
         """
         return cls(sig.parameters.values())
 
@@ -310,15 +482,135 @@ class Params(UserDict):
         return True
 
 
-class Sig(Signature):
+class Sig(Signature, Mapping):
+    """A subclass of inspect.Signature that has some extra api sugar, such as a dict-like interface, merging, ...
+
+    Note that Sig doesn't burden itself with return_annotation, so as to keep the API and code
+    simpler, while leaving it open for extension to classes that would handle that aspect
+    in their context-dependent way.
+
+    """
+
+    def __init__(self, obj: ParamsAble = None):
+        """Initialize a Sig instance.
+        See Also: `ensure_params` to see what kind of objects you can make `Sig`s with.
+
+        :param obj: A ParamsAble object (callable, iterable of Parameter instances, or strings, tuples, or dicts...)
+
+        >>> def f(w, /, x: float = 1, y=1, *, z: int = 1): ...
+        >>> Sig(f)
+        <Sig (w, /, x: float = 1, y=1, *, z: int = 1)>
+        >>> Sig(['a', ('b', Parameter.empty, int), ('c', 2), ('d', 1.0, float),
+        ...                dict(name='special', kind=Parameter.KEYWORD_ONLY, default=0)])
+        <Sig (a, b: int, c=2, d: float = 1.0, *, special=0)>
+        >>>
+        >>> Sig(['a', 'b', dict(name='args', kind=Parameter.VAR_POSITIONAL),
+        ...                dict(name='kwargs', kind=Parameter.VAR_KEYWORD)]
+        ... )
+        <Sig (a, b, *args, **kwargs)>
+        """
+        super().__init__(ensure_params(obj))
+
+    @classmethod
+    def from_obj(cls, obj=None):
+        return cls(ensure_params(obj))
+
     @classmethod
     def from_params(cls, params):
         if isinstance(params, Parameter):
             params = (params,)
         return cls(params)
 
+    def __iter__(self):
+        return iter(self.parameters)
+
+    def __len__(self):
+        return len(self.parameters)
+
+    def __getitem__(self, k):
+        return self.parameters[k]
+
     def __add__(self, sig):
-        pass
+        """Merge two signatures
+
+        Important Note:
+        POSITION_ONLY and KEYWORD_ONLY kinds will be replaced by POSITIONAL_OR_KEYWORD kind.
+        This is to simplify the interface and code.
+        If the user really wants to maintain those kinds, they can replace them back after the fact.
+
+        >>> def f(w, /, x: float = 1, y=1, *, z: int = 1): ...
+        >>> def h(i, j, w): ...  # has a 'w' argument, like f and g
+        >>> def different(a, b: str, c=None): ...  # No argument names in common with other functions
+
+        >>> Sig(f) + Sig(different)
+        <Sig (w, a, b: str, x: float = 1, y=1, z: int = 1, c=None)>
+        >>> Sig(different) + Sig(f)
+        <Sig (a, b: str, w, c=None, x: float = 1, y=1, z: int = 1)>
+
+        The order of the first signature will take precedence over the second,
+        but default-less arguments have to come before arguments with defaults.
+         first, and Note the difference of the orders.
+        >>> Sig(f) + Sig(h)
+        <Sig (w, i, j, x: float = 1, y=1, z: int = 1)>
+        >>> Sig(h) + Sig(f)
+        <Sig (i, j, w, x: float = 1, y=1, z: int = 1)>
+
+        The sum of two Sig's takes a safe-or-blow-up-now approach.
+        If any of the arguments have different defaults or annotations, summing will raise an AssertionError.
+        It's up to the user to decorate their input functions to express the default they actually desire.
+
+        >>> def ff(w, /, x: float, y=1, *, z: int = 1): ...  # just like f, but without the default for x
+        >>> Sig(f) + Sig(ff)
+        Traceback (most recent call last):
+        ...
+        AssertionError: The parameter x for the two signatures you tried to add
+        should also have the same default and annotations:
+        (w, x: float = 1, y=1, z: int = 1) vs (w, x: float, y=1, z: int = 1)
+
+        >>> def hh(i, j, w=1): ...  # like h, but w has a default
+        >>> Sig(h) + Sig(hh)
+        Traceback (most recent call last):
+        ...
+        AssertionError: The parameter w for the two signatures you tried to add
+        should also have the same default and annotations:
+        (i, j, w) vs (i, j, w=1)
+
+        >>> Sig(f) + ['w', ('y', 1), ('d', 1.0, float),
+        ...                dict(name='special', kind=Parameter.KEYWORD_ONLY, default=0)]
+        <Sig (w, x: float = 1, y=1, z: int = 1, d: float = 1.0, special=0)>
+
+        """
+        _self = Sig(ch_signature_to_all_pk(self))
+        self_names = set(_self)
+        _sig = Sig(ch_signature_to_all_pk(ensure_signature(sig)))
+
+        params = [
+            *self._yield_params_from_two_sigs(_self.without_defaults, _sig.without_defaults,
+                                              _self, _sig, self_names),
+            *self._yield_params_from_two_sigs(_self.with_defaults, _sig.with_defaults,
+                                              _self, _sig, self_names)]
+        return self.__class__(params)
+
+    @staticmethod
+    def _yield_params_from_two_sigs(params1, params2, sig1, sig2, self_names):
+        for p in params1.values():
+            yield p
+        for p in params2.values():
+            if p.name not in self_names:
+                yield p
+            else:
+                assert sig1[p.name] == sig2[p.name], (
+                    f"The parameter {p.name} for the two signatures you tried to add\n"
+                    "should also have the same default and annotations:\n"
+                    f"{sig1} vs {sig2}")
+
+    @property
+    def without_defaults(self):
+        return self.__class__(p for p in self.values() if p.default == Parameter.empty)
+
+    @property
+    def with_defaults(self):
+        return self.__class__(p for p in self.values() if p.default != Parameter.empty)
 
 
 def mk_sig(obj: Union[Signature, Callable, Mapping, None] = None, return_annotations=_empty, **annotations):
@@ -718,3 +1010,14 @@ for kind in param_kinds:
             partial(param_for_kind, kind=kind, with_default=True))
     setattr(getattr(param_for_kind, 'with_default'), lower_kind,
             partial(param_for_kind, kind=kind, with_default=True))
+
+
+def ch_signature_to_all_pk(sig):
+    def changed_params():
+        for p in sig.parameters.values():
+            if p.kind not in var_param_types:
+                yield p.replace(kind=PK)
+            else:
+                yield p
+
+    return Signature(list(changed_params()), return_annotation=sig.return_annotation)

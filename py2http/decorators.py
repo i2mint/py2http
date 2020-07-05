@@ -602,16 +602,7 @@ def tuple_the_args(func):
         return copy_func(func)  # don't change anything (or should we wrap anyway, to be consistent?)
 
 
-# TODO: Copied to py2mint.deco: Consider referencing from there
-def ch_signature_to_all_pk(sig):
-    def changed_params():
-        for p in sig.parameters.values():
-            if p.kind not in var_param_types:
-                yield p.replace(kind=PK)
-            else:
-                yield p
-
-    return Signature(list(changed_params()), return_annotation=sig.return_annotation)
+from py2http.signatures import set_signature_of_func, ch_signature_to_all_pk
 
 
 # TODO: Copied to py2mint.deco: Consider referencing from there
@@ -643,9 +634,6 @@ def ch_func_to_all_pk(func):
     sig = signature(func)
     func.__signature__ = ch_signature_to_all_pk(sig)
     return func
-
-
-from py2http.signatures import set_signature_of_func
 
 
 # TODO: generalize instance_attrs to instance_params
