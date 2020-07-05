@@ -44,5 +44,5 @@ def mult(x: float, y=1):
 
 
 # This one has every of the 4 combinations of (default y/n, annotated y/n)
-def formula1(w, x: float, y=1, z: int = 1):
+def formula1(w, /, x: float, y=1, *, z: int = 1):
     return ((w + x) * y) ** z
