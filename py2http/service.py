@@ -43,6 +43,7 @@ def mk_config(key, func, configs, defaults, **options):
           The expected type of the output (use Callable for functions)
     """
     funcname = options.get('funcname', getattr(func, '__name__', None))
+    # TODO: TW should ask SH the intent of the code below
     result = getattr(func, key, configs.get(key, None))
     if isinstance(result, dict):
         dict_value = result.get(funcname, None)
@@ -50,8 +51,10 @@ def mk_config(key, func, configs, defaults, **options):
             result = dict_value
         elif options.get('type', None) is not dict:
             result = None
+    # TODO: TW should ask SH the intent of the code above
+
     if result:
-        expected_type = options.get('type', None)
+        expected_type = options.get('type', None)  # align names expected_type <-> type
         if not expected_type:
             default_value = defaults.get(key, None)
             assert default_value is not None, f'Missing default value for key {key}'

@@ -69,10 +69,20 @@ def launch_and_wait_till_ready(start_process: Callable[[], Any],
 
 @contextmanager
 @deprecate
-def run_process(launcher, is_ready=2, verbose=False, timeout=30, **kwargs):
-    """Context manager to launch server on entry, and shut it down on exit"""
+def run_process(launcher,
+                is_ready: Union[Callable[[], Any], float, int] = 2,
+                verbose=False, timeout=30, **kwargs):
+    """Context manager to launch server on entry, and shut it down on exit
+
+    :param launcher:
+    :param is_ready: A argument-less function that returns False if, and only if, the process should be considered ready
+    :param verbose:
+    :param timeout:
+    :param kwargs: kwargs to be given to
+    :return:
+    """
     from warnings import warn
-    process_name = getattr(launcher, '__name__', '\b')
+    process_name = getattr(launcher, '__qualname__', '\b')
     clog = conditional_logger(verbose)
     process = None
     try:
