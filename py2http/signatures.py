@@ -482,34 +482,153 @@ class ParamsDict(dict):
         return True
 
 
+WRAPPER_UPDATES = ('__dict__',)
+
+
 class Sig(Signature, Mapping):
     """A subclass of inspect.Signature that has some extra api sugar, such as a dict-like interface, merging, ...
 
-    Note that Sig doesn't burden itself with return_annotation, so as to keep the API and code
-    simpler, while leaving it open for extension to classes that would handle that aspect
-    in their context-dependent way.
+    You can construct a `Sig` object from a callable,
+    >>> def f(w, /, x: float = 1, y=1, *, z: int = 1): ...
+    >>> Sig(f)
+    <Sig (w, /, x: float = 1, y=1, *, z: int = 1)>
 
+    but also from any "ParamsAble" object. Such as...
+
+    an iterable of Parameter instances, strings, tuples, or dicts:
+    >>> Sig(['a', ('b', Parameter.empty, int), ('c', 2), ('d', 1.0, float),
+    ...                dict(name='special', kind=Parameter.KEYWORD_ONLY, default=0)])
+    <Sig (a, b: int, c=2, d: float = 1.0, *, special=0)>
+    >>>
+    >>> Sig(['a', 'b', dict(name='args', kind=Parameter.VAR_POSITIONAL),
+    ...                dict(name='kwargs', kind=Parameter.VAR_KEYWORD)]
+    ... )
+    <Sig (a, b, *args, **kwargs)>
+
+    The parameters of a signature are like a matrix whose rows are the parameters,
+    and the 4 columns are their properties: name, kind, default, and annotation
+    (the two laste ones being optional).
+    You get a row view when doing `Sig(...).parameters.values()`,
+    but what if you want a column-view?
+    Here's how:
+
+    >>> def f(w, /, x: float = 1, y=2, *, z: int = 3): ...
+    >>>
+    >>> s = Sig(f)
+    >>>
+    >>> s.kinds  # doctest: +NORMALIZE_WHITESPACE
+    {'w': <_ParameterKind.POSITIONAL_ONLY: 0>,
+    'x': <_ParameterKind.POSITIONAL_OR_KEYWORD: 1>,
+    'y': <_ParameterKind.POSITIONAL_OR_KEYWORD: 1>,
+    'z': <_ParameterKind.KEYWORD_ONLY: 3>}
+
+    >>>
+    >>> s.annotations
+    {'x': <class 'float'>, 'z': <class 'int'>}
+    >>> assert s.annotations == f.__annotations__  # same as what you get in `__annotations__`
+    >>>
+    >>> s.defaults
+    {'x': 1, 'y': 2, 'z': 3}
+    >>> # Note that it's not the same as you get in __defaults__ though:
+    >>> assert s.defaults != f.__defaults__ == (1, 2)  # not 3, since __kwdefaults__ has that!
+
+    A Sig instance is callable. It has the effect of inserting it's signature in the input
+    (in `__signature__`, but also inserting the resulting `__defaults__` and `__kwdefaults__`).
+    One of the intents is to be able to do things like:
+    >>> def f(w, /, x: float = 1, y=1, *, z: int = 1): ...
+    >>> def g(i, w, j=2): ...
+    >>> sig = Sig(f) + g + ['a', ('b', 3.14), ('c', 42, int)]
+    >>> @sig
+    ... def some_func(*args, **kwargs):
+    ...     ...
+    >>> import inspect
+    >>> inspect.signature(some_func)
+    <Signature (w, i, a, x: float = 1, y=1, z: int = 1, j=2, b=3.14, c: int = 42)>
     """
 
-    def __init__(self, obj: ParamsAble = None):
+    def __init__(self, obj: ParamsAble = None, *,
+                 return_annotation=_empty,
+                 __validate_parameters__=True, ):
         """Initialize a Sig instance.
         See Also: `ensure_params` to see what kind of objects you can make `Sig`s with.
 
         :param obj: A ParamsAble object (callable, iterable of Parameter instances, or strings, tuples, or dicts...)
 
-        >>> def f(w, /, x: float = 1, y=1, *, z: int = 1): ...
-        >>> Sig(f)
-        <Sig (w, /, x: float = 1, y=1, *, z: int = 1)>
-        >>> Sig(['a', ('b', Parameter.empty, int), ('c', 2), ('d', 1.0, float),
-        ...                dict(name='special', kind=Parameter.KEYWORD_ONLY, default=0)])
-        <Sig (a, b: int, c=2, d: float = 1.0, *, special=0)>
-        >>>
-        >>> Sig(['a', 'b', dict(name='args', kind=Parameter.VAR_POSITIONAL),
-        ...                dict(name='kwargs', kind=Parameter.VAR_KEYWORD)]
-        ... )
-        <Sig (a, b, *args, **kwargs)>
+
         """
-        super().__init__(ensure_params(obj))
+        super().__init__(ensure_params(obj),
+                         return_annotation=return_annotation,
+                         __validate_parameters__=__validate_parameters__)
+
+    def __call__(self, func: Callable):
+        """Gives the input function the signature.
+        This is similar to the `functools.wraps` function, but parametrized by a signature
+        (not a callable). Also, where as both write to the input func's `__signature__`
+        attribute, here we also write to
+        - `__defaults__` and `__kwdefaults__`, extracting these from `__signature__`
+            (functools.wraps doesn't do that at the time of writing this
+            (see https://github.com/python/cpython/pull/21379)).
+        - `__annotations__` (also extracted from `__signature__`)
+        - does not write to `__module__`, `__name__`, `__qualname__`, `__doc__`
+            (because again, we're basinig the injecton on a signature, not a function,
+            so we have no name, doc, etc...)
+
+        >>> def f(w, /, x: float = 1, y=2, z: int = 3):
+        ...     return w + x * y ** z
+        >>> f(0, 1)  # 0 + 1 * 2 ** 3
+        8
+        >>> f.__defaults__
+        (1, 2, 3)
+        >>> assert 8 == f(0) == f(0, 1) == f(0, 1, 2) == f(0, 1, 2, 3)
+
+        Now let's create a very similar function to f, but where:
+        - w is not position-only
+        - x annot is int instead of float, and doesn't have a default
+        - z's default changes to 10
+        >>> def g(w, x: int, y=2, z: int = 10):
+        ...     return w + x * y ** z
+        >>> s = Sig(g)
+        >>> f = s(f)
+        >>> import inspect
+        >>> inspect.signature(f)  # see that
+        <Signature (w, x: int, y=2, z: int = 10)>
+        >>> # But (unlike with functools.wraps) here we get __defaults__ and __kwdefault__
+        >>> f.__defaults__  # see that x has no more default, and z's default changed to 10
+        (2, 10)
+        >>> f(0, 1)  # see that now we get a different output because using different defaults
+        1024
+
+        TODO: Something goes wrong when using keyword only arguments.
+            Note that the same problem occurs with functools.wraps, and even boltons.funcutils.wraps.
+        >>> def f(w, /, x: float = 1, y=2, *, z: int = 3):
+        ...     return w + x * y ** z
+        >>> f(0)  # 0 + 1 * 2 ** 3
+        8
+        >>> f(0, 1, 2, 3)  # error expected!
+        Traceback (most recent call last):
+          ...
+        TypeError: f() takes from 1 to 3 positional arguments but 4 were given
+        >>> def g(w, x: int, y=2, *, z: int = 10):
+        ...     return w + x * y ** z
+        >>> s = Sig(g)
+        >>> f = s(f)
+        >>> f.__defaults__
+        (2,)
+        >>> f.__kwdefaults__
+        {'z': 10}
+        >>> f(0, 1, 2, 3)  # error not expected! TODO: Make it work!!
+        Traceback (most recent call last):
+          ...
+        TypeError: f() takes from 2 to 3 positional arguments but 4 were given
+        """
+        func.__signature__ = Signature(self.parameters.values(),
+                                       return_annotation=self.return_annotation)
+        func.__annotations__ = self.annotations
+        ko_names = self.names_for_kind(kind=KO)
+        dflts = self.defaults
+        func.__defaults__ = tuple(dflts[name] for name in dflts if name not in ko_names)
+        func.__kwdefaults__ = {name: dflts[name] for name in dflts if name in ko_names}
+        return func
 
     @classmethod
     def from_obj(cls, obj=None):
@@ -521,6 +640,24 @@ class Sig(Signature, Mapping):
             params = (params,)
         return cls(params)
 
+    @property
+    def kinds(self):
+        return {p.name: p.kind for p in self.parameters.values()}
+
+    @property
+    def defaults(self):
+        return {p.name: p.default for p in self.parameters.values() if p.default != Parameter.empty}
+
+    @property
+    def annotations(self):
+        """{arg_name: annotation, ...} dict of annotations of the signature.
+        What `func.__annotations__` would give you.
+        """
+        return {p.name: p.annotation for p in self.parameters.values() if p.annotation != Parameter.empty}
+
+    def names_for_kind(self, kind):
+        return tuple(p.name for p in self.parameters.values() if p.kind == kind)
+
     def __iter__(self):
         return iter(self.parameters)
 
@@ -530,11 +667,15 @@ class Sig(Signature, Mapping):
     def __getitem__(self, k):
         return self.parameters[k]
 
-    def __add__(self, sig):
+    def __add__(self, sig: ParamsAble):
         """Merge two signatures
 
-        Important Note:
-        POSITION_ONLY and KEYWORD_ONLY kinds will be replaced by POSITIONAL_OR_KEYWORD kind.
+        Important Notes:
+        - The resulting Sig will loose it's return_annotation if it had one.
+            This is to avoid making too many assumptions about how the sig sum will be used.
+            If a return_annotation is needed (say, for composition, the last return_annotation
+            summed), one can subclass Sig and overwrite __add__
+        - POSITION_ONLY and KEYWORD_ONLY kinds will be replaced by POSITIONAL_OR_KEYWORD kind.
         This is to simplify the interface and code.
         If the user really wants to maintain those kinds, they can replace them back after the fact.
 
@@ -590,6 +731,7 @@ class Sig(Signature, Mapping):
             *self._yield_params_from_two_sigs(_self.with_defaults, _sig.with_defaults,
                                               _self, _sig, self_names)]
         return self.__class__(params)
+
 
     @staticmethod
     def _yield_params_from_two_sigs(params1, params2, sig1, sig2, self_names):
@@ -879,9 +1021,10 @@ def set_signature_of_func(func, parameters, *, return_annotation=_empty, __valid
     <Signature (**kws) -> str>
 
     """
-    func.__signature__ = mk_signature(parameters,
-                                      return_annotation=return_annotation,
-                                      __validate_parameters__=__validate_parameters__)
+    sig = mk_signature(parameters,
+                       return_annotation=return_annotation,
+                       __validate_parameters__=__validate_parameters__)
+    func.__signature__ = sig
     # Not returning func so it's clear(er) that the function is transformed in place
 
 
