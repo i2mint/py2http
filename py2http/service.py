@@ -123,11 +123,16 @@ def mk_route(func, **configs):
             final_result = web.json_response(final_result)
         return final_result
 
-    http_method = config_for('http_method').lower()
-    if http_method not in ['get', 'put', 'post', 'delete']:
-        http_method = 'post'
+    # TODO: Align config keys and variable names
+    valid_http_methods = {'get', 'put', 'post', 'delete'}  # outside function
+    http_method = config_for('http_method')  # read
+    assert isinstance(http_method, str)  # validation
+    http_method = http_method.lower()  # normalization
+    assert http_method in valid_http_methods  # validation
     web_mk_route = getattr(web, http_method)
 
+    # TODO: Make func -> path a function (not hardcoded)
+    # TODO: Make sure that func -> path MAPPING is known outside (perhaps through openapi)
     method_name = config_for('name') or func.__name__
     path = config_for('route') or f'/{method_name}'
 
