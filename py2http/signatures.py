@@ -485,6 +485,9 @@ class ParamsDict(dict):
 WRAPPER_UPDATES = ('__dict__',)
 
 
+# TODO: See other signature operating functions below in this module:
+#   Do we need them now that we have Sig?
+#   Do we want to keep them and have Sig use them?
 class Sig(Signature, Mapping):
     """A subclass of inspect.Signature that has some extra api sugar, such as a dict-like interface, merging, ...
 
@@ -532,18 +535,28 @@ class Sig(Signature, Mapping):
     >>> # Note that it's not the same as you get in __defaults__ though:
     >>> assert s.defaults != f.__defaults__ == (1, 2)  # not 3, since __kwdefaults__ has that!
 
-    A Sig instance is callable. It has the effect of inserting it's signature in the input
+    We can sum (i.e. merge) and subtract (i.e. remove arguments) Sig instances.
+    Also, Sig instance is callable. It has the effect of inserting it's signature in the input
     (in `__signature__`, but also inserting the resulting `__defaults__` and `__kwdefaults__`).
     One of the intents is to be able to do things like:
+    >>> import inspect
     >>> def f(w, /, x: float = 1, y=1, *, z: int = 1): ...
     >>> def g(i, w, j=2): ...
-    >>> sig = Sig(f) + g + ['a', ('b', 3.14), ('c', 42, int)]
+    >>>
+    >>> @Sig.from_objs(f, g, ['a', ('b', 3.14), ('c', 42, int)])
+    ... def some_func(*args, **kwargs):
+    ...     ...
+    >>> inspect.signature(some_func)
+    <Signature (w, i, a, x: float = 1, y=1, z: int = 1, j=2, b=3.14, c: int = 42)>
+    >>>
+    >>> sig = Sig(f) + g + ['a', ('b', 3.14), ('c', 42, int)] - 'b' - ['a', 'z']
     >>> @sig
     ... def some_func(*args, **kwargs):
     ...     ...
-    >>> import inspect
     >>> inspect.signature(some_func)
-    <Signature (w, i, a, x: float = 1, y=1, z: int = 1, j=2, b=3.14, c: int = 42)>
+    <Signature (w, i, x: float = 1, y=1, j=2, c: int = 42)>
+    >>>
+    >>> # You can also do it this way
     """
 
     def __init__(self, obj: ParamsAble = None, *,
@@ -631,8 +644,15 @@ class Sig(Signature, Mapping):
         return func
 
     @classmethod
-    def from_obj(cls, obj=None):
-        return cls(ensure_params(obj))
+    def from_objs(cls, *objs):
+        if len(objs) > 0:
+            first_obj, *objs = objs
+            sig = cls(ensure_params(first_obj))
+            for obj in objs:
+                sig = sig + obj
+            return sig
+        else:  # if no objs are given
+            return cls()  # return an empty signature
 
     @classmethod
     def from_params(cls, params):
@@ -666,6 +686,18 @@ class Sig(Signature, Mapping):
 
     def __getitem__(self, k):
         return self.parameters[k]
+
+    def merge_with_sig(self, sig: ParamsAble):
+        _self = Sig(ch_signature_to_all_pk(self))
+        self_names = set(_self)
+        _sig = Sig(ch_signature_to_all_pk(ensure_signature(sig)))
+
+        params = [
+            *self._yield_params_from_two_sigs(_self.without_defaults, _sig.without_defaults,
+                                              _self, _sig, self_names),
+            *self._yield_params_from_two_sigs(_self.with_defaults, _sig.with_defaults,
+                                              _self, _sig, self_names)]
+        return self.__class__(params)
 
     def __add__(self, sig: ParamsAble):
         """Merge two signatures
@@ -721,17 +753,15 @@ class Sig(Signature, Mapping):
         <Sig (w, x: float = 1, y=1, z: int = 1, d: float = 1.0, special=0)>
 
         """
-        _self = Sig(ch_signature_to_all_pk(self))
-        self_names = set(_self)
-        _sig = Sig(ch_signature_to_all_pk(ensure_signature(sig)))
+        return self.merge_with_sig(sig)
 
-        params = [
-            *self._yield_params_from_two_sigs(_self.without_defaults, _sig.without_defaults,
-                                              _self, _sig, self_names),
-            *self._yield_params_from_two_sigs(_self.with_defaults, _sig.with_defaults,
-                                              _self, _sig, self_names)]
-        return self.__class__(params)
+    def remove_names(self, names):
+        names = {p.name for p in ensure_params(names)}
+        new_params = {name: p for name, p in self.parameters.items() if name not in names}
+        return self.__class__(new_params, return_annotation=self.return_annotation)
 
+    def __sub__(self, sig):
+        return self.remove_names(sig)
 
     @staticmethod
     def _yield_params_from_two_sigs(params1, params2, sig1, sig2, self_names):
