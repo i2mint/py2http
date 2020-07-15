@@ -2,7 +2,7 @@ import requests
 from py2http.service import mk_http_service, mk_routes_and_openapi_specs, run_http_service
 from http2py.py2request import mk_request_func_from_openapi_spec
 from py2http.util import ModuleNotFoundIgnore
-from py2http.util import conditional_logger, CreateProcess
+from py2http.util import conditional_logger, run_process
 from py2http.openapi_utils import OpenApiExtractor
 from inspect import signature
 from collections.abc import Iterable
@@ -66,8 +66,11 @@ def test_p2h2p(funcs, inputs_for_func=None, p2h_configs=None, h2p_configs=None,
     """
     clog = conditional_logger(verbose)
     client_funcs = get_client_funcs(funcs, p2h_configs=p2h_configs, h2p_configs=h2p_configs)
-    with CreateProcess(run_http_service, wait_before_entering=wait_before_entering, verbose=verbose,
-                       funcs=funcs, configs=p2h_configs) as proc:
+    with run_process(func=run_http_service,
+                     func_args=(funcs,),
+                     func_kwargs=dict({}, configs=p2h_configs),
+                     is_ready=wait_before_entering,
+                     verbose=verbose) as proc:
         for f, cf in zip(funcs, client_funcs):
             clog(f"{signature(f)} -- {signature(cf)}")
             if check_signatures:
