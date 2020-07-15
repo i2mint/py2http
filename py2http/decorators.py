@@ -6,6 +6,7 @@ from types import FunctionType
 from warnings import warn
 from aiohttp import web
 from bson import ObjectId
+import collections
 
 from py2http.types import (WriteOpResult, ParameterKind, Params, HasParams,
                            PK, VP, VK, PO, KO, var_param_types)
@@ -782,19 +783,19 @@ def flatten_callables(*callables, func_name=None):
     # return flat_func
 
 
-def mk_flat(cls, method, *, func_name="flat_func"):
+def mk_flat(class_, method, *, func_name="flat_func"):
     """
-    Flatten a simple cls->instance->method call pipeline into one function.
+    Flatten a simple class_->instance->method call pipeline into one function.
 
-    That is, a function mk_flat(cls, method) that returns a "flat function" such that
+    That is, a function mk_flat(class_, method) that returns a "flat function" such that
     ```
-    cls(**init_kwargs).method(**method_kwargs) == flat_func(**init_kwargs, **method_kwargs)
+    class_(**init_kwargs).method(**method_kwargs) == flat_func(**init_kwargs, **method_kwargs)
     ```
 
     So, instead of this:
     ```graphviz
-    label="NESTED: result = cls(**init_kwargs).method(**method_kwargs)"
-    cls, init_kwargs -> instance
+    label="NESTED: result = class_(**init_kwargs).method(**method_kwargs)"
+    class_, init_kwargs -> instance
     instance, method, method_kwargs -> result
     ```
     you get a function `flat_func` that you can use like this:
@@ -802,7 +803,7 @@ def mk_flat(cls, method, *, func_name="flat_func"):
     label="FLAT: result = flat_func(**init_kwargs, **method_kwargs)"
     flat_func, init_kwargs, method_kwargs -> result
     ```
-    :param cls: A class
+    :param class_: A class
     :param method: A method of this class
     :param func_name: The name of the function (will be "flat_func" by default)
     :return:
@@ -834,23 +835,33 @@ def mk_flat(cls, method, *, func_name="flat_func"):
     flat_func(x, z)
     <BLANKLINE>
     """
-    sig1 = signature(cls)
+    sig1 = signature(class_)
     if isinstance(method, str):
-        method = getattr(cls, method)
+        method = getattr(class_, method)
     sig2 = signature(method)
     parameters = list(sig1.parameters.values()) + list(sig2.parameters.values())[1:]
+    parameters.sort(key=lambda x: x.kind)  # sort by kind
+    duplicates = [x for x, count in collections.Counter(parameters).items() if count > 1]
+    for d in duplicates:
+        if d.kind != Parameter.VAR_POSITIONAL and d.kind != Parameter.VAR_KEYWORD:
+            raise TypeError(f"Cannot flatten {method.__name__}! Duplicate argument found: {d.name} is in both {class_.__name__} class' and {method.__name__} method's signatures.")
+    parameters = list(dict.fromkeys(parameters))  # remove args and kwargs duplicates
 
     def flat_func(**kwargs):
-        for1 = {k: kwargs[k] for k in kwargs if k in sig1.parameters}
-        for2 = {k: kwargs[k] for k in kwargs if k in sig2.parameters}
-        instance = cls(**for1)  # TODO: implement caching option
+        if 'kwargs' in sig1.parameters:
+            for1 = kwargs
+        else:
+            for1 = {k: kwargs[k] for k in kwargs if k in sig1.parameters}
+        if 'kwargs' in sig2.parameters:
+            for2 = kwargs
+        else:
+            for2 = {k: kwargs[k] for k in kwargs if k in sig2.parameters}
+        instance = class_(**for1)  # TODO: implement caching option
         return getattr(instance, method.__name__)(**for2)
 
     flat_func.__dict__ = method.__dict__.copy()
     flat_func.__signature__ = Signature(parameters, return_annotation=sig2.return_annotation)
     flat_func.__name__ = func_name
-
-    final_sig = signature(flat_func)
 
     return flat_func
 
