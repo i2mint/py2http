@@ -8,6 +8,9 @@ from aiohttp import web
 from bson import ObjectId
 import collections
 
+from py2http.signatures import set_signature_of_func, ch_signature_to_all_pk
+from i2.deco import ch_func_to_all_pk
+
 from py2http.types import (WriteOpResult, ParameterKind, Params, HasParams,
                            PK, VP, VK, PO, KO, var_param_types)
 
@@ -477,37 +480,7 @@ class Decora(Decorator):
             cls.__new__ = __new__
 
 
-# TODO: Copied to py2mint.deco: Consider referencing from there
-def copy_func(f):
-    """Copy a function (not sure it works with all types of callables)"""
-    g = FunctionType(f.__code__, f.__globals__, name=f.__name__,
-                     argdefs=f.__defaults__, closure=f.__closure__)
-    g = update_wrapper(g, f)
-    g.__kwdefaults__ = f.__kwdefaults__
-    if hasattr(f, '__signature__'):
-        g.__signature__ = f.__signature__
-    return g
-
-
-# TODO: Copied to py2mint.deco: Consider referencing from there
-def transparently_wrapped(func):
-    @wraps(func)
-    def transparently_wrapped_func(*args, **kwargs):
-        return func(args, **kwargs)
-
-    return transparently_wrapped_func
-
-
-# TODO: Copied to py2mint.deco: Consider referencing from there
-def params_of(obj: HasParams):
-    if isinstance(obj, Signature):
-        obj = list(obj.parameters.values())
-    elif isinstance(obj, Mapping):
-        obj = list(obj.values())
-    elif callable(obj):
-        obj = list(signature(obj).parameters.values())
-    assert all(isinstance(p, Parameter) for p in obj), "obj needs to be a Iterable[Parameter] at this point"
-    return obj  # as is
+from i2.deco import copy_func, params_of
 
 
 def replace_with_params(target=None, /, *, source=None, inplace=False):
@@ -571,70 +544,6 @@ def params_replacer(replace: Union[dict, Callable[[Parameter], dict]],
     for p in params_of(obj):
         p = p.replace(**(replace(p) or {}))
         yield p
-
-
-# TODO: Copied to py2mint.deco: Consider referencing from there
-def tuple_the_args(func):
-    """A decorator that will change a VAR_POSITIONAL (*args) argument to a tuple (args)
-    argument of the same name.
-    """
-    params = params_of(func)
-    is_vp = list(p.kind == VP for p in params)
-    if any(is_vp):
-        index_of_vp = is_vp.index(True)  # there's can be only one
-
-        @wraps(func)
-        def vpless_func(*args, **kwargs):
-            # extract the element of args that needs to be unraveled
-            a, _vp_args_, aa = args[:index_of_vp], args[index_of_vp], args[(index_of_vp + 1):]
-            # call the original function with the unravelled args
-            return func(*a, *_vp_args_, *aa, **kwargs)
-
-        try:  # TODO: Avoid this try catch. Look in advance for default ordering
-            params[index_of_vp] = params[index_of_vp].replace(kind=PK, default=())
-            vpless_func.__signature__ = Signature(params,
-                                                  return_annotation=signature(func).return_annotation)
-        except ValueError:
-            params[index_of_vp] = params[index_of_vp].replace(kind=PK)
-            vpless_func.__signature__ = Signature(params,
-                                                  return_annotation=signature(func).return_annotation)
-        return vpless_func
-    else:
-        return copy_func(func)  # don't change anything (or should we wrap anyway, to be consistent?)
-
-
-from py2http.signatures import set_signature_of_func, ch_signature_to_all_pk
-
-
-# TODO: Copied to py2mint.deco: Consider referencing from there
-def ch_func_to_all_pk(func):
-    """Returns a copy of the function where all arguments are of the PK kind.
-    (PK: Positional_or_keyword)
-
-    :param func: A callable
-    :return:
-
-    >>> from py2http.decorators import signature, ch_func_to_all_pk
-    >>>
-    >>> def f(a, /, b, *, c=None, **kwargs): ...
-    ...
-    >>> print(signature(f))
-    (a, /, b, *, c=None, **kwargs)
-    >>> ff = ch_func_to_all_pk(f)
-    >>> print(signature(ff))
-    (a, b, c=None, **kwargs)
-    >>> def g(x, y=1, *args, **kwargs): ...
-    ...
-    >>> print(signature(g))
-    (x, y=1, *args, **kwargs)
-    >>> gg = ch_func_to_all_pk(g)
-    >>> print(signature(gg))
-    (x, y=1, args=(), **kwargs)
-    """
-    func = tuple_the_args(func)
-    sig = signature(func)
-    func.__signature__ = ch_signature_to_all_pk(sig)
-    return func
 
 
 # TODO: generalize instance_attrs to instance_params
@@ -783,19 +692,19 @@ def flatten_callables(*callables, func_name=None):
     # return flat_func
 
 
-def mk_flat(class_, method, *, func_name="flat_func"):
+def mk_flat(cls, method, *, func_name="flat_func"):
     """
-    Flatten a simple class_->instance->method call pipeline into one function.
+    Flatten a simple cls->instance->method call pipeline into one function.
 
-    That is, a function mk_flat(class_, method) that returns a "flat function" such that
+    That is, a function mk_flat(cls, method) that returns a "flat function" such that
     ```
-    class_(**init_kwargs).method(**method_kwargs) == flat_func(**init_kwargs, **method_kwargs)
+    cls(**init_kwargs).method(**method_kwargs) == flat_func(**init_kwargs, **method_kwargs)
     ```
 
     So, instead of this:
     ```graphviz
-    label="NESTED: result = class_(**init_kwargs).method(**method_kwargs)"
-    class_, init_kwargs -> instance
+    label="NESTED: result = cls(**init_kwargs).method(**method_kwargs)"
+    cls, init_kwargs -> instance
     instance, method, method_kwargs -> result
     ```
     you get a function `flat_func` that you can use like this:
@@ -803,7 +712,7 @@ def mk_flat(class_, method, *, func_name="flat_func"):
     label="FLAT: result = flat_func(**init_kwargs, **method_kwargs)"
     flat_func, init_kwargs, method_kwargs -> result
     ```
-    :param class_: A class
+    :param cls: A class
     :param method: A method of this class
     :param func_name: The name of the function (will be "flat_func" by default)
     :return:
@@ -835,16 +744,17 @@ def mk_flat(class_, method, *, func_name="flat_func"):
     flat_func(x, z)
     <BLANKLINE>
     """
-    sig1 = signature(class_)
+    sig1 = signature(cls)
     if isinstance(method, str):
-        method = getattr(class_, method)
+        method = getattr(cls, method)
     sig2 = signature(method)
     parameters = list(sig1.parameters.values()) + list(sig2.parameters.values())[1:]
     parameters.sort(key=lambda x: x.kind)  # sort by kind
     duplicates = [x for x, count in collections.Counter(parameters).items() if count > 1]
     for d in duplicates:
         if d.kind != Parameter.VAR_POSITIONAL and d.kind != Parameter.VAR_KEYWORD:
-            raise TypeError(f"Cannot flatten {method.__name__}! Duplicate argument found: {d.name} is in both {class_.__name__} class' and {method.__name__} method's signatures.")
+            raise TypeError(
+                f"Cannot flatten {method.__name__}! Duplicate argument found: {d.name} is in both {cls.__name__} class' and {method.__name__} method's signatures.")
     parameters = list(dict.fromkeys(parameters))  # remove args and kwargs duplicates
 
     def flat_func(**kwargs):
@@ -856,7 +766,7 @@ def mk_flat(class_, method, *, func_name="flat_func"):
             for2 = kwargs
         else:
             for2 = {k: kwargs[k] for k in kwargs if k in sig2.parameters}
-        instance = class_(**for1)  # TODO: implement caching option
+        instance = cls(**for1)  # TODO: implement caching option
         return getattr(instance, method.__name__)(**for2)
 
     flat_func.__dict__ = method.__dict__.copy()
