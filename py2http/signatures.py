@@ -555,8 +555,6 @@ class Sig(Signature, Mapping):
     ...     ...
     >>> inspect.signature(some_func)
     <Signature (w, i, x: float = 1, y=1, j=2, c: int = 42)>
-    >>>
-    >>> # You can also do it this way
     """
 
     def __init__(self, obj: ParamsAble = None, *,
