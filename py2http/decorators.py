@@ -1,18 +1,40 @@
-from inspect import signature, Signature, Parameter
+from inspect import signature, Signature, Parameter, iscoroutinefunction
 from typing import Iterable, Callable, Union, Mapping
 from functools import partial, wraps, update_wrapper
 from json import JSONDecodeError, JSONEncoder
-from types import FunctionType
-from warnings import warn
 from aiohttp import web
 from bson import ObjectId
 import collections
+from typing import Awaitable, get_origin
+from collections.abc import Awaitable as _Awaitable
 
 from py2http.signatures import set_signature_of_func, ch_signature_to_all_pk
 from i2.deco import ch_func_to_all_pk
 
 from py2http.types import (WriteOpResult, ParameterKind, Params, HasParams,
                            PK, VP, VK, PO, KO, var_param_types)
+
+
+def ensure_awaitable_return_annot(func):
+    """
+    >>> async def foo(x: str) -> int: ...
+    >>> assert str(signature(foo)) == '(x: str) -> int'
+    >>> assert str(signature(ensure_awaitable_return_annot(foo))) == '(x: str) -> Awaitable[int]'
+    >>>
+    >>> # but if func is not async, don't change anything
+    >>> def bar(a) -> str: ...
+    >>> assert str(signature(bar)) == str(signature(ensure_awaitable_return_annot(bar)))  == '(a) -> str'
+    >>>
+    >>> # or if the return annotation is already contained in an Awaitable, don't change anything
+    >>> async def baz() -> Awaitable[float]: ...
+    >>> assert str(signature(baz)) == str(signature(ensure_awaitable_return_annot(baz))) == '() -> Awaitable[float]'
+    """
+    sig = signature(func)
+    if (iscoroutinefunction(func)
+            and sig.return_annotation != Signature.empty
+            and get_origin(sig.return_annotation) != _Awaitable):
+        func.__signature__ = sig.replace(return_annotation=Awaitable[sig.return_annotation])
+    return func
 
 
 def ignore_extra_arguments(func):
