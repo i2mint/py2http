@@ -1,2 +1,4 @@
+`the_one_where_we_have_python_objects_and_we_want_to_make_an_http_service_out_of_them`
+
 # py2http
-Dispatching python objects as web services
+Dispatching python objects as http services.
