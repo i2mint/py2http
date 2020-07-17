@@ -1,10 +1,14 @@
 from functools import partial
 
 from aiohttp import web
-from inspect import isawaitable, signature
+import asyncio
+from collections import namedtuple
+from flask import Flask, request
+from inspect import isawaitable
 import json
 from typing import Callable
 
+from py2http.config import mk_config, FLASK, AIOHTTP
 from py2http.default_configs import default_configs
 from py2http.openapi_utils import add_paths_to_spec, mk_openapi_path, mk_openapi_template
 from py2http.schema_tools import mk_input_schema_from_func, mk_output_schema_from_func
@@ -24,55 +28,6 @@ assert_type = TypeAsserter(types_for_kind={
 })
 
 
-# TODO: Revise logic and use more appropriate tools (ChainMap, glom) and interface.
-def mk_config(key, func, configs, defaults, **options):
-    """
-    Get a config value for a function. First checks the properties of the function,
-    then the configs, then the defaults.
-
-    :param key: The key to search for
-    :param func: The function associated with the config
-    :param configs: A config dict to search
-    :param defaults: The default configs to fall back on
-    :param **options: Additional options
-
-    :Keyword Arguments:
-        * *funcname*
-          The name of the function, if not the same as func.__name__
-        * *type*
-          The expected type of the output (use Callable for functions)
-    """
-    funcname = options.get('funcname', getattr(func, '__name__', None))
-    # TODO: TW should ask SH the intent of the code below
-    result = getattr(func, key, configs.get(key, None))
-    if isinstance(result, dict):
-        dict_value = result.get(funcname, None)
-        if dict_value:
-            result = dict_value
-        elif options.get('type', None) is not dict:
-            result = None
-    # TODO: TW should ask SH the intent of the code above
-
-    if result:
-        expected_type = options.get('type', None)  # align names expected_type <-> type
-        if not expected_type:
-            default_value = defaults.get(key, None)
-            assert default_value is not None, f'Missing default value for key {key}'
-            if callable(default_value):
-                expected_type = Callable
-            else:
-                expected_type = type(default_value)
-        assert isinstance(result, expected_type), f'Config {key} does not match type {expected_type}.'
-    else:
-        result = defaults.get(key, None)
-    return result
-
-
-from collections import namedtuple
-
-
-# TODO: Just to try out a smoother interface. Delete if never used.
-
 def mk_route(func, **configs):
     """
     Generate an aiohttp route object and an OpenAPI path specification for a function
@@ -84,7 +39,7 @@ def mk_route(func, **configs):
 
     # TODO: perhaps collections.abc.Mapping initialized with func, configs, etc.
     config_for = partial(mk_config, func=func, configs=configs, defaults=default_configs)
-
+    framework = config_for('framework')
     input_mapper = config_for('input_mapper')
     input_validator = config_for('input_validator')
     output_mapper = config_for('output_mapper')
@@ -119,7 +74,7 @@ def mk_route(func, **configs):
         final_result = output_mapper(raw_result, input_kwargs)
         if isawaitable(final_result):
             final_result = await final_result
-        if not isinstance(final_result, web.Response):
+        if framework == AIOHTTP and not isinstance(final_result, web.Response):
             final_result = web.json_response(final_result)
         return final_result
 
@@ -129,14 +84,29 @@ def mk_route(func, **configs):
     assert isinstance(http_method, str)  # validation
     http_method = http_method.lower()  # normalization
     assert http_method in valid_http_methods  # validation
-    web_mk_route = getattr(web, http_method)
 
-    # TODO: Make func -> path a function (not hardcoded)
+    def mk_framework_route(http_method, path, method_name, handler):
+        if framework == AIOHTTP:
+            web_mk_route = getattr(web, http_method)
+            return web_mk_route(path, handler)
+        if framework == FLASK:
+            def sync_handle_request():
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                result = loop.run_until_complete(handler(request))
+                return result
+            sync_handle_request.path = path
+            sync_handle_request.http_method = http_method
+            sync_handle_request.method_name = method_name
+            return sync_handle_request
+        return None
+
+        # TODO: Make func -> path a function (not hardcoded)
     # TODO: Make sure that func -> path MAPPING is known outside (perhaps through openapi)
     method_name = config_for('name') or func.__name__
     path = config_for('route') or f'/{method_name}'
 
-    route = web_mk_route(path, handle_request)
+    route = mk_framework_route(http_method, path, method_name, handle_request)
 
     path_fields = dict({'x-method_name': method_name}, **extra_path_info(func))
     openapi_path = mk_openapi_path(path,
@@ -147,7 +117,7 @@ def mk_route(func, **configs):
     return route, openapi_path
 
 
-def extra_path_info(func, ):
+def extra_path_info(func):
     return {}
 
 
@@ -160,13 +130,42 @@ def handle_ping(req):
 def run_http_service(funcs, **configs):
     app = mk_http_service(funcs, **configs)
     port = configs.get('port', app.dflt_port)
+    framework = mk_config('framework', None, configs, default_configs)
+    if framework == FLASK:
+        return run_flask_service(app, port)
+    if framework == AIOHTTP:
+        return run_aiohttp_service(app, port)
+
+
+def run_flask_service(app, port):
+    app.run(port=port, debug=True)
+
+
+def run_aiohttp_service(app, port):
     web.run_app(app, port=port)
 
 
 def mk_http_service(funcs, **configs):
+    routes, openapi_spec = mk_routes_and_openapi_specs(funcs, configs)
+    framework = mk_config('framework', None, configs, default_configs)
+    if framework == FLASK:
+        return mk_flask_service(routes, openapi_spec, **configs)
+    return mk_aiohttp_service(routes, openapi_spec, **configs)
+
+
+def mk_flask_service(routes, openapi_spec, **configs):
+    app_name = mk_config('app_name', None, configs, default_configs)
+    app = Flask(app_name)
+    for route in routes:
+        app.add_url_rule(route.path, route.method_name, route, methods=[route.http_method.upper()])
+    app.openapi_spec = openapi_spec
+    app.dflt_port = mk_config('port', None, configs, default_configs)
+    return app
+
+
+def mk_aiohttp_service(routes, openapi_spec, **configs):
     middleware = mk_config('middleware', None, configs, default_configs)
     app = web.Application(middlewares=middleware)
-    routes, openapi_spec = mk_routes_and_openapi_specs(funcs, configs)
     app.add_routes([web.get('/ping', handle_ping), *routes])
     # adding a few more attributes
     app.openapi_spec = openapi_spec

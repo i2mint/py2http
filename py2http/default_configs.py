@@ -17,7 +17,14 @@ def default_output_mapper(output, input_kwargs):
     return output
 
 
+def flask_output_mapper(output, input_kwargs):
+    print(f'returning output: {output}')
+    return output
+
+
 default_configs = {
+    'app_name': 'OtoSense',
+    'framework': 'aiohttp',
     'input_mapper': default_input_mapper,
     'input_validator': default_input_validator,
     'output_mapper': default_output_mapper,

@@ -1,4 +1,4 @@
-from inspect import signature, Signature, Parameter, iscoroutinefunction
+from inspect import signature, Signature, Parameter, isawaitable, iscoroutinefunction
 from typing import Iterable, Callable, Union, Mapping
 from functools import partial, wraps, update_wrapper
 from json import JSONDecodeError, JSONEncoder
@@ -843,7 +843,8 @@ def route(route_name):
 
 def handle_json_req(func):
     async def input_mapper(req):
-        kwargs = await _get_req_input_kwargs(req, req.json)
+        kwargs = await _get_req_input_kwargs(
+            req, getattr(req, 'json', getattr(req, 'get_json', None)))
         return func(kwargs)
 
     input_mapper.content_type = 'json'
@@ -937,8 +938,10 @@ def mk_input_mapper(input_map):
 
 async def _get_req_input_kwargs(req, get_body_func):
     kwargs = {}
-    if req.has_body:
-        body = await get_body_func()
+    if getattr(req, 'has_body', getattr(req, 'data', None)):
+        body = get_body_func()
+        if isawaitable(body):
+            body = await body
         if isinstance(body, str):
             body = dict({}, text=body)
         kwargs = body
