@@ -8,7 +8,7 @@ import collections
 from typing import Awaitable, get_origin
 from collections.abc import Awaitable as _Awaitable
 
-from py2http.signatures import set_signature_of_func, ch_signature_to_all_pk
+from i2.signatures import set_signature_of_func, ch_signature_to_all_pk, Sig
 from i2.deco import ch_func_to_all_pk
 
 from py2http.types import (WriteOpResult, ParameterKind, Params, HasParams,
@@ -766,33 +766,41 @@ def mk_flat(cls, method, *, func_name="flat_func"):
     flat_func(x, z)
     <BLANKLINE>
     """
-    sig1 = signature(cls)
+    # sig1 = signature(cls)
+    # if isinstance(method, str):
+    #     method = getattr(cls, method)
+    # sig2 = signature(method)
+    # parameters = list(sig1.parameters.values()) + list(sig2.parameters.values())[1:]
+    # parameters.sort(key=lambda x: x.kind)  # sort by kind
+    # duplicates = [x for x, count in collections.Counter(parameters).items() if count > 1]
+    # for d in duplicates:
+    #     if d.kind != Parameter.VAR_POSITIONAL and d.kind != Parameter.VAR_KEYWORD:
+    #         raise TypeError(
+    #             f"Cannot flatten {method.__name__}! Duplicate argument found: {d.name} is in both {cls.__name__} class' and {method.__name__} method's signatures.")
+    # parameters = list(dict.fromkeys(parameters))  # remove args and kwargs duplicates
+
     if isinstance(method, str):
         method = getattr(cls, method)
-    sig2 = signature(method)
-    parameters = list(sig1.parameters.values()) + list(sig2.parameters.values())[1:]
-    parameters.sort(key=lambda x: x.kind)  # sort by kind
-    duplicates = [x for x, count in collections.Counter(parameters).items() if count > 1]
-    for d in duplicates:
-        if d.kind != Parameter.VAR_POSITIONAL and d.kind != Parameter.VAR_KEYWORD:
-            raise TypeError(
-                f"Cannot flatten {method.__name__}! Duplicate argument found: {d.name} is in both {cls.__name__} class' and {method.__name__} method's signatures.")
-    parameters = list(dict.fromkeys(parameters))  # remove args and kwargs duplicates
+    sig_cls = Sig(cls)
+    sig_method = Sig(method)
+    sig_flat = sig_cls + sig_method
+    sig_flat = sig_flat.remove_names(['self'])
+    sig_flat = sig_flat.replace(return_annotation=sig_method.return_annotation)
 
     def flat_func(**kwargs):
-        if 'kwargs' in sig1.parameters:
-            for1 = kwargs
+        if len([p for p in sig_cls.parameters.values() if p.kind == Parameter.VAR_KEYWORD]) == 1:
+            cls_params = kwargs
         else:
-            for1 = {k: kwargs[k] for k in kwargs if k in sig1.parameters}
-        if 'kwargs' in sig2.parameters:
-            for2 = kwargs
+            cls_params = {k: kwargs[k] for k in kwargs if k in sig_cls.parameters}
+        if len([p for p in sig_method.parameters.values() if p.kind == Parameter.VAR_KEYWORD]) == 1:
+            method_params = kwargs
         else:
-            for2 = {k: kwargs[k] for k in kwargs if k in sig2.parameters}
-        instance = cls(**for1)  # TODO: implement caching option
-        return getattr(instance, method.__name__)(**for2)
+            method_params = {k: kwargs[k] for k in kwargs if k in sig_method.parameters}
+        instance = cls(**cls_params)  # TODO: implement caching option
+        return getattr(instance, method.__name__)(**method_params)
 
     flat_func.__dict__ = method.__dict__.copy()
-    flat_func.__signature__ = Signature(parameters, return_annotation=sig2.return_annotation)
+    flat_func.__signature__ = sig_flat
     flat_func.__name__ = func_name
 
     return flat_func
