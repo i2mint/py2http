@@ -1,12 +1,13 @@
-from functools import partial
-
 from aiohttp import web
 import asyncio
 from collections import namedtuple
 from flask import Flask, request
+from functools import partial
 from inspect import isawaitable
 import json
 from typing import Callable
+
+from i2.errors import InputError
 
 from py2http.config import mk_config, FLASK, AIOHTTP
 from py2http.default_configs import default_configs
@@ -43,6 +44,7 @@ def mk_route(func, **configs):
     input_mapper = config_for('input_mapper')
     input_validator = config_for('input_validator')
     output_mapper = config_for('output_mapper')
+    error_handler = config_for('error_handler')
     header_inputs = config_for('header_inputs', type=dict)
 
     exclude_request_keys = header_inputs.keys()
@@ -58,25 +60,28 @@ def mk_route(func, **configs):
                                   mk_output_schema_from_func(func))
 
     async def handle_request(req):
-        input_kwargs = input_mapper(req)
-        if isawaitable(input_kwargs):  # Pattern: pass-on async property
-            input_kwargs = await input_kwargs
+        input_kwargs = {}
+        try:
+            input_kwargs = input_mapper(req)
+            if isawaitable(input_kwargs):  # Pattern: pass-on async property
+                input_kwargs = await input_kwargs
 
-        validation_result = input_validator(input_kwargs)
-        if validation_result is not True:
-            raise web.HTTPBadRequest(text=json.dumps({'error': validation_result}),
-                                     content_type='application/json')
+            validation_result = input_validator(input_kwargs)
+            if validation_result is not True:
+                raise InputError(validation_result)
 
-        raw_result = func(**input_kwargs)
-        if isawaitable(raw_result):  # Pattern: pass-on async property
-            raw_result = await raw_result
+            raw_result = func(**input_kwargs)
+            if isawaitable(raw_result):  # Pattern: pass-on async property
+                raw_result = await raw_result
 
-        final_result = output_mapper(raw_result, input_kwargs)
-        if isawaitable(final_result):
-            final_result = await final_result
-        if framework == AIOHTTP and not isinstance(final_result, web.Response):
-            final_result = web.json_response(final_result)
-        return final_result
+            final_result = output_mapper(raw_result, input_kwargs)
+            if isawaitable(final_result):
+                final_result = await final_result
+            if framework == AIOHTTP and not isinstance(final_result, web.Response):
+                final_result = web.json_response(final_result)
+            return final_result
+        except Exception as error:
+            return error_handler(error, input_kwargs)
 
     # TODO: Align config keys and variable names
     valid_http_methods = {'get', 'put', 'post', 'delete'}  # outside function
