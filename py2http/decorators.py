@@ -944,6 +944,29 @@ def mk_input_mapper(input_map):
     return decorator
 
 
+def validate_param(param_key, *, type, optional=False, required_keys=[], optional_keys=[]):
+    def wrap(func):
+        def input_validator(input_kwargs):
+            param_value = input_kwargs.get(param_key, None)
+            if param_value:
+                if not isinstance(param_value, type):
+                    return f'Invalid parameter "{param_key}". Must be of type {type}.'
+                if type == dict:
+                    for k in required_keys:
+                        if k not in param_value:
+                            return f'Invalid parameter "{param_key}". Key {k} is required.'
+                    valid_keys = required_keys + optional_keys
+                    if len(valid_keys) > 0:
+                        invalid_keys = [k for k in param_value.keys() if k not in valid_keys]
+                        if len(invalid_keys):
+                            return f'Invalid parameter "{param_key}". The following keys are not allowed: {invalid_keys}.'
+            elif not optional:
+                return f'Parameter "{param_key}" is required.'
+            return func(input_kwargs)
+        return input_validator
+    return wrap
+
+
 async def _get_req_input_kwargs(req, get_body_func):
     kwargs = {}
     if getattr(req, 'has_body', getattr(req, 'data', None)):

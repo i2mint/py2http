@@ -1,7 +1,7 @@
 from aiohttp import web
 import json
 
-from i2.errors import AuthorizationError, BusinessRuleError, ForbiddenError, InputError, NotFoundError
+from i2.errors import AuthorizationError, ForbiddenError, InputError, NotFoundError, DuplicateRecordError
 
 from py2http.decorators import handle_json_req, send_json_resp
 
@@ -33,7 +33,7 @@ def _raise_http_client_error(error, message):
 
 def default_error_handler(error, input_kwargs):
     message = str(error)
-    if isinstance(error, (AuthorizationError, BusinessRuleError, InputError)):
+    if isinstance(error, (AuthorizationError, InputError, DuplicateRecordError)):
         _raise_http_client_error(web.HTTPBadRequest, message)
     elif isinstance(error, ForbiddenError):
         _raise_http_client_error(web.HTTPForbidden, message)
