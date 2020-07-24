@@ -955,21 +955,21 @@ def validate_input(params: dict, schema: dict):
             if param_name in params:
                 param = params[param_name]
                 param_type = spec.get('type', str)
-                min_length = spec.get('min_length', 0)
+                min_length = spec.get('min_length', 1)
                 if not isinstance(param, param_type):
                     errors.append(f'Invalid parameter "{param_path}". Must be of type "{param_type.__name__}".')
-                if param_type == str and len(param) < min_length:
-                    errors.append(f'Invalid parameter "{param_path}". Must contain at least {min_length} characters".')
+                if (param_type == str or param_type == list) and len(param) < min_length:
+                    errors.append(f'Invalid parameter "{param_path}". Must have a length of {min_length} at least".')
                 if param_type == list and 'items' in spec:
                     items_spec = spec['items']
                     element_type = items_spec.get('type', str)
-                    min_length = items_spec.get('min_length', 0)
+                    min_length = items_spec.get('min_length', 1)
                     for i in range(len(param)):
                         element = param[i]
                         if not isinstance(element, element_type):
                             errors.append(f'Invalid parameter "{param_path}[{i}] ({element})". Must be of type "{element_type.__name__}".')
-                        if element_type == str and len(element) < min_length:
-                            errors.append(f'Invalid parameter "{param_path}[{i}] ({element})". Must contain at least {min_length} characters".')
+                        if (element_type == str or element_type == list) and len(element) < min_length:
+                            errors.append(f'Invalid parameter "{param_path}[{i}] ({element})". Must have a length of {min_length} at least".')
                 if param_type == dict and 'schema' in spec:
                     errors.extend(_validate_input(param, spec['schema'], param_path))
             elif not spec.get('optional', False):
