@@ -983,7 +983,6 @@ def validate_input(params: dict, schema: dict):
     errors = _validate_input(params, schema, '')
     if len(errors) > 0:
         error_msg = '\n'.join(errors)
-        print(error_msg)
         raise InputError(error_msg)
 
 
