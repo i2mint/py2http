@@ -10,6 +10,7 @@ from collections.abc import Awaitable as _Awaitable
 
 from i2.signatures import set_signature_of_func, ch_signature_to_all_pk, Sig
 from i2.deco import ch_func_to_all_pk
+from i2.errors import InputError
 
 from py2http.types import (WriteOpResult, ParameterKind, Params, HasParams,
                            PK, VP, VK, PO, KO, var_param_types)
@@ -944,27 +945,46 @@ def mk_input_mapper(input_map):
     return decorator
 
 
-def validate_param(param_key, *, type, optional=False, required_keys=[], optional_keys=[]):
-    def wrap(func):
-        def input_validator(input_kwargs):
-            param_value = input_kwargs.get(param_key, None)
-            if param_value:
-                if not isinstance(param_value, type):
-                    return f'Invalid parameter "{param_key}". Must be of type {type}.'
-                if type == dict:
-                    for k in required_keys:
-                        if k not in param_value:
-                            return f'Invalid parameter "{param_key}". Key {k} is required.'
-                    valid_keys = required_keys + optional_keys
-                    if len(valid_keys) > 0:
-                        invalid_keys = [k for k in param_value.keys() if k not in valid_keys]
-                        if len(invalid_keys):
-                            return f'Invalid parameter "{param_key}". The following keys are not allowed: {invalid_keys}.'
-            elif not optional:
-                return f'Parameter "{param_key}" is required.'
-            return func(input_kwargs)
-        return input_validator
-    return wrap
+def validate_input(params: dict, schema: dict):
+    def _validate_input(params, schema, root_path):
+        errors = []
+        for param_name, spec in schema.items():
+            param_path = f'{root_path}.{param_name}' if root_path else param_name
+            if not isinstance(spec, dict):
+                raise TypeError('Bad schema for input validation. Must contain dictionaries only.')
+            if param_name in params:
+                param = params[param_name]
+                param_type = spec.get('type', str)
+                min_length = spec.get('min_length', 0)
+                if not isinstance(param, param_type):
+                    errors.append(f'Invalid parameter "{param_path}". Must be of type "{param_type.__name__}".')
+                if param_type == str and len(param) < min_length:
+                    errors.append(f'Invalid parameter "{param_path}". Must contain at least {min_length} characters".')
+                if param_type == list and 'items' in spec:
+                    items_spec = spec['items']
+                    element_type = items_spec.get('type', str)
+                    min_length = items_spec.get('min_length', 0)
+                    for i in range(len(param)):
+                        element = param[i]
+                        if not isinstance(element, element_type):
+                            errors.append(f'Invalid parameter "{param_path}[{i}] ({element})". Must be of type "{element_type.__name__}".')
+                        if element_type == str and len(element) < min_length:
+                            errors.append(f'Invalid parameter "{param_path}[{i}] ({element})". Must contain at least {min_length} characters".')
+                if param_type == dict and 'schema' in spec:
+                    errors.extend(_validate_input(param, spec['schema'], param_path))
+            elif not spec.get('optional', False):
+                errors.append(f'Parameter "{param_path}" is missing.')
+        for p in params:
+            param_path = f'{root_path}.{p}' if root_path else p
+            if p not in schema:
+                errors.append(f'Parameter "{param_path}" is not allowed.')
+        return errors
+
+    errors = _validate_input(params, schema, '')
+    if len(errors) > 0:
+        error_msg = '\n'.join(errors)
+        print(error_msg)
+        raise InputError(error_msg)
 
 
 async def _get_req_input_kwargs(req, get_body_func):
