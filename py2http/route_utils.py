@@ -12,7 +12,6 @@ def create_handler(input_class, methodname):
         instance = input_class(**constructor_kwargs)
         return instance.getattr(methodname)(*input_args, **input_kwargs)
     handler.input_trans = class_method.getattr('input_trans', None)
-    handler.input_validator = class_method.getattr('input_validator', None)
     handler.output_trans = class_method.getattr('output_trans', None)
     return handler
 
