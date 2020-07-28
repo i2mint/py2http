@@ -14,6 +14,7 @@ from py2http.default_configs import default_configs
 from py2http.openapi_utils import add_paths_to_spec, mk_openapi_path, mk_openapi_template
 from py2http.schema_tools import mk_input_schema_from_func, mk_output_schema_from_func
 from py2http.util import TypeAsserter
+from py2http.schema_tools import validate_input
 
 
 def method_not_found(method_name):
@@ -24,7 +25,6 @@ def method_not_found(method_name):
 # default TypeAsserter used in this project
 assert_type = TypeAsserter(types_for_kind={
     'input_mapper': Callable,
-    'input_validator': Callable,
     'output_mapper': Callable,
 })
 
@@ -42,7 +42,6 @@ def mk_route(func, **configs):
     config_for = partial(mk_config, func=func, configs=configs, defaults=default_configs)
     framework = config_for('framework')
     input_mapper = config_for('input_mapper')
-    input_validator = config_for('input_validator')
     output_mapper = config_for('output_mapper')
     error_handler = config_for('error_handler')
     header_inputs = config_for('header_inputs', type=dict)
@@ -65,12 +64,11 @@ def mk_route(func, **configs):
             input_kwargs = input_mapper(req)
             if isawaitable(input_kwargs):  # Pattern: pass-on async property
                 input_kwargs = await input_kwargs
-
-            validation_result = input_validator(input_kwargs)
-            if validation_result is not True:
-                raise InputError(validation_result)
-
-            raw_result = func(**input_kwargs)
+            validate_input(input_kwargs, request_schema)
+            try:
+                raw_result = func(**input_kwargs)
+            except TypeError as error:
+                raise InputError(str(error))
             if isawaitable(raw_result):  # Pattern: pass-on async property
                 raw_result = await raw_result
 
@@ -242,20 +240,18 @@ def mk_config_nt(keys, *args, **kwargs):
     return ConfigNT(**{k: mk_config(k, *args, **kwargs) for k in keys})
 
     # input_mapper = mk_config('input_mapper', func, configs, default_configs)
-    # input_validator = mk_config('input_validator', func, configs, default_configs)
     # output_mapper = mk_config('output_mapper', func, configs, default_configs)
     # header_inputs = mk_config('header_inputs', func, configs, default_configs, type=dict)
 
     # 1: Replacement proposal
-    # input_mapper, input_validator, output_mapper, header_inputs = mk_config_nt(
-    #     ['input_mapper', 'input_validator', 'output_mapper', 'header_inputs'],
+    # input_mapper, output_mapper, header_inputs = mk_config_nt(
+    #     ['input_mapper', 'output_mapper', 'header_inputs'],
     #     func, configs, default_configs)
-    # input_mapper, input_validator, output_mapper, header_inputs = mk_configs(
-    #     ['input_mapper', 'input_validator', 'output_mapper', 'header_inputs'],
+    # input_mapper, output_mapper, header_inputs = mk_configs(
+    #     ['input_mapper', 'output_mapper', 'header_inputs'],
     #     func, configs, default_configs
     # )
     # 1: To replace this   # TODO: Test and choose
     # input_mapper = mk_config('input_mapper', func, configs, default_configs)
-    # input_validator = mk_config('input_validator', func, configs, default_configs)
     # output_mapper = mk_config('output_mapper', func, configs, default_configs)
     # header_inputs = mk_config('header_inputs', func, configs, default_configs)

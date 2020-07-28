@@ -11,10 +11,6 @@ def default_input_mapper(input_kwargs):
     return input_kwargs
 
 
-def default_input_validator(input_kwargs):
-    return True
-
-
 @send_json_resp
 def default_output_mapper(output, input_kwargs):
     return output
@@ -47,7 +43,6 @@ default_configs = {
     'app_name': 'OtoSense',
     'framework': 'aiohttp',
     'input_mapper': default_input_mapper,
-    'input_validator': default_input_validator,
     'output_mapper': default_output_mapper,
     'error_handler': default_error_handler,
     'header_inputs': {},

@@ -1,24 +1,32 @@
 from inspect import signature, Signature, Parameter
-from typing import Any, _TypedDictMeta, T_co
+from typing import Any, _TypedDictMeta, T_co, Union, _GenericAlias
+from i2.errors import InputError
 
-complex_type_mapping = {}
-json_types = [list, str, int, float, dict, bool]
+COMPLEX_TYPE_MAPPING = {}
+JSON_TYPES = [list, str, int, float, dict, bool]
 
 
 def mk_sub_dict_schema_from_typed_dict(typed_dict):
-    properties = {}
-    for key, value in typed_dict.__annotations__.items():
-        properties[key] = {'required': typed_dict.__total__}
-        if getattr(value, '_name', None) == 'Iterable':
+    def set_property(key, value):
+        if value in JSON_TYPES:
+            properties[key]['type'] = value
+        elif getattr(value, '__origin__', None) == Union:
+            properties[key]['required'] = properties[key]['required'] and type(None) not in value.__args__
+            types = [x for x in value.__args__ if type(None) != x]
+            if len(types) == 1:
+                set_property(key, types[0])
+        elif getattr(value, '_name', None) == 'Iterable':
             properties[key]['type'] = list
             properties[key]['items'] = mk_sub_list_schema_from_iterable(value)
-        elif value in json_types:
-            properties[key]['type'] = value
         elif isinstance(value, _TypedDictMeta):
             properties[key]['type'] = 'object'
             properties[key]['properties'] = mk_sub_dict_schema_from_typed_dict(value)
-        else:
-            properties[key]['type'] = Any
+
+    properties = {}
+    for key, value in typed_dict.__annotations__.items():
+        properties[key] = {'required': True}
+        properties[key]['type'] = Any
+        set_property(key, value)
     return properties
 
 
@@ -31,7 +39,7 @@ def mk_sub_list_schema_from_iterable(iterable_type):
     elif getattr(items_type, '_name', None) == 'Iterable':
         result['type'] = list
         result['items'] = mk_sub_list_schema_from_iterable(items_type)
-    elif items_type in json_types:
+    elif items_type in JSON_TYPES:
         result['type'] = items_type
     else:
         items_type = Any
@@ -85,36 +93,41 @@ def mk_input_schema_from_func(func, exclude_keys=None, include_func_params=False
         if key in exclude_keys:
             continue
 
-        default = None  # TODO: Not used. Check why
         default_type = Any
         p = {'required': True}
-        if param.default != Signature.empty:
+        if param.default != Parameter.empty:
             default = param.default
             p['required'] = False
-            if type(default) in json_types:
-                default_type = type(default)  # TODO: perhaps you meant json_types[type(default)] ?
-        p['default'] = default
+            if type(default) in JSON_TYPES:
+                default_type = type(default)
+            p['default'] = default
+        elif param.kind == Parameter.VAR_POSITIONAL:  # TODO: See how to handle a tuple instead of a list (not JSON compatible)
+            p['required'] = False
+            p['default'] = []
+            default_type = list
+        elif param.kind == Parameter.VAR_KEYWORD:
+            p['required'] = False
+            p['default'] = {}
+            default_type = dict
 
         arg_type = default_type  # TODO: Not used. Check why (seems the if clause does covers all)
         if param.annotation != Signature.empty:
             arg_type = param.annotation
             if isinstance(arg_type, _TypedDictMeta):
-                p['type'] = 'object'
                 p['properties'] = mk_sub_dict_schema_from_typed_dict(arg_type)
-                continue
-            if getattr(arg_type, '_name', None) == 'Iterable':
+                arg_type = dict
+            elif getattr(arg_type, '_name', None) == 'Iterable':
                 p['items'] = mk_sub_list_schema_from_iterable(arg_type)
                 arg_type = list
-            elif arg_type not in json_types and not complex_type_mapping.get(arg_type):
+            elif arg_type not in JSON_TYPES and not COMPLEX_TYPE_MAPPING.get(arg_type):
                 arg_type = default_type
-        else:
-            arg_type = default_type  # TODO: Think. Could be a convention, but no applicable in all cases.
         p['type'] = arg_type
 
         if include_func_params:
             p['x-py-param'] = param
         # map key to this p info
         input_schema[key] = p
+        
     return input_schema
 
 
@@ -131,21 +144,53 @@ def mk_output_schema_from_func(func):
     elif getattr(output_type, '_name', None) == 'Iterable':
         result['type'] = list
         result['items'] = mk_sub_list_schema_from_iterable(output_type)
-    elif output_type not in json_types and not complex_type_mapping.get(output_type):
+    elif output_type not in JSON_TYPES and not COMPLEX_TYPE_MAPPING.get(output_type):
         return {}
     else:
         result['type'] = output_type
     return result
 
 
+def validate_input(params: dict, schema: dict):
+    def _validate_input(params, schema, root_path):
+        errors = []
+        for param_name, spec in schema.items():
+            param_path = f'{root_path}.{param_name}' if root_path else param_name
+            if not isinstance(spec, dict):
+                raise TypeError('Bad schema for input validation. Must contain dictionaries only.')
+            if param_name in params:
+                param = params[param_name]
+                param_type = spec.get('type', Any)
+                if param_type != Any and not isinstance(param, param_type):
+                    errors.append(f'Invalid parameter "{param_path}". Must be of type "{param_type.__name__}".')
+                if param_type == list and 'items' in spec:
+                    items_spec = spec['items']
+                    element_type = items_spec.get('type', Any)
+                    if element_type != Any:
+                        for i in range(len(param)):
+                            element = param[i]
+                            if not isinstance(element, element_type):
+                                errors.append(f'Invalid parameter "{param_path}[{i}] ({element})". Must be of type "{element_type.__name__}".')
+                if param_type == dict and 'properties' in spec:
+                    errors.extend(_validate_input(param, spec['properties'], param_path))
+            elif spec.get('required', True):
+                errors.append(f'Parameter "{param_path}" is missing.')
+        return errors
+
+    errors = _validate_input(params, schema, '')
+    if len(errors) > 0:
+        error_msg = '\n'.join(errors)
+        raise InputError(error_msg)
+
+
 # TODO write this function to take the output from
 # mk_input_schema_from_func and create a validator function
 # that takes an input_kwargs dict and makes sure the type of each value
 # matches the schema
-def mk_input_validator_from_schema(schema):
-    def input_validator(input_kwargs):
-        print('Your arguments are fallacious.')
-        return False
+# def mk_input_validator_from_schema(schema):
+#     def input_validator(input_kwargs):
+#         print('Your arguments are fallacious.')
+#         return False
 
 
 # TODO write this function to take a dict like the following and create an input mapper
