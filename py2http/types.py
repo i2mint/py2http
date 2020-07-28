@@ -11,4 +11,4 @@ HasParams = Union[Iterable[Parameter], Mapping[str, Parameter], Signature, Calla
 PK = Parameter.POSITIONAL_OR_KEYWORD
 VP, VK = Parameter.VAR_POSITIONAL, Parameter.VAR_KEYWORD
 PO, KO = Parameter.POSITIONAL_ONLY, Parameter.KEYWORD_ONLY
-var_param_types = {VP, VK}
+var_param_kinds = {VP, VK}

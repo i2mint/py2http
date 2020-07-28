@@ -13,7 +13,7 @@ from i2.deco import ch_func_to_all_pk
 from i2.errors import InputError
 
 from py2http.types import (WriteOpResult, ParameterKind, Params, HasParams,
-                           PK, VP, VK, PO, KO, var_param_types)
+                           PK, VP, VK, PO, KO, var_param_kinds)
 
 
 def ensure_awaitable_return_annot(func):
