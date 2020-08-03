@@ -21,16 +21,18 @@ def flask_output_mapper(output, input_kwargs):
     return output
 
 
-def _raise_http_client_error(error, message):
+def _raise_http_client_error(error, message, reason=None):
     raise error(
-        text=json.dumps({"error": message}), content_type="application/json"
+        text=json.dumps({"error": message}),
+        content_type="application/json",
+        reason=reason
     )
 
 
 def default_error_handler(error, input_kwargs):
     message = str(error)
     if isinstance(error, (AuthorizationError, InputError, DuplicateRecordError)):
-        _raise_http_client_error(web.HTTPBadRequest, message)
+        _raise_http_client_error(web.HTTPBadRequest, message, reason=type(error).__name__)
     elif isinstance(error, ForbiddenError):
         _raise_http_client_error(web.HTTPForbidden, message)
     elif isinstance(error, NotFoundError):
