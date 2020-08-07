@@ -93,3 +93,14 @@ configuration:
                     - jwt
                     - refresh_token
                     - refresh_expiration
+    name:
+      default: None
+      doc: >
+        Human-friendly names to display in OpenAPI docs in place of the actual function names
+        (should be a dict of {'original_name_1': 'Other name'}
+    route:
+      default: None
+      doc: >
+        The HTTP path for each route (must be URL-compatible and readable by the HTTP library in use).
+        Allows for path parameters such as '/funcname/{input_arg}' if you extract those values in
+        middleware or the input mapper. Must be different for each route or some will be overridden.

@@ -16,24 +16,7 @@ def create_handler(input_class, methodname):
     return handler
 
 
-# TODO: Consider merging whitelist and regex.
-# TODO: Default ("everything but what starts with _") could be dangerous
-# TODO: See _proposal_mk_functions_from_class
-def mk_functions_from_class(input_class, whitelist=None, name_regex=None):
-    def allowed_method(methodname):
-        if whitelist and methodname in whitelist:
-            return True
-        if name_regex:
-            return re.match(name_regex, methodname)
-        return not methodname.startswith('_')
-
-    methods = [m for m in inspect.getmembers(input_class, predicate=callable) if
-               allowed_method(m[0][0])]
-
-    return [create_handler(input_class, method) for method in methods]
-
-
-def _proposal_mk_functions_from_class(input_class, whitelist):
+def mk_functions_from_class(input_class, whitelist):
     if isinstance(whitelist, Iterable):
         whitelist = re.compile('(' + '|'.join(whitelist) + ')$').match
     elif isinstance(whitelist, str):

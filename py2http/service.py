@@ -113,7 +113,7 @@ def mk_route(func, **configs):
             return sync_handle_request
         return None
 
-        # TODO: Make func -> path a function (not hardcoded)
+    # TODO: Make func -> path a function (not hardcoded)
     # TODO: Make sure that func -> path MAPPING is known outside (perhaps through openapi)
     method_name = config_for('name') or func.__name__
     path = config_for('route') or f'/{method_name}'

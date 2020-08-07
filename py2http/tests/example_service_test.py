@@ -21,7 +21,7 @@ def example_test(base_url=dflt_base_url):
 
 if __name__ == '__main__':
     from py2http.tests.utils_for_testing import run_server
-    from py2http.tests.example_service import example_functions, run_http_service
+    from py2http.examples.example_service import example_functions, run_http_service
 
 
     def run_example_service():
