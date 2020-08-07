@@ -1,0 +1,95 @@
+configuration:
+  doc: |
+    Configuration values can be specified in three ways:
+    1. Function properties: my_function.http_method = 'get'
+    2. Top-level values in the configuration object, applying to all functions:
+       config = {'input_mapper': my_custom_input_mapper}
+    3. Function-specific values within nested dicts in the configuration object:
+       config = {'input_mapper': {'my_function': my_custom_input_mapper,
+                                  'other_function': other_input_mapper}}
+  keys:
+    app_name:
+      default: OtoSense
+      doc: Specifies the application name for Flask
+    framework:
+      default: aiohttp
+      doc: Specifies the HTTP server library to run, either "aiohttp" or "flask"
+    input_mapper:
+      default: py2http.default_configs.default_input_mapper
+      default_doc: >
+        Extracts the request body in JSON format and returns it as a dict
+      doc: >
+        A function that takes an aiohttp or flask request object, which returns the input arguments
+        for the route handler. Can return a list of [*args], a dict of {**kwargs} or both as a tuple
+        of (args, kwargs)
+    output_mapper:
+      default: py2http.default_configs.default_output_mapper
+      default_doc: Encodes the function output in JSON format and returns an aiohttp.web.json_response
+      doc: >
+        A function that takes the result of the route function and returns it to the client
+        in an HTTP-compatible format
+    error_handler:
+      default: py2http.default_configs.default_error_handler
+      default_doc: Catches all exceptions and returns appropriate error response types from aiohttp.web
+      doc: >
+        A function that will be called if the route handler raises an exception,
+        and should return an HTTP-compatible result to the client
+    header_inputs:
+      default: {}
+      doc: >
+        A dict of properties in JSON schema format that the client will be expected to pass
+        in the request header rather than the usual input (extracting them must be handled in
+        middleware and/or the input mapper)
+    middleware:
+      default: []
+      doc: >
+        A list of middleware functions passed to the HTTP server library. Currently only supports
+        aiohttp.web middleware.
+    port:
+      default: 3030
+      doc: The TCP port to listen on
+    http_method:
+      default: post
+      doc: The HTTP method to accept for each route
+    openapi:
+      default: {}
+      doc: >
+        Defines some application-level values for the OpenAPI specification for the server,
+        which can be used with the http2py client generator
+      keys:
+        title:
+          doc: The application title
+        version:
+          doc: The application version number (string)
+        auth:
+          doc: Authentication configuration
+          keys:
+            auth_type:
+              doc: The type of authentication, must be either "jwt" or "api_key" if present
+            login_details:
+              doc: >
+                Only for JWT authentication; describes the login input and output login_details
+                to allow the http2py client to automatically log in (currently only supports JSON login requests/responses)
+              keys:
+                login_url:
+                  doc: The url for login requests
+                refresh_url:
+                  doc: The url for refresh requests
+                login_inputs:
+                  doc: A list of strings with the keys expected by the login endpoint
+                  example:
+                    - account
+                    - email
+                    - password
+                refresh_inputs:
+                  doc: A list of strings with the keys expected by the refresh endpoint
+                  example:
+                    - account
+                    - email
+                    - refresh_token
+                outputs:
+                  doc: A list of strings with the keys returned by the login/refresh endpoints
+                  example:
+                    - jwt
+                    - refresh_token
+                    - refresh_expiration

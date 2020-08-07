@@ -61,12 +61,21 @@ def mk_route(func, **configs):
     async def handle_request(req):
         input_kwargs = {}
         try:
-            input_kwargs = input_mapper(req)
-            if isawaitable(input_kwargs):  # Pattern: pass-on async property
-                input_kwargs = await input_kwargs
-            validate_input(input_kwargs, request_schema)
+            inputs = input_mapper(req)
+            if isawaitable(inputs):  # Pattern: pass-on async property
+                inputs = await inputs
+            validate_input(inputs, request_schema)
+            if isinstance(inputs, dict):
+                input_args = ()
+                input_kwargs = inputs
+            elif isinstance(inputs, list):
+                input_args = tuple(inputs)
+                input_kwargs = {}
+            elif isinstance(inputs, tuple):
+                input_args = inputs[0]
+                input_kwargs = inputs[1]
             try:
-                raw_result = func(**input_kwargs)
+                raw_result = func(*input_args, **input_kwargs)
             except TypeError as error:
                 raise InputError(str(error))
             if isawaitable(raw_result):  # Pattern: pass-on async property
@@ -131,6 +140,11 @@ def handle_ping(req):
 
 
 def run_http_service(funcs, **configs):
+    """
+    Launches an HTTP server, with a list of functions as route handlers.
+
+    See config.yaml for configuration documentation.
+    """
     app = mk_http_service(funcs, **configs)
     port = configs.get('port', app.dflt_port)
     framework = mk_config('framework', None, configs, default_configs)

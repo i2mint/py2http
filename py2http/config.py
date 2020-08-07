@@ -3,6 +3,33 @@ AIOHTTP = 'aiohttp'
 FLASK = 'flask'
 
 
+def get_result(configs, func, funcname, key, options):
+    """ this is meant to allow nested configs by function name
+    example:
+
+    >>> def create_something():
+    ...    pass
+    >>> example_configs = {'http_method': {
+    ...    'create_something': 'post',
+    ...    'get_something': 'get',
+    ... }}
+    >>> mk_config(create_something, example_configs, defaults)
+    'post'
+
+    TODO: allow an $else case, other keywords, more complex parsing, and/or custom get_result functions
+    """
+    result = getattr(func, key, configs.get(key, None))
+    if isinstance(result, dict):
+        dict_value = result.get(funcname, None)
+        if dict_value:
+            result = dict_value
+        elif '$else' in result:
+            result = result['$else']
+        elif options.get('type', None) is not dict:
+            result = None
+    return result
+
+
 # TODO: Revise logic and use more appropriate tools (ChainMap, glom) and interface.
 def mk_config(key, func, configs, defaults, **options):
     """
@@ -22,15 +49,8 @@ def mk_config(key, func, configs, defaults, **options):
           The expected type of the output (use Callable for functions)
     """
     funcname = options.get('funcname', getattr(func, '__name__', None))
-    # TODO: TW should ask SH the intent of the code below
-    result = getattr(func, key, configs.get(key, None))
-    if isinstance(result, dict):
-        dict_value = result.get(funcname, None)
-        if dict_value:
-            result = dict_value
-        elif options.get('type', None) is not dict:
-            result = None
-    # TODO: TW should ask SH the intent of the code above
+
+    result = get_result(configs, func, funcname, key, options)
 
     if result:
         expected_type = options.get('type', None)  # align names expected_type <-> type
