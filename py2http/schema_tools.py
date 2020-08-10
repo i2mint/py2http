@@ -154,33 +154,37 @@ def mk_output_schema_from_func(func):
     return result
 
 
-def validate_input(params: dict, schema: dict):
-    def _validate_input(params, schema, root_path):
-        errors = []
+def validate_input(input: dict, schema: dict):
+    def _validate_dict(input: dict, schema: dict, root_path: str):
         for param_name, spec in schema.items():
             param_path = f'{root_path}.{param_name}' if root_path else param_name
             if not isinstance(spec, dict):
                 raise TypeError('Bad schema for input validation. Must contain dictionaries only.')
-            if param_name in params:
-                param = params[param_name]
-                param_type = spec.get('type', Any)
-                if param_type != Any and not isinstance(param, param_type):
-                    errors.append(f'Invalid parameter "{param_path}". Must be of type "{param_type.__name__}".')
-                if param_type == list and 'items' in spec:
-                    items_spec = spec['items']
-                    element_type = items_spec.get('type', Any)
-                    if element_type != Any:
-                        for i in range(len(param)):
-                            element = param[i]
-                            if not isinstance(element, element_type):
-                                errors.append(f'Invalid parameter "{param_path}[{i}] ({element})". Must be of type "{element_type.__name__}".')
-                if param_type == dict and 'properties' in spec:
-                    errors.extend(_validate_input(param, spec['properties'], param_path))
+            if param_name in input:
+                param = input[param_name]
+                _validate_input(param, spec, param_path)
             elif spec.get('required', True):
                 errors.append(f'Parameter "{param_path}" is missing.')
         return errors
 
-    errors = _validate_input(params, schema, '')
+    def _validate_input(param, spec, param_path):
+        invalid_input_msg = f'Invalid parameter "{param_path}"' if param_path else 'Invalid input'
+        param_type = spec.get('type', Any)
+        if param_type != Any and not isinstance(param, param_type):
+            errors.append(f'{invalid_input_msg}. Must be of type "{param_type.__name__}".')
+        elif param_type == list and 'items' in spec:
+            items_spec = spec['items']
+            element_type = items_spec.get('type', Any)
+            if element_type != Any:
+                for i in range(len(param)):
+                    element = param[i]
+                    if not isinstance(element, element_type):
+                        errors.append(f'{invalid_input_msg} at index {i} ({element}). Must be of type "{element_type.__name__}".')
+        elif param_type == dict and 'properties' in spec:
+            _validate_dict(param, spec['properties'], param_path)
+
+    errors = []
+    _validate_input(input, schema, '')
     if len(errors) > 0:
         error_msg = '\n'.join(errors)
         raise InputError(error_msg)
