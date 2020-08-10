@@ -851,7 +851,7 @@ def route(route_name):
 
 
 def validate_and_invoke_mapper(func, inputs):
-    request_schema = getattr(func, 'request_schema')
+    request_schema = getattr(func, 'request_schema', None)
     if request_schema:
         validate_input(inputs, request_schema)
     return func(inputs)

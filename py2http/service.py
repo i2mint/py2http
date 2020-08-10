@@ -1,11 +1,13 @@
 from aiohttp import web
 import asyncio
 from collections import namedtuple
+from copy import deepcopy
 from flask import Flask, request
 from functools import partial
 from inspect import isawaitable
 import json
 from typing import Callable
+from types import FunctionType
 
 from i2.errors import InputError
 
@@ -29,6 +31,13 @@ assert_type = TypeAsserter(types_for_kind={
 })
 
 
+def func_copy(func):
+    new_func = FunctionType(func.__code__, func.__globals__, func.__name__,
+                            func.__defaults__, func.__closure__)
+    new_func.__dict__.update(deepcopy(func.__dict__))
+    return new_func
+
+
 def mk_route(func, **configs):
     """
     Generate an aiohttp route object and an OpenAPI path specification for a function
@@ -41,7 +50,7 @@ def mk_route(func, **configs):
     # TODO: perhaps collections.abc.Mapping initialized with func, configs, etc.
     config_for = partial(mk_config, func=func, configs=configs, defaults=default_configs)
     framework = config_for('framework')
-    input_mapper = config_for('input_mapper')
+    input_mapper = func_copy(config_for('input_mapper'))
     output_mapper = config_for('output_mapper')
     error_handler = config_for('error_handler')
     header_inputs = config_for('header_inputs', type=dict)
@@ -50,7 +59,6 @@ def mk_route(func, **configs):
     request_schema = getattr(input_mapper, 'request_schema', None)
     if request_schema is None:
         request_schema = mk_input_schema_from_func(func, exclude_keys=exclude_request_keys)
-        input_mapper.request_schema = request_schema
     response_schema = getattr(output_mapper,
                               'response_schema',
                               mk_output_schema_from_func(output_mapper))
