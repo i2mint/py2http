@@ -165,7 +165,6 @@ def validate_input(raw_input: Any, schema: dict):
                 _validate_input(param, spec, param_path)
             elif spec.get('required', True):
                 errors.append(f'Parameter "{param_path}" is missing.')
-        return errors
 
     def _validate_input(param, spec, param_path):
         invalid_input_msg = f'Invalid parameter "{param_path}"' if param_path else 'Invalid input'
