@@ -67,8 +67,10 @@ def mk_input_schema_from_func(func, exclude_keys=None, include_func_params=False
     ...
     >>> got = mk_input_schema_from_func(add)
     >>> expected = {
-    ...     'a': {'required': True, 'default': None, 'type': typing.Any},
-    ...     'b': {'required': False, 'default': 0.0, 'type': float}}
+    ...     'type': dict,
+    ...     'properties': {
+    ...         'a': {'required': True, 'default': None, 'type': typing.Any},
+    ...         'b': {'required': False, 'default': 0.0, 'type': float}}}
     >>> assert got == expected, f"\\n  expected {expected}\\n  got {got}"
     >>>
     >>>
@@ -79,15 +81,17 @@ def mk_input_schema_from_func(func, exclude_keys=None, include_func_params=False
     ...
     >>> got = mk_input_schema_from_func(mult)
     >>> expected = {
-    ...     'x': {'required': True, 'default': None, 'type': float},
-    ...     'y': {'required': False, 'default': 1, 'type': int},
-    ...     'z': {'required': False, 'type': int, 'default': 1}
-    ...     }
+    ...     'type': dict,
+    ...     'properties': {
+    ...        'x': {'required': True, 'default': None, 'type': float},
+    ...        'y': {'required': False, 'default': 1, 'type': int},
+    ...        'z': {'required': False, 'type': int, 'default': 1}}}
     >>> assert got == expected, f"\\n  expected {expected}\\n  got {got}"
     """
     if not exclude_keys:
         exclude_keys = {}
-    input_schema = {}
+    input_properties = {}
+    input_schema = {'type': dict, 'properties': input_properties}
     params = signature(func).parameters
     for key, param in params.items():
         if key in exclude_keys:
@@ -126,8 +130,7 @@ def mk_input_schema_from_func(func, exclude_keys=None, include_func_params=False
         if include_func_params:
             p['x-py-param'] = param
         # map key to this p info
-        input_schema[key] = p
-        
+        input_properties[key] = p
     return input_schema
 
 

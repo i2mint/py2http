@@ -7,16 +7,16 @@ from py2http.decorators import handle_json_req, send_json_resp
 
 
 @handle_json_req
-def default_input_mapper(input_kwargs):
-    return input_kwargs
+def default_input_mapper(inputs):
+    return inputs
 
 
 @send_json_resp
-def default_output_mapper(output, input_kwargs):
+def default_output_mapper(output, inputs):
     return output
 
 
-def flask_output_mapper(output, input_kwargs):
+def flask_output_mapper(output, inputs):
     print(f'returning output: {output}')
     return output
 

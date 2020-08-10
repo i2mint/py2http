@@ -26,10 +26,10 @@ class Divider:
 divider_from_ten = Divider(10)
 
 # Make a list of functions or instance methods
-my_funcs = [add, multiply, divider_from_ten.divide]
+func_list = [add, multiply, divider_from_ten.divide]
 
 # Create an HTTP server
-run_http_service(my_funcs)
+run_http_service(func_list)
 ```
 The HTTP server will listen on port 3030 by default.
 ```
@@ -51,7 +51,7 @@ requests.post(url, json=add_args).json()
 Expose class methods by flattening the init -> method call process.
 
 ```
-from py2http.service import run_http_service
+from py2http import run_http_service
 from py2http.decorators import mk_flat
 
 class Adder:
@@ -63,9 +63,9 @@ class Adder:
 
 add = mk_flat(Adder, Adder.add, func_name='add')
 
-my_funcs = [add]
+func_list = [add]
 
-run_http_service(my_funcs)
+run_http_service(func_list)
 ```
 
 ## Input mapping
@@ -169,5 +169,23 @@ TODO
 
 ## Client generation
 
-TODO
+Py2http generates an OpenAPI specification for the server before running. You can use this document with any OpenAPI-compatible client tools. To extract the specification, you can generate a server application object before running it.
+```
+from aiohttp import web
+import json
+from py2http import mk_http_service, run_aiohttp_service
+
+def add(a, b):
+    return a + b
+
+func_list = [add]
+
+app = mk_http_service(func_list)
+openapi_spec = app.openapi_spec
+
+with open('~/openapi.json', 'w') as fp:
+    json.dump(openapi_spec, fp)
+
+web.run_app(app, port=3030)
+```
 

@@ -47,9 +47,10 @@ def mk_route(func, **configs):
     header_inputs = config_for('header_inputs', type=dict)
 
     exclude_request_keys = header_inputs.keys()
-    request_schema = getattr(input_mapper,
-                             'request_schema',
-                             mk_input_schema_from_func(func, exclude_keys=exclude_request_keys))
+    request_schema = getattr(input_mapper, 'request_schema', None)
+    if request_schema is None:
+        request_schema = mk_input_schema_from_func(func, exclude_keys=exclude_request_keys)
+        input_mapper.request_schema = request_schema
     response_schema = getattr(output_mapper,
                               'response_schema',
                               mk_output_schema_from_func(output_mapper))
@@ -64,7 +65,6 @@ def mk_route(func, **configs):
             inputs = input_mapper(req)
             if isawaitable(inputs):  # Pattern: pass-on async property
                 inputs = await inputs
-            validate_input(inputs, request_schema)
             if isinstance(inputs, dict):
                 input_args = ()
                 input_kwargs = inputs
@@ -123,8 +123,8 @@ def mk_route(func, **configs):
     path_fields = dict({'x-method_name': method_name}, **extra_path_info(func))
     openapi_path = mk_openapi_path(path,
                                    http_method,
-                                   request_dict=request_schema,
-                                   response_dict=response_schema,
+                                   request_schema=request_schema,
+                                   response_schema=response_schema,
                                    path_fields=path_fields)
     return route, openapi_path
 

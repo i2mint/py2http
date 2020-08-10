@@ -112,9 +112,9 @@ def set_auth(openapi_spec, auth_type='jwt', *, login_details=None):
 def mk_openapi_path(pathname='/',
                     method='post',
                     request_content_type='application/json',
-                    request_dict=None,
+                    request_schema=None,
                     response_content_type='application/json',
-                    response_dict=None,
+                    response_schema=None,
                     path_fields=None):
     # TODO: correctly handle input args in URL (params and query)
     # TODO: allow args in header (specific to path, not just for whole service)
@@ -125,15 +125,12 @@ def mk_openapi_path(pathname='/',
         path_fields = {}
     new_path = {pathname: {method: dict(path_fields)}}
     new_path_spec = new_path[pathname][method]
-    if request_dict:
+    if request_schema:
         new_path_spec['requestBody'] = {
             'required': True,
             'content': {
                 request_content_type: {
-                    'schema': {
-                        'type': 'object',
-                        'properties': mk_obj_schema(request_dict),
-                    }
+                    'schema': mk_arg_schema(request_schema)
                 }
             }
         }
@@ -146,8 +143,8 @@ def mk_openapi_path(pathname='/',
             }
         }
     }
-    if response_dict:
-        new_path_spec['responses']['200']['content'][request_content_type]['schema'] = mk_arg_schema(response_dict)
+    if response_schema:
+        new_path_spec['responses']['200']['content'][request_content_type]['schema'] = mk_arg_schema(response_schema)
     return new_path
 
 
@@ -188,16 +185,16 @@ def func_to_openapi_spec(func,
                          request_content_type='application/json',
                          #                     request_dict=None,
                          response_content_type='application/json',
-                         response_dict=None,
+                         response_schema=None,
                          path_fields=None):
     pathname = pathname or func.__name__  # TODO: need safer get_name func, and name collision management
-    request_dict = mk_input_schema_from_func(func, exclude_keys)
+    request_schema = mk_input_schema_from_func(func, exclude_keys)
     return mk_openapi_path(pathname,
                            method=method,
                            request_content_type=request_content_type,
-                           request_dict=request_dict,
+                           request_schema=request_schema,
                            response_content_type=response_content_type,
-                           response_dict=response_dict,
+                           response_schema=response_schema,
                            path_fields=path_fields)
 
 # Wish for sigfrom and/or mkwith decorators to be able to do func_to_openapi_spec like this:
