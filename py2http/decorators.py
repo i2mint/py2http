@@ -11,6 +11,7 @@ from collections.abc import Awaitable as _Awaitable
 from i2.signatures import set_signature_of_func, ch_signature_to_all_pk, Sig
 from i2.deco import ch_func_to_all_pk
 
+from py2http.schema_tools import validate_input
 from py2http.types import (WriteOpResult, ParameterKind, Params, HasParams,
                            PK, VP, VK, PO, KO, var_param_kinds)
 

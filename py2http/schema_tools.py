@@ -154,14 +154,14 @@ def mk_output_schema_from_func(func):
     return result
 
 
-def validate_input(input: dict, schema: dict):
-    def _validate_dict(input: dict, schema: dict, root_path: str):
+def validate_input(raw_input: Any, schema: dict):
+    def _validate_dict(input_value: dict, schema: dict, root_path: str):
         for param_name, spec in schema.items():
             param_path = f'{root_path}.{param_name}' if root_path else param_name
             if not isinstance(spec, dict):
                 raise TypeError('Bad schema for input validation. Must contain dictionaries only.')
-            if param_name in input:
-                param = input[param_name]
+            if param_name in input_value:
+                param = input_value[param_name]
                 _validate_input(param, spec, param_path)
             elif spec.get('required', True):
                 errors.append(f'Parameter "{param_path}" is missing.')
@@ -176,15 +176,14 @@ def validate_input(input: dict, schema: dict):
             items_spec = spec['items']
             element_type = items_spec.get('type', Any)
             if element_type != Any:
-                for i in range(len(param)):
-                    element = param[i]
+                for i, element in enumerate(param):
                     if not isinstance(element, element_type):
                         errors.append(f'{invalid_input_msg} at index {i} ({element}). Must be of type "{element_type.__name__}".')
         elif param_type == dict and 'properties' in spec:
             _validate_dict(param, spec['properties'], param_path)
 
     errors = []
-    _validate_input(input, schema, '')
+    _validate_input(raw_input, schema, '')
     if len(errors) > 0:
         error_msg = '\n'.join(errors)
         raise InputError(error_msg)
