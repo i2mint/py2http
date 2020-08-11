@@ -850,36 +850,35 @@ def route(route_name):
     return add_attrs(route=route_name)
 
 
-def validate_and_invoke_mapper(func, inputs):
-    request_schema = getattr(func, 'request_schema', None)
+def validate_and_invoke_mapper(func, inputs, request_schema):
     if request_schema:
         validate_input(inputs, request_schema)
     return func(inputs)
 
 
 def handle_json_req(func):
-    async def input_mapper(req):
+    async def input_mapper(req, request_schema):
         inputs = await _get_req_inputs(
             req, getattr(req, 'json', getattr(req, 'get_json', None)))
-        return validate_and_invoke_mapper(func, inputs)
+        return validate_and_invoke_mapper(func, inputs, request_schema)
 
     input_mapper.content_type = 'json'
     return input_mapper
 
 
 def handle_multipart_req(func):
-    async def input_mapper(req):
+    async def input_mapper(req, request_schema):
         inputs = await _get_req_inputs(req, req.post)
-        return validate_and_invoke_mapper(func, inputs)
+        return validate_and_invoke_mapper(func, inputs, request_schema)
 
     input_mapper.content_type = 'multipart'
     return input_mapper
 
 
 def handle_raw_req(func):
-    async def input_mapper(req):
+    async def input_mapper(req, request_schema):
         inputs = await _get_req_inputs(req, req.text)
-        return validate_and_invoke_mapper(func, inputs)
+        return validate_and_invoke_mapper(func, inputs, request_schema)
 
     input_mapper.content_type = 'raw'
     return input_mapper

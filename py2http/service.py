@@ -16,7 +16,6 @@ from py2http.default_configs import default_configs
 from py2http.openapi_utils import add_paths_to_spec, mk_openapi_path, mk_openapi_template
 from py2http.schema_tools import mk_input_schema_from_func, mk_output_schema_from_func
 from py2http.util import TypeAsserter
-from py2http.schema_tools import validate_input
 
 
 def method_not_found(method_name):
@@ -50,7 +49,7 @@ def mk_route(func, **configs):
     # TODO: perhaps collections.abc.Mapping initialized with func, configs, etc.
     config_for = partial(mk_config, func=func, configs=configs, defaults=default_configs)
     framework = config_for('framework')
-    input_mapper = func_copy(config_for('input_mapper'))
+    input_mapper = config_for('input_mapper')
     output_mapper = config_for('output_mapper')
     error_handler = config_for('error_handler')
     header_inputs = config_for('header_inputs', type=dict)
@@ -70,7 +69,7 @@ def mk_route(func, **configs):
     async def handle_request(req):
         input_kwargs = {}
         try:
-            inputs = input_mapper(req)
+            inputs = input_mapper(req, request_schema)
             if isawaitable(inputs):  # Pattern: pass-on async property
                 inputs = await inputs
             if isinstance(inputs, dict):
@@ -134,6 +133,7 @@ def mk_route(func, **configs):
                                    request_schema=request_schema,
                                    response_schema=response_schema,
                                    path_fields=path_fields)
+
     return route, openapi_path
 
 
