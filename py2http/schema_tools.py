@@ -19,7 +19,7 @@ def mk_sub_dict_schema_from_typed_dict(typed_dict):
             properties[key]['type'] = list
             properties[key]['items'] = mk_sub_list_schema_from_iterable(value)
         elif isinstance(value, _TypedDictMeta):
-            properties[key]['type'] = 'object'
+            properties[key]['type'] = dict
             properties[key]['properties'] = mk_sub_dict_schema_from_typed_dict(value)
 
     properties = {}
@@ -34,7 +34,7 @@ def mk_sub_list_schema_from_iterable(iterable_type):
     result = {}
     items_type = iterable_type.__args__[0]
     if type(items_type) == _TypedDictMeta:
-        result['type'] = 'object'
+        result['type'] = dict
         result['properties'] = mk_sub_dict_schema_from_typed_dict(items_type)
     elif getattr(items_type, '_name', None) == 'Iterable':
         result['type'] = list
@@ -142,7 +142,7 @@ def mk_output_schema_from_func(func):
     if output_type in [Signature.empty, Any]:
         return {}
     if isinstance(output_type, _TypedDictMeta):
-        result['type'] = 'object'
+        result['type'] = dict
         result['properties'] = mk_sub_dict_schema_from_typed_dict(output_type)
     elif getattr(output_type, '_name', None) == 'Iterable':
         result['type'] = list
@@ -172,12 +172,8 @@ def validate_input(raw_input: Any, schema: dict):
         if param_type != Any and not isinstance(param, param_type):
             errors.append(f'{invalid_input_msg}. Must be of type "{param_type.__name__}".')
         elif param_type == list and 'items' in spec:
-            items_spec = spec['items']
-            element_type = items_spec.get('type', Any)
-            if element_type != Any:
-                for i, element in enumerate(param):
-                    if not isinstance(element, element_type):
-                        errors.append(f'{invalid_input_msg} at index {i} ({element}). Must be of type "{element_type.__name__}".')
+            for i, element in enumerate(param):
+                _validate_input(element, spec['items'], f'{param_path}[{i}]')                    
         elif param_type == dict and 'properties' in spec:
             _validate_dict(param, spec['properties'], param_path)
 
