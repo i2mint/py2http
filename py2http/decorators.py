@@ -892,8 +892,10 @@ def send_json_resp(func):
                 return str(o)
             return JSONEncoder.default(self, o)
 
-    def output_mapper(output, input_kwargs):
+    async def output_mapper(output, input_kwargs):
         mapped_output = func(output, input_kwargs)
+        if isawaitable(mapped_output):
+            mapped_output = await mapped_output
         return web.json_response(mapped_output, dumps=JsonRespEncoder().encode)
 
     output_mapper.content_type = 'json'
@@ -901,8 +903,10 @@ def send_json_resp(func):
 
 
 def send_html_resp(func):
-    def output_mapper(output, input_kwargs):
+    async def output_mapper(output, input_kwargs):
         mapped_output = func(output, input_kwargs)
+        if isawaitable(mapped_output):
+            mapped_output = await mapped_output
         return web.Response(text=mapped_output, content_type='text/html')
 
     output_mapper.content_type = 'html'

@@ -31,7 +31,7 @@ assert_type = TypeAsserter(types_for_kind={
 })
 
 
-def func_copy(func):
+def func_copy(func) -> Callable:
     new_func = FunctionType(func.__code__, func.__globals__, func.__name__,
                             func.__defaults__, func.__closure__)
     new_func.__dict__.update(deepcopy(func.__dict__))
