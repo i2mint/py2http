@@ -8,8 +8,9 @@ from inspect import isawaitable
 import json
 from typing import Callable
 from types import FunctionType
+import logging
 
-from i2.errors import InputError
+from i2.errors import InputError, DataError, AuthorizationError
 
 from py2http.config import mk_config, FLASK, AIOHTTP
 from py2http.default_configs import default_configs
@@ -53,6 +54,7 @@ def mk_route(func, **configs):
     output_mapper = config_for('output_mapper')
     error_handler = config_for('error_handler')
     header_inputs = config_for('header_inputs', type=dict)
+    logger = config_for('logger')
 
     exclude_request_keys = header_inputs.keys()
     request_schema = getattr(input_mapper, 'request_schema', None)
@@ -94,10 +96,19 @@ def mk_route(func, **configs):
             if framework == AIOHTTP and not isinstance(final_result, web.Response):
                 final_result = web.json_response(final_result)
             return final_result
+        except (DataError, AuthorizationError, InputError) as error:
+            if logger:
+                level = logging.INFO if logger.getEffectiveLevel() >= logging.INFO else logging.DEBUG
+                exc_info = level == logging.DEBUG
+                logger.log(level, error, exc_info=exc_info)
+            return error_handler(error, input_kwargs)
         except Exception as error:
+            if logger:
+                logger.exception(error)
             return error_handler(error, input_kwargs)
 
-    # TODO: Align config keys and variable names
+
+    #  TODO: Align config keys and variable names
     valid_http_methods = {'get', 'put', 'post', 'delete'}  # outside function
     http_method = config_for('http_method')  # read
     assert isinstance(http_method, str)  # validation

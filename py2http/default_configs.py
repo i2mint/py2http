@@ -51,5 +51,6 @@ default_configs = {
     'middleware': [],
     'port': 3030,
     'http_method': 'post',
-    'openapi': {}
+    'openapi': {},
+    'logger': None
 }

@@ -173,14 +173,14 @@ def validate_input(raw_input: Any, schema: dict):
             errors.append(f'{invalid_input_msg}. Must be of type "{param_type.__name__}".')
         elif param_type == list and 'items' in spec:
             for i, element in enumerate(param):
-                _validate_input(element, spec['items'], f'{param_path}[{i}]')                    
+                _validate_input(element, spec['items'], f'{param_path}[{i}]')
         elif param_type == dict and 'properties' in spec:
             _validate_dict(param, spec['properties'], param_path)
 
     errors = []
     _validate_input(raw_input, schema, '')
     if len(errors) > 0:
-        error_msg = '\n'.join(errors)
+        error_msg = ' '.join(errors)
         raise InputError(error_msg)
 
 
