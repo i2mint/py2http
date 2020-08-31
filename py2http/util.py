@@ -171,6 +171,7 @@ def run_process(func: Callable,
                 
     def launch_process():
         try:
+            print('starting process!...')
             clog(f"Starting {process_name} process...")
             process.start()
             clog(f"... {process_name} process started.")

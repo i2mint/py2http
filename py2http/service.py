@@ -2,7 +2,6 @@ from aiohttp import web
 import asyncio
 from collections import namedtuple
 from copy import deepcopy
-from flask import Flask, request
 from functools import partial
 from inspect import isawaitable
 import json
@@ -12,7 +11,7 @@ import logging
 
 from i2.errors import InputError, DataError, AuthorizationError
 
-from py2http.config import mk_config, FLASK, AIOHTTP
+from py2http.config import mk_config, FLASK, AIOHTTP, BOTTLE
 from py2http.default_configs import default_configs
 from py2http.openapi_utils import add_paths_to_spec, mk_openapi_path, mk_openapi_template
 from py2http.schema_tools import mk_input_schema_from_func, mk_output_schema_from_func
@@ -120,10 +119,28 @@ def mk_route(func, **configs):
             web_mk_route = getattr(web, http_method)
             return web_mk_route(path, handler)
         if framework == FLASK:
-            def sync_handle_request():
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                result = loop.run_until_complete(handler(request))
+            from flask import Flask, request
+            def sync_handle_request(*args):
+                result = handler(request)
+                if isawaitable(result):
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    result = loop.run_until_complete(result)
+                return result
+            sync_handle_request.path = path
+            sync_handle_request.http_method = http_method
+            sync_handle_request.method_name = method_name
+            return sync_handle_request
+        if framework == BOTTLE:
+            from bottle import request
+            def sync_handle_request(*args):
+                request.get_json = lambda *x: request.json
+                result = handler(request)
+                if isawaitable(result):
+                    print('I had to wait')
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    result = loop.run_until_complete(result)
                 return result
             sync_handle_request.path = path
             sync_handle_request.http_method = http_method
@@ -169,11 +186,16 @@ def run_http_service(funcs, **configs):
     framework = mk_config('framework', None, configs, default_configs)
     if framework == FLASK:
         return run_flask_service(app, port)
-    if framework == AIOHTTP:
-        return run_aiohttp_service(app, port)
+    if framework == BOTTLE:
+        return run_bottle_service(app, port)
+    return run_aiohttp_service(app, port)
 
 
 def run_flask_service(app, port):
+    app.run(port=port, debug=True)
+
+
+def run_bottle_service(app, port):
     app.run(port=port, debug=True)
 
 
@@ -186,12 +208,18 @@ def mk_http_service(funcs, **configs):
     framework = mk_config('framework', None, configs, default_configs)
     if framework == FLASK:
         return mk_flask_service(routes, openapi_spec, **configs)
+    if framework == BOTTLE:
+        return mk_bottle_service(routes, openapi_spec, **configs)
     return mk_aiohttp_service(routes, openapi_spec, **configs)
 
 
 def mk_flask_service(routes, openapi_spec, **configs):
+    from flask import Flask
     app_name = mk_config('app_name', None, configs, default_configs)
     app = Flask(app_name)
+    middleware = mk_config('middleware', None, configs, default_configs)
+    if middleware:
+        app = middleware(app)
     for route in routes:
         app.add_url_rule(route.path, route.method_name, route, methods=[route.http_method.upper()])
     app.openapi_spec = openapi_spec
@@ -204,6 +232,21 @@ def mk_aiohttp_service(routes, openapi_spec, **configs):
     app = web.Application(middlewares=middleware)
     app.add_routes([web.get('/ping', handle_ping), *routes])
     # adding a few more attributes
+    app.openapi_spec = openapi_spec
+    app.dflt_port = mk_config('port', None, configs, default_configs)
+    return app
+
+
+def mk_bottle_service(routes, openapi_spec, **configs):
+    from bottle import Bottle
+    app = Bottle(catchall=False)
+    plugins = mk_config('plugins', None, configs, default_configs)
+    if plugins:
+        for plugin in plugins:
+            app.install(plugin)
+    for route in routes:
+        print(f'Mounting route: {route.path} {route.http_method.upper()}')
+        app.route(route.path, route.http_method.upper(), route, route.method_name)
     app.openapi_spec = openapi_spec
     app.dflt_port = mk_config('port', None, configs, default_configs)
     return app
@@ -231,12 +274,34 @@ def mk_routes_and_openapi_specs(funcs, configs):
     return routes, openapi_spec
 
 
-def run_many_services(apps, **configs):
-    app = web.Application()
+def run_many_services(apps, run_now=False, **configs):
+    framework = mk_config('framework', None, configs, default_configs)
+    if framework == BOTTLE:
+        return run_many_bottle_services(apps, run_now=run_now, **configs)
+    return run_many_aiohttp_services(apps, **configs)
+
+
+def run_many_bottle_services(apps, run_now=False, **configs):
+    from bottle import Bottle, run
+    parent_app = Bottle(catchall=False)
     for route, subapp in apps.items():
-        app.add_subapp(route, subapp)
-    port = mk_config('port', None, configs, default_configs)
-    web.run_app(app, port=port)
+        parent_app.mount(route, subapp)
+    if run_now:
+        port = mk_config('port', None, configs, default_configs)
+        run(parent_app, port=port)
+    else:
+        return parent_app
+
+
+def run_many_aiohttp_services(apps, run_now=False, **configs):
+    parent_app = web.Application()
+    for route, subapp in apps.items():
+        parent_app.add_subapp(route, subapp)
+    if run_now:
+        port = mk_config('port', None, configs, default_configs)
+        web.run_app(parent_app, port=port)
+    else:
+        return parent_app
 
 
 ##########################################################################################

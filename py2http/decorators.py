@@ -1,12 +1,13 @@
 from inspect import signature, Signature, Parameter, isawaitable, iscoroutinefunction
 from typing import Iterable, Callable, Union, Mapping
 from functools import partial, wraps, update_wrapper
-from json import JSONDecodeError, JSONEncoder
+from json import JSONDecodeError, JSONEncoder, dumps
 from aiohttp import web
 from bson import ObjectId
 import collections
 from typing import Awaitable, get_origin
 from collections.abc import Awaitable as _Awaitable
+import os
 
 from i2.signatures import set_signature_of_func, ch_signature_to_all_pk, Sig
 from i2.deco import ch_func_to_all_pk
@@ -14,6 +15,8 @@ from i2.deco import ch_func_to_all_pk
 from py2http.schema_tools import validate_input
 from py2http.types import (WriteOpResult, ParameterKind, Params, HasParams,
                            PK, VP, VK, PO, KO, var_param_kinds)
+
+SYNC = os.getenv('SYNC', None)
 
 
 def ensure_awaitable_return_annot(func):
@@ -859,7 +862,7 @@ def validate_and_invoke_mapper(func, inputs, request_schema):
 def handle_json_req(func):
     async def input_mapper(req, request_schema):
         inputs = await _get_req_inputs(
-            req, getattr(req, 'json', getattr(req, 'get_json', None)))
+            req, getattr(req, 'get_json', getattr(req, 'json', None)))
         return validate_and_invoke_mapper(func, inputs, request_schema)
 
     input_mapper.content_type = 'json'
@@ -884,17 +887,20 @@ def handle_raw_req(func):
     return input_mapper
 
 
-def send_json_resp(func):
-    class JsonRespEncoder(JSONEncoder):
-        def default(self, o):
-            if isinstance(o, ObjectId):
-                return str(o)
-            return JSONEncoder.default(self, o)
+class JsonRespEncoder(JSONEncoder):
+    def default(self, o):
+        if isinstance(o, ObjectId):
+            return str(o)
+        return JSONEncoder.default(self, o)
 
+
+def send_json_resp(func):
     async def output_mapper(output, input_kwargs):
         mapped_output = func(output, input_kwargs)
         if isawaitable(mapped_output):
             mapped_output = await mapped_output
+        if SYNC:
+            return dumps(mapped_output, cls=JsonRespEncoder)
         return web.json_response(mapped_output, dumps=JsonRespEncoder().encode)
 
     output_mapper.content_type = 'json'
@@ -957,7 +963,7 @@ def mk_input_mapper(input_map):
 
 async def _get_req_inputs(req, get_body_func):
     kwargs = {}
-    if getattr(req, 'has_body', getattr(req, 'data', None)):
+    if getattr(req, 'has_body', getattr(req, 'data', getattr(req, 'json', None))):
         body = get_body_func()
         if isawaitable(body):
             body = await body

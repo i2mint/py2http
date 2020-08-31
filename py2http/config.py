@@ -1,5 +1,6 @@
 from typing import Callable
 AIOHTTP = 'aiohttp'
+BOTTLE = 'bottle'
 FLASK = 'flask'
 
 
