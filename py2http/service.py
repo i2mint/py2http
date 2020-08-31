@@ -278,7 +278,7 @@ def run_many_services(apps, run_now=False, **configs):
     framework = mk_config('framework', None, configs, default_configs)
     if framework == BOTTLE:
         return run_many_bottle_services(apps, run_now=run_now, **configs)
-    return run_many_aiohttp_services(apps, **configs)
+    return run_many_aiohttp_services(apps, run_now=run_now, **configs)
 
 
 def run_many_bottle_services(apps, run_now=False, **configs):
