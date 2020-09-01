@@ -11,12 +11,10 @@ class JWTPlugin:
 
     def __call__(self, handler):
         def wrapped_handler(*args, **kwargs):
-            print('Trying to decode JWT!')
             auth_header = request.headers.get('Authorization', '')
             token = auth_header[7:]
             try:
                 decoded = jwt.decode(token, self._secret, verify=False)
-                print(f'Decoded JWT!: {decoded}')
                 request.token = decoded
                 return handler(*args, **kwargs)
             except jwt.DecodeError:

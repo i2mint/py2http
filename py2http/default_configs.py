@@ -1,9 +1,12 @@
 from aiohttp import web
+from bottle import response
 import json
+import os
 
 from i2.errors import AuthorizationError, ForbiddenError, InputError, NotFoundError, DuplicateRecordError
 
 from py2http.decorators import handle_json_req, send_json_resp, JsonRespEncoder
+from py2http.config import AIOHTTP, BOTTLE, FLASK
 
 
 @handle_json_req
@@ -34,7 +37,7 @@ def _raise_http_client_error(error, message, reason=None):
     )
 
 
-def default_error_handler(error, input_kwargs):
+def aiohttp_error_handler(error: Exception, input_kwargs):
     message = str(error)
     if isinstance(error, (AuthorizationError, InputError, DuplicateRecordError)):
         _raise_http_client_error(web.HTTPBadRequest, message, reason=type(error).__name__)
@@ -45,11 +48,12 @@ def default_error_handler(error, input_kwargs):
     else:
         _raise_http_client_error(web.HTTPInternalServerError, message)
 
+
 def bottle_error_handler(error: Exception, input_kwargs):
-    from bottle import response
     message = str(error)
     if isinstance(error, (AuthorizationError, InputError, DuplicateRecordError)):
-        response.status = 400
+        response.status = f'400 {type(error).__name__}'
+        # response.reason = type(error).__name__
     elif isinstance(error, ForbiddenError):
         response.status = 403
     elif isinstance(error, NotFoundError):
@@ -59,11 +63,26 @@ def bottle_error_handler(error: Exception, input_kwargs):
     return {'error': message}
 
 
+def flask_error_handler(error: Exception, input_kwargs):
+    raise NotImplementedError()
+
+
+def default_error_handler(error: Exception, input_kwargs):
+    framework = os.getenv('PY2HTTP_FRAMEWORK', AIOHTTP)
+    if framework == AIOHTTP:
+        aiohttp_error_handler(error, input_kwargs)
+    if framework == BOTTLE:
+        bottle_error_handler(error, input_kwargs)
+    if framework == FLASK:
+        flask_error_handler(error, input_kwargs)
+    bottle_error_handler(error, input_kwargs)
+
+
 default_configs = {
     'app_name': 'OtoSense',
     'framework': 'aiohttp',
     'input_mapper': default_input_mapper,
-    'output_mapper': bottle_output_mapper,
+    'output_mapper': default_output_mapper,
     'error_handler': default_error_handler,
     'header_inputs': {},
     'middleware': [],

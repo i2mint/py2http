@@ -15,8 +15,7 @@ from i2.deco import ch_func_to_all_pk
 from py2http.schema_tools import validate_input
 from py2http.types import (WriteOpResult, ParameterKind, Params, HasParams,
                            PK, VP, VK, PO, KO, var_param_kinds)
-
-SYNC = os.getenv('SYNC', None)
+from py2http.config import AIOHTTP
 
 
 def ensure_awaitable_return_annot(func):
@@ -899,9 +898,10 @@ def send_json_resp(func):
         mapped_output = func(output, input_kwargs)
         if isawaitable(mapped_output):
             mapped_output = await mapped_output
-        if SYNC:
-            return dumps(mapped_output, cls=JsonRespEncoder)
-        return web.json_response(mapped_output, dumps=JsonRespEncoder().encode)
+        framework = os.getenv('PY2HTTP_FRAMEWORK', AIOHTTP)
+        if framework == AIOHTTP:
+            return web.json_response(mapped_output, dumps=JsonRespEncoder().encode)
+        return dumps(mapped_output, cls=JsonRespEncoder)
 
     output_mapper.content_type = 'json'
     return output_mapper

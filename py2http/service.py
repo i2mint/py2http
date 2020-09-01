@@ -8,6 +8,8 @@ import json
 from typing import Callable
 from types import FunctionType
 import logging
+import os
+from bottle import Bottle
 
 from i2.errors import InputError, DataError, AuthorizationError
 
@@ -16,7 +18,6 @@ from py2http.default_configs import default_configs
 from py2http.openapi_utils import add_paths_to_spec, mk_openapi_path, mk_openapi_template
 from py2http.schema_tools import mk_input_schema_from_func, mk_output_schema_from_func
 from py2http.util import TypeAsserter
-
 
 def method_not_found(method_name):
     raise web.HTTPNotFound(text=json.dumps({'error': f'method {method_name} not found'}),
@@ -48,7 +49,7 @@ def mk_route(func, **configs):
 
     # TODO: perhaps collections.abc.Mapping initialized with func, configs, etc.
     config_for = partial(mk_config, func=func, configs=configs, defaults=default_configs)
-    framework = config_for('framework')
+    framework = _get_framework(configs, default_configs)
     input_mapper = config_for('input_mapper')
     output_mapper = config_for('output_mapper')
     error_handler = config_for('error_handler')
@@ -119,7 +120,7 @@ def mk_route(func, **configs):
             web_mk_route = getattr(web, http_method)
             return web_mk_route(path, handler)
         if framework == FLASK:
-            from flask import Flask, request
+            from flask import request
             def sync_handle_request(*args):
                 result = handler(request)
                 if isawaitable(result):
@@ -137,7 +138,7 @@ def mk_route(func, **configs):
                 request.get_json = lambda *x: request.json
                 result = handler(request)
                 if isawaitable(result):
-                    print('I had to wait')
+                    # print('I had to wait')
                     loop = asyncio.new_event_loop()
                     asyncio.set_event_loop(loop)
                     result = loop.run_until_complete(result)
@@ -183,7 +184,7 @@ def run_http_service(funcs, **configs):
     """
     app = mk_http_service(funcs, **configs)
     port = configs.get('port', app.dflt_port)
-    framework = mk_config('framework', None, configs, default_configs)
+    framework = _get_framework(configs, default_configs)
     if framework == FLASK:
         return run_flask_service(app, port)
     if framework == BOTTLE:
@@ -205,7 +206,7 @@ def run_aiohttp_service(app, port):
 
 def mk_http_service(funcs, **configs):
     routes, openapi_spec = mk_routes_and_openapi_specs(funcs, configs)
-    framework = mk_config('framework', None, configs, default_configs)
+    framework = _get_framework(configs, default_configs)
     if framework == FLASK:
         return mk_flask_service(routes, openapi_spec, **configs)
     if framework == BOTTLE:
@@ -238,14 +239,13 @@ def mk_aiohttp_service(routes, openapi_spec, **configs):
 
 
 def mk_bottle_service(routes, openapi_spec, **configs):
-    from bottle import Bottle
     app = Bottle(catchall=False)
     plugins = mk_config('plugins', None, configs, default_configs)
     if plugins:
         for plugin in plugins:
             app.install(plugin)
     for route in routes:
-        print(f'Mounting route: {route.path} {route.http_method.upper()}')
+        # print(f'Mounting route: {route.path} {route.http_method.upper()}')
         app.route(route.path, route.http_method.upper(), route, route.method_name)
     app.openapi_spec = openapi_spec
     app.dflt_port = mk_config('port', None, configs, default_configs)
@@ -275,7 +275,7 @@ def mk_routes_and_openapi_specs(funcs, configs):
 
 
 def run_many_services(apps, run_now=False, **configs):
-    framework = mk_config('framework', None, configs, default_configs)
+    framework = _get_framework(configs, default_configs)
     if framework == BOTTLE:
         return run_many_bottle_services(apps, run_now=run_now, **configs)
     return run_many_aiohttp_services(apps, run_now=run_now, **configs)
@@ -353,3 +353,9 @@ def mk_config_nt(keys, *args, **kwargs):
     # input_mapper = mk_config('input_mapper', func, configs, default_configs)
     # output_mapper = mk_config('output_mapper', func, configs, default_configs)
     # header_inputs = mk_config('header_inputs', func, configs, default_configs)
+
+
+def _get_framework(configs, default_configs):
+    framework = mk_config('framework', None, configs, default_configs)
+    os.environ['PY2HTTP_FRAMEWORK'] = framework
+    return framework
