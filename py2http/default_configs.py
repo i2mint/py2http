@@ -37,7 +37,7 @@ def _raise_http_client_error(error, message, reason=None):
     )
 
 
-def aiohttp_error_handler(error: Exception, input_kwargs):
+def aiohttp_error_handler(error: Exception):
     message = str(error)
     if isinstance(error, (AuthorizationError, InputError, DuplicateRecordError)):
         _raise_http_client_error(web.HTTPBadRequest, message, reason=type(error).__name__)
@@ -49,7 +49,7 @@ def aiohttp_error_handler(error: Exception, input_kwargs):
         _raise_http_client_error(web.HTTPInternalServerError, message)
 
 
-def bottle_error_handler(error: Exception, input_kwargs):
+def bottle_error_handler(error: Exception):
     message = str(error)
     if isinstance(error, (AuthorizationError, InputError, DuplicateRecordError)):
         response.status = f'400 {type(error).__name__}'
@@ -63,24 +63,24 @@ def bottle_error_handler(error: Exception, input_kwargs):
     return {'error': message}
 
 
-def flask_error_handler(error: Exception, input_kwargs):
+def flask_error_handler(error: Exception):
     raise NotImplementedError()
 
 
-def default_error_handler(error: Exception, input_kwargs):
-    framework = os.getenv('PY2HTTP_FRAMEWORK', AIOHTTP)
+def default_error_handler(error: Exception):
+    framework = os.getenv('PY2HTTP_FRAMEWORK', BOTTLE)
     if framework == AIOHTTP:
-        aiohttp_error_handler(error, input_kwargs)
+        aiohttp_error_handler(error)
     if framework == BOTTLE:
-        bottle_error_handler(error, input_kwargs)
+        bottle_error_handler(error)
     if framework == FLASK:
-        flask_error_handler(error, input_kwargs)
-    bottle_error_handler(error, input_kwargs)
+        flask_error_handler(error)
+    bottle_error_handler(error)
 
 
 default_configs = {
     'app_name': 'OtoSense',
-    'framework': 'aiohttp',
+    'framework': 'bottle',
     'input_mapper': default_input_mapper,
     'output_mapper': default_output_mapper,
     'error_handler': default_error_handler,

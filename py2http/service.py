@@ -40,12 +40,24 @@ def func_copy(func) -> Callable:
 
 def mk_route(func, **configs):
     """
-    Generate an aiohttp route object and an OpenAPI path specification for a function
+    Generate an route object and an OpenAPI path specification for a function
 
     :param func: The function
 
     :Keyword Arguments: The configuration settings
     """
+
+    def get_input_args_and_kwargs(inputs):
+        input_args = ()
+        input_kwargs = {}
+        if isinstance(inputs, dict):
+            input_kwargs = inputs
+        elif isinstance(inputs, list):
+            input_args = tuple(inputs)
+        elif isinstance(inputs, tuple):
+            input_args = inputs[0]
+            input_kwargs = inputs[1]
+        return input_args, input_kwargs
 
     # TODO: perhaps collections.abc.Mapping initialized with func, configs, etc.
     config_for = partial(mk_config, func=func, configs=configs, defaults=default_configs)
@@ -68,45 +80,55 @@ def mk_route(func, **configs):
                                   'response_schema',
                                   mk_output_schema_from_func(func))
 
-    async def handle_request(req):
-        input_kwargs = {}
-        try:
-            inputs = input_mapper(req, request_schema)
-            if isawaitable(inputs):  # Pattern: pass-on async property
-                inputs = await inputs
-            if isinstance(inputs, dict):
-                input_args = ()
-                input_kwargs = inputs
-            elif isinstance(inputs, list):
-                input_args = tuple(inputs)
-                input_kwargs = {}
-            elif isinstance(inputs, tuple):
-                input_args = inputs[0]
-                input_kwargs = inputs[1]
+    def handle_error(func):
+        def handle_request(req):
             try:
-                raw_result = func(*input_args, **input_kwargs)
-            except TypeError as error:
-                raise InputError(str(error))
-            if isawaitable(raw_result):  # Pattern: pass-on async property
-                raw_result = await raw_result
+                return func(req)
+            except (DataError, AuthorizationError, InputError) as error:
+                if logger:
+                    level = logging.INFO if logger.getEffectiveLevel() >= logging.INFO else logging.DEBUG
+                    exc_info = level == logging.DEBUG
+                    logger.log(level, error, exc_info=exc_info)
+                return error_handler(error)
+            except Exception as error:
+                if logger:
+                    logger.exception(error)
+                return error_handler(error)
 
-            final_result = output_mapper(raw_result, input_kwargs)
-            if isawaitable(final_result):
-                final_result = await final_result
-            if framework == AIOHTTP and not isinstance(final_result, web.Response):
-                final_result = web.json_response(final_result)
-            return final_result
-        except (DataError, AuthorizationError, InputError) as error:
-            if logger:
-                level = logging.INFO if logger.getEffectiveLevel() >= logging.INFO else logging.DEBUG
-                exc_info = level == logging.DEBUG
-                logger.log(level, error, exc_info=exc_info)
-            return error_handler(error, input_kwargs)
-        except Exception as error:
-            if logger:
-                logger.exception(error)
-            return error_handler(error, input_kwargs)
+        return handle_request
 
+    @handle_error
+    def sync_handle_request(req):
+        if framework == BOTTLE:
+            req.get_json = lambda *x: req.json
+        inputs = input_mapper(req, request_schema)
+        input_args, input_kwargs = get_input_args_and_kwargs(inputs)
+        try:
+            raw_result = func(*input_args, **input_kwargs)
+        except TypeError as error:
+            raise InputError(str(error))
+
+        return output_mapper(raw_result, input_kwargs)
+
+    @handle_error
+    async def aiohttp_handle_request(req):
+        inputs = input_mapper(req, request_schema)
+        if isawaitable(inputs):  # Pattern: pass-on async property
+            inputs = await inputs
+        input_args, input_kwargs = get_input_args_and_kwargs(inputs)
+        try:
+            raw_result = func(*input_args, **input_kwargs)
+        except TypeError as error:
+            raise InputError(str(error))
+        if isawaitable(raw_result):  # Pattern: pass-on async property
+            raw_result = await raw_result
+
+        final_result = output_mapper(raw_result, input_kwargs)
+        if isawaitable(final_result):
+            final_result = await final_result
+        if not isinstance(final_result, web.Response):
+            final_result = web.json_response(final_result)
+        return final_result
 
     #  TODO: Align config keys and variable names
     valid_http_methods = {'get', 'put', 'post', 'delete'}  # outside function
@@ -115,46 +137,35 @@ def mk_route(func, **configs):
     http_method = http_method.lower()  # normalization
     assert http_method in valid_http_methods  # validation
 
-    def mk_framework_route(http_method, path, method_name, handler):
+    def mk_framework_route(http_method, path, method_name):
         if framework == AIOHTTP:
             web_mk_route = getattr(web, http_method)
-            return web_mk_route(path, handler)
-        if framework == FLASK:
-            from flask import request
-            def sync_handle_request(*args):
-                result = handler(request)
+            return web_mk_route(path, aiohttp_handle_request)
+        else:
+            if framework == FLASK:
+                from flask import request
+            elif framework == BOTTLE:
+                from bottle import request
+
+            def handle_request(*args):
+                result = sync_handle_request(request)
                 if isawaitable(result):
                     loop = asyncio.new_event_loop()
                     asyncio.set_event_loop(loop)
                     result = loop.run_until_complete(result)
                 return result
-            sync_handle_request.path = path
-            sync_handle_request.http_method = http_method
-            sync_handle_request.method_name = method_name
-            return sync_handle_request
-        if framework == BOTTLE:
-            from bottle import request
-            def sync_handle_request(*args):
-                request.get_json = lambda *x: request.json
-                result = handler(request)
-                if isawaitable(result):
-                    # print('I had to wait')
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                    result = loop.run_until_complete(result)
-                return result
-            sync_handle_request.path = path
-            sync_handle_request.http_method = http_method
-            sync_handle_request.method_name = method_name
-            return sync_handle_request
-        return None
+
+            handle_request.path = path
+            handle_request.http_method = http_method
+            handle_request.method_name = method_name
+            return handle_request
 
     # TODO: Make func -> path a function (not hardcoded)
     # TODO: Make sure that func -> path MAPPING is known outside (perhaps through openapi)
     method_name = config_for('name') or func.__name__
     path = config_for('route') or f'/{method_name}'
 
-    route = mk_framework_route(http_method, path, method_name, handle_request)
+    route = mk_framework_route(http_method, path, method_name)
 
     path_fields = dict({'x-method_name': method_name}, **extra_path_info(func))
     openapi_path = mk_openapi_path(path,

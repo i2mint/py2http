@@ -15,7 +15,7 @@ from i2.deco import ch_func_to_all_pk
 from py2http.schema_tools import validate_input
 from py2http.types import (WriteOpResult, ParameterKind, Params, HasParams,
                            PK, VP, VK, PO, KO, var_param_kinds)
-from py2http.config import AIOHTTP
+from py2http.config import AIOHTTP, BOTTLE
 
 
 def ensure_awaitable_return_annot(func):
@@ -859,8 +859,8 @@ def validate_and_invoke_mapper(func, inputs, request_schema):
 
 
 def handle_json_req(func):
-    async def input_mapper(req, request_schema):
-        inputs = await _get_req_inputs(
+    def input_mapper(req, request_schema):
+        inputs = _get_req_inputs(
             req, getattr(req, 'get_json', getattr(req, 'json', None)))
         return validate_and_invoke_mapper(func, inputs, request_schema)
 
@@ -869,8 +869,8 @@ def handle_json_req(func):
 
 
 def handle_multipart_req(func):
-    async def input_mapper(req, request_schema):
-        inputs = await _get_req_inputs(req, req.post)
+    def input_mapper(req, request_schema):
+        inputs = _get_req_inputs(req, req.post)
         return validate_and_invoke_mapper(func, inputs, request_schema)
 
     input_mapper.content_type = 'multipart'
@@ -878,8 +878,8 @@ def handle_multipart_req(func):
 
 
 def handle_raw_req(func):
-    async def input_mapper(req, request_schema):
-        inputs = await _get_req_inputs(req, req.text)
+    def input_mapper(req, request_schema):
+        inputs = _get_req_inputs(req, req.text)
         return validate_and_invoke_mapper(func, inputs, request_schema)
 
     input_mapper.content_type = 'raw'
@@ -894,14 +894,18 @@ class JsonRespEncoder(JSONEncoder):
 
 
 def send_json_resp(func):
-    async def output_mapper(output, input_kwargs):
-        mapped_output = func(output, input_kwargs)
-        if isawaitable(mapped_output):
-            mapped_output = await mapped_output
-        framework = os.getenv('PY2HTTP_FRAMEWORK', AIOHTTP)
-        if framework == AIOHTTP:
+    framework = os.getenv('PY2HTTP_FRAMEWORK', BOTTLE)
+    print(framework)
+    if framework == AIOHTTP:
+        async def output_mapper(output, input_kwargs):
+            mapped_output = func(output, input_kwargs)
+            if isawaitable(mapped_output):
+                mapped_output = await mapped_output
             return web.json_response(mapped_output, dumps=JsonRespEncoder().encode)
-        return dumps(mapped_output, cls=JsonRespEncoder)
+    else:
+        def output_mapper(output, input_kwargs):
+            mapped_output = func(output, input_kwargs)
+            return dumps(mapped_output, cls=JsonRespEncoder)
 
     output_mapper.content_type = 'json'
     return output_mapper
@@ -918,41 +922,6 @@ def send_html_resp(func):
     return output_mapper
 
 
-def format_db_write(content_type='json'):
-    def mk_output_mapper(func):
-        def output_mapper(output, input_kwargs) -> WriteOpResult:
-            mapped_output = {'n': 0, 'ok': 0}
-            inserted_id = getattr(output, 'inserted_id', getattr(output, 'upserted_id', None))
-            inserted_ids = getattr(output, 'inserted_ids', getattr(output, 'upserted_ids', None))
-            deleted_count = getattr(output, 'deleted_count', None)
-            raw_result = getattr(output, 'raw_result', None)
-            if inserted_id:
-                mapped_output['inserted_ids'] = [inserted_id]
-                mapped_output['n'] = 1
-                mapped_output['ok'] = 1
-            elif inserted_ids:
-                mapped_output['inserted_ids'] = inserted_ids
-                mapped_output['n'] = len(inserted_ids)
-                mapped_output['ok'] = 1
-            elif deleted_count:
-                mapped_output['n'] = deleted_count
-                mapped_output['ok'] = 1
-            elif raw_result:
-                n = raw_result.get('nModified', 0)
-                ok = raw_result.get('ok')
-                mapped_output = {'n': n, 'ok': ok}
-            return mapped_output
-
-        if content_type == 'html':
-            output_mapper = send_html_resp(output_mapper)
-        else:
-            output_mapper = send_json_resp(output_mapper)
-        func.output_mapper = output_mapper
-        return func
-
-    return mk_output_mapper
-
-
 # TODO: stub
 def mk_input_mapper(input_map):
     def decorator(func):
@@ -961,12 +930,10 @@ def mk_input_mapper(input_map):
     return decorator
 
 
-async def _get_req_inputs(req, get_body_func):
+def _get_req_inputs(req, get_body_func):
     kwargs = {}
     if getattr(req, 'has_body', getattr(req, 'data', getattr(req, 'json', None))):
         body = get_body_func()
-        if isawaitable(body):
-            body = await body
         if isinstance(body, str):
             body = dict({}, text=body)
         kwargs = body
