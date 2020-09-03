@@ -12,19 +12,19 @@ configuration:
       default: OtoSense
       doc: Specifies the application name for Flask
     framework:
-      default: aiohttp
-      doc: Specifies the HTTP server library to run, either "aiohttp" or "flask"
+      default: bottle
+      doc: Specifies the HTTP server library to run, either "aiohttp", "flask" or "bottle"
     input_mapper:
       default: py2http.default_configs.default_input_mapper
       default_doc: >
         Extracts the request body in JSON format and returns it as a dict
       doc: >
-        A function that takes an aiohttp or flask request object, which returns the input arguments
+        A function that takes an aiohttp, flask or bottle request object, which returns the input arguments
         for the route handler. Can return a list of [*args], a dict of {**kwargs} or both as a tuple
         of (args, kwargs)
     output_mapper:
       default: py2http.default_configs.default_output_mapper
-      default_doc: Encodes the function output in JSON format and returns an aiohttp.web.json_response
+      default_doc: Encodes the function output in JSON format and returns an http response
       doc: >
         A function that takes the result of the route function and returns it to the client
         in an HTTP-compatible format
