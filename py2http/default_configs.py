@@ -63,7 +63,7 @@ default_configs = {
     'app_name': 'OtoSense',
     'framework': 'aiohttp',
     'input_mapper': default_input_mapper,
-    'output_mapper': bottle_output_mapper,
+    'output_mapper': default_output_mapper,
     'error_handler': default_error_handler,
     'header_inputs': {},
     'middleware': [],
