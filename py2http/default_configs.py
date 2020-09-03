@@ -24,7 +24,6 @@ def flask_output_mapper(output, inputs):
 
 
 def bottle_output_mapper(output, inputs):
-    from bottle import response
     response.content_type = 'application/json'
     return json.dumps(output, cls=JsonRespEncoder)
 
@@ -51,6 +50,8 @@ def aiohttp_error_handler(error: Exception):
 
 def bottle_error_handler(error: Exception):
     message = str(error)
+    print(f'Error: {error}')
+    print(f'Message: {message}')
     if isinstance(error, (AuthorizationError, InputError, DuplicateRecordError)):
         response.status = f'400 {type(error).__name__}'
         # response.reason = type(error).__name__
@@ -70,17 +71,17 @@ def flask_error_handler(error: Exception):
 def default_error_handler(error: Exception):
     framework = os.getenv('PY2HTTP_FRAMEWORK', BOTTLE)
     if framework == AIOHTTP:
-        aiohttp_error_handler(error)
+        return aiohttp_error_handler(error)
     if framework == BOTTLE:
-        bottle_error_handler(error)
+        return bottle_error_handler(error)
     if framework == FLASK:
-        flask_error_handler(error)
-    bottle_error_handler(error)
+        return flask_error_handler(error)
+    return bottle_error_handler(error)
 
 
 default_configs = {
     'app_name': 'OtoSense',
-    'framework': 'bottle',
+    'framework': BOTTLE,
     'input_mapper': default_input_mapper,
     'output_mapper': default_output_mapper,
     'error_handler': default_error_handler,
