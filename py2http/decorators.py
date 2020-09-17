@@ -805,6 +805,7 @@ def mk_flat(cls, method, *, func_name="flat_func"):
     flat_func.__dict__ = method.__dict__.copy()
     flat_func.__signature__ = sig_flat
     flat_func.__name__ = func_name
+    flat_func.__doc__ = method.__doc__
 
     return flat_func
 
@@ -895,7 +896,6 @@ class JsonRespEncoder(JSONEncoder):
 
 def send_json_resp(func):
     framework = os.getenv('PY2HTTP_FRAMEWORK', BOTTLE)
-    print(framework)
     if framework == AIOHTTP:
         async def output_mapper(output, input_kwargs):
             mapped_output = func(output, input_kwargs)

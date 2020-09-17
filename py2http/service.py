@@ -178,7 +178,7 @@ def mk_route(func, **configs):
 
 
 def extra_path_info(func):
-    return {}
+    return {'x-docstring': func.__doc__}
 
 
 def handle_ping(req):
