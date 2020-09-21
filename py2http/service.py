@@ -181,10 +181,9 @@ def extra_path_info(func):
     return {'x-docstring': func.__doc__}
 
 
-def handle_ping(req):
-    # the req param is required for this function to work as an aiohttp route
-    # even though it's not used, so don't remove it
-    return web.json_response({'ping': 'pong'})
+
+
+
 
 
 def run_http_service(funcs, **configs):
@@ -216,51 +215,69 @@ def run_aiohttp_service(app, port):
 
 
 def mk_http_service(funcs, **configs):
+    def handle_ping_sync():
+        return {'ping': 'pong'}
+
+    def handle_ping_async(req):
+        # the req param is required for this function to work as an aiohttp route
+        # even though it's not used, so don't remove it
+        return web.json_response({'ping': 'pong'})
+
+    def get_openapi_sync():
+        return openapi_spec
+
+    def get_openapi_async(req):
+        return web.json_response(openapi_spec)
+
+    def mk_flask_service():
+        from flask import Flask
+        app_name = mk_config('app_name', None, configs, default_configs)
+        app = Flask(app_name)
+        middleware = mk_config('middleware', None, configs, default_configs)
+        if middleware:
+            app = middleware(app)
+        for route in routes:
+            app.add_url_rule(route.path, route.method_name, route, methods=[route.http_method.upper()])
+        app.add_url_rule('/ping', 'ping', handle_ping_sync)
+        app.add_url_rule('/openapi', 'openapi', get_openapi_sync)
+        app.openapi_spec = openapi_spec
+        app.dflt_port = mk_config('port', None, configs, default_configs)
+        return app
+
+    def mk_bottle_service():
+        app = Bottle(catchall=False)
+        plugins = mk_config('plugins', None, configs, default_configs)
+        if plugins:
+            for plugin in plugins:
+                app.install(plugin)
+        for route in routes:
+            # print(f'Mounting route: {route.path} {route.http_method.upper()}')
+            app.route(route.path, route.http_method.upper(), route, route.method_name)
+        app.route(path='/ping', callback=handle_ping_sync, name='ping')
+        app.route(path='/openapi', callback=get_openapi_sync, name='openapi')
+        app.openapi_spec = openapi_spec
+        app.dflt_port = mk_config('port', None, configs, default_configs)
+        return app
+
+    def mk_aiohttp_service():
+
+        middleware = mk_config('middleware', None, configs, default_configs)
+        app = web.Application(middlewares=middleware)
+        app.add_routes([web.get('/ping', handle_ping_async), ('/openapi', get_openapi_async), *routes])
+        # adding a few more attributes
+        app.openapi_spec = openapi_spec
+        app.dflt_port = mk_config('port', None, configs, default_configs)
+        return app
+
     routes, openapi_spec = mk_routes_and_openapi_specs(funcs, configs)
     framework = _get_framework(configs, default_configs)
     if framework == FLASK:
-        return mk_flask_service(routes, openapi_spec, **configs)
+        return mk_flask_service()
     if framework == BOTTLE:
-        return mk_bottle_service(routes, openapi_spec, **configs)
-    return mk_aiohttp_service(routes, openapi_spec, **configs)
+        return mk_bottle_service()
+    return mk_aiohttp_service()
 
 
-def mk_flask_service(routes, openapi_spec, **configs):
-    from flask import Flask
-    app_name = mk_config('app_name', None, configs, default_configs)
-    app = Flask(app_name)
-    middleware = mk_config('middleware', None, configs, default_configs)
-    if middleware:
-        app = middleware(app)
-    for route in routes:
-        app.add_url_rule(route.path, route.method_name, route, methods=[route.http_method.upper()])
-    app.openapi_spec = openapi_spec
-    app.dflt_port = mk_config('port', None, configs, default_configs)
-    return app
-
-
-def mk_aiohttp_service(routes, openapi_spec, **configs):
-    middleware = mk_config('middleware', None, configs, default_configs)
-    app = web.Application(middlewares=middleware)
-    app.add_routes([web.get('/ping', handle_ping), *routes])
-    # adding a few more attributes
-    app.openapi_spec = openapi_spec
-    app.dflt_port = mk_config('port', None, configs, default_configs)
-    return app
-
-
-def mk_bottle_service(routes, openapi_spec, **configs):
-    app = Bottle(catchall=False)
-    plugins = mk_config('plugins', None, configs, default_configs)
-    if plugins:
-        for plugin in plugins:
-            app.install(plugin)
-    for route in routes:
-        # print(f'Mounting route: {route.path} {route.http_method.upper()}')
-        app.route(route.path, route.http_method.upper(), route, route.method_name)
-    app.openapi_spec = openapi_spec
-    app.dflt_port = mk_config('port', None, configs, default_configs)
-    return app
 
 
 # TODO: Make signature explicit instead of using configs
