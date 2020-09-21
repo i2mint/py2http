@@ -3,14 +3,14 @@ from typing import Iterable, Callable, Union, Mapping
 from functools import partial, wraps, update_wrapper
 from json import JSONDecodeError, JSONEncoder, dumps
 from aiohttp import web
-from bson import ObjectId
-import collections
+# import collections
 from typing import Awaitable, get_origin
 from collections.abc import Awaitable as _Awaitable
 import os
 
 from i2.signatures import set_signature_of_func, ch_signature_to_all_pk, Sig
 from i2.deco import ch_func_to_all_pk
+from i2.errors import ModuleNotFoundIgnore
 
 from py2http.schema_tools import validate_input
 from py2http.types import (WriteOpResult, ParameterKind, Params, HasParams,
@@ -887,10 +887,47 @@ def handle_raw_req(func):
     return input_mapper
 
 
+# TODO: Definitely want to move this to a place that is specialized for defining serialization needs
+#   First, it's not really a decorator.
+#   Secondly, the user should be able to easily define the serialization logic for their needs
+#   Thirdly, ObjectId is specific to mongo. No specifics should be here
+#   Fourthly, if we do have such specific package-dependent stuffs, we need to condition on existence
 class JsonRespEncoder(JSONEncoder):
     def default(self, o):
-        if isinstance(o, ObjectId):
-            return str(o)
+        with ModuleNotFoundIgnore:  # added this to condition bson existence
+            from bson import ObjectId  # added this to condition bson existence
+            if isinstance(o, ObjectId):
+                return str(o)
+        return JSONEncoder.default(self, o)
+
+
+# See proposal for JsonRespEncoder (understand and expand (and move)) below:
+
+def _mk_default_serializer_for_type():
+    _serializer_for_type = {}
+
+    with ModuleNotFoundIgnore:
+        from bson import ObjectId
+        _serializer_for_type[ObjectId] = str
+
+    return _serializer_for_type
+
+
+def _json_reponse_preproc(o, serializer_for_type):
+    for _type, _serializer in serializer_for_type.items():
+        if isinstance(o, _type):
+            return o
+    return o  # if not returned before
+
+
+class ProposalJsonRespEncoder(JSONEncoder):
+    # Note: Subclass and replace _pre_process_obj to get different preprocessing
+    # Note: To get control from init, definte init to set _pre_process_obj
+    _pre_process_obj = partial(_json_reponse_preproc,
+                               serializer_for_type=_mk_default_serializer_for_type())
+
+    def default(self, o):
+        o = self._pre_process_obj(o)
         return JSONEncoder.default(self, o)
 
 
