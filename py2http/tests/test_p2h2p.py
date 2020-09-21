@@ -51,7 +51,7 @@ def p2h2p_app(funcs, p2h_configs=None, h2p_configs=None):
 # equivalence tests ############################################
 
 
-def test_p2h2p(funcs, inputs_for_func=None, p2h_configs=None, h2p_configs=None,
+def p2h2p_test(funcs, inputs_for_func=None, p2h_configs=None, h2p_configs=None,
                check_signatures=False, wait_before_entering=2,
                verbose=False):
     """
@@ -124,6 +124,6 @@ if __name__ == '__main__':
         power: zip([(10,), (5,)], [{'p': 1}, {'p': 2}]),
     }
 
-    test_p2h2p(funcs=funcs,
+    p2h2p_test(funcs=funcs,
                inputs_for_func=inputs_for_func,
                verbose=True)
