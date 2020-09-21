@@ -97,3 +97,17 @@ my_setup(**setup_kwargs)
 #       author='ADI',
 #       license='MIT',
 #       packages=find_packages())
+
+# install_requires =
+#     glom==20.8
+#     PyJWT==1.7
+#     i2==0.0
+# extras_require =
+#     # For backends
+#     Flask==1.1
+#     aiohttp==3.6
+#     bottle==0.12
+#     # For testing
+#     pytest==6.0
+#     requests==2.24
+#
