@@ -210,7 +210,7 @@ class DecoParam:
 from typing import Optional
 import re
 
-token_p = re.compile('\w+')
+token_p = re.compile(r'\w+')
 
 
 # TODO: Research how to keep the params in the order they were declared.
@@ -638,7 +638,7 @@ def _handle_exisisting_method_name(cls, method, if_method_exists):
             raise ValueError(f"if_method_exists value not recognized: {if_method_exists}")
 
 
-# TODO: Not working yet
+# TODO: inject_methodized_funcs not working yet
 #   - signatures have different orders every time (need to use ordered containers)
 #   - Values not computed correctly
 def inject_methodized_funcs(cls=None, *, funcs=(), instance_params=None, if_method_exists='raise'):
@@ -650,35 +650,36 @@ def inject_methodized_funcs(cls=None, *, funcs=(), instance_params=None, if_meth
     :param if_method_exists:
     :return:
 
-    >>> from inspect import signature
-    >>>
-    >>>
-    >>> def f(a, b, x):
-    ...     return x * (a + b)
-    ...
-    >>> def g(x, y=1):
-    ...     return x * y
-    ...
-    >>>
-    >>> def h(a, x, c, **kwargs):
-    ...     return f"{a}-{x}-{c}: {list(kwargs.keys())}"
-    ...
-    >>> @inject_methodized_funcs(funcs=(f, g, h))
-    ... class C:
-    ...     def __init__(self, x, a=0, bob=True):
-    ...         self.x = x
-    ...         self.a = a
-    ...         self.bob = bob
-    ...
-    >>>
-    >>>
-    >>> c = C(x=10)
-    >>> for m in ('f', 'g', 'h'):
-    ...     print(f"{C.__name__}.{m}{signature(getattr(c, m))}")
-    ...
-    C.f(b, x)
-    C.g(y, x)
-    C.h(kwargs, c, x)
+    # TODO: Come back to inject_methodized_funcs doctest once inject_methodized_funcs is well written
+    # >>> from inspect import signature
+    # >>>
+    # >>>
+    # >>> def f(a, b, x):
+    # ...     return x * (a + b)
+    # ...
+    # >>> def g(x, y=1):
+    # ...     return x * y
+    # ...
+    # >>>
+    # >>> def h(a, x, c, **kwargs):
+    # ...     return f"{a}-{x}-{c}: {list(kwargs.keys())}"
+    # ...
+    # >>> @inject_methodized_funcs(funcs=(f, g, h))
+    # ... class C:
+    # ...     def __init__(self, x, a=0, bob=True):
+    # ...         self.x = x
+    # ...         self.a = a
+    # ...         self.bob = bob
+    # ...
+    # >>>
+    # >>>
+    # >>> c = C(x=10)
+    # >>> for m in ('f', 'g', 'h'):
+    # ...     print(f"{C.__name__}.{m}{signature(getattr(c, m))}")
+    # ...
+    # C.f(b, x)
+    # C.g(y, x)
+    # C.h(kwargs, c, x)
     """
     raise NotImplementedError("Not working yet: Come back to it!")
     if cls is None:
@@ -757,14 +758,14 @@ def mk_flat(cls, method, *, func_name="flat_func"):
     >>> MultiplierClass(3).subtract(1)
     2
     >>> f = mk_flat(MultiplierClass, 'multiply', func_name='my_special_func')
-    >>> help(f)
-    Help on function my_special_func in module decorators:
+    >>> help(f)  # doctest: +SKIP
+    Help on function my_special_func in module ...
     <BLANKLINE>
     my_special_func(x, y: float = 1) -> float
     <BLANKLINE>
     >>> f = mk_flat(MultiplierClass, MultiplierClass.subtract)
-    >>> help(f)
-    Help on function flat_func in module decorators:
+    >>> help(f)  # doctest: +SKIP
+    Help on function flat_func in in module ...
     <BLANKLINE>
     flat_func(x, z)
     <BLANKLINE>
@@ -802,7 +803,7 @@ def mk_flat(cls, method, *, func_name="flat_func"):
         instance = cls(**cls_params)  # TODO: implement caching option
         return getattr(instance, method.__name__)(**method_params)
 
-    flat_func.__dict__ = method.__dict__.copy()
+    flat_func.__dict__ = method.__dict__.copy()  # to copy attributes of method
     flat_func.__signature__ = sig_flat
     flat_func.__name__ = func_name
     flat_func.__doc__ = method.__doc__
@@ -894,7 +895,7 @@ def handle_raw_req(func):
 #   Fourthly, if we do have such specific package-dependent stuffs, we need to condition on existence
 class JsonRespEncoder(JSONEncoder):
     def default(self, o):
-        with ModuleNotFoundIgnore:  # added this to condition bson existence
+        with ModuleNotFoundIgnore():  # added this to condition bson existence
             from bson import ObjectId  # added this to condition bson existence
             if isinstance(o, ObjectId):
                 return str(o)
@@ -906,7 +907,7 @@ class JsonRespEncoder(JSONEncoder):
 def _mk_default_serializer_for_type():
     _serializer_for_type = {}
 
-    with ModuleNotFoundIgnore:
+    with ModuleNotFoundIgnore():
         from bson import ObjectId
         _serializer_for_type[ObjectId] = str
 

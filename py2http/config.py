@@ -1,4 +1,5 @@
 from typing import Callable
+
 AIOHTTP = 'aiohttp'
 BOTTLE = 'bottle'
 FLASK = 'flask'
@@ -8,14 +9,16 @@ def get_result(configs, func, funcname, key, options):
     """ this is meant to allow nested configs by function name
     example:
 
-    >>> def create_something():
-    ...    pass
-    >>> example_configs = {'http_method': {
-    ...    'create_something': 'post',
-    ...    'get_something': 'get',
-    ... }}
-    >>> mk_config(create_something, example_configs, defaults)
-    'post'
+    # TODO: See mk_config use and make an actual doctest for get_result
+    # >>> def create_something():
+    # ...    pass
+    # >>> example_configs = {'http_method': {
+    # ...    'create_something': 'post',
+    # ...    'get_something': 'get',
+    # ... }}
+    # >>> defaults = {'create_something': 'DEFAULTED'}
+    # >>> get_result(example_configs, create_something, 'create_something', 'http_method', defaults)
+    # 'post'
 
     TODO: allow an $else case, other keywords, more complex parsing, and/or custom get_result functions
     """
@@ -62,7 +65,8 @@ def mk_config(key, func, configs, defaults, **options):
                 expected_type = Callable
             else:
                 expected_type = type(default_value)
-        assert expected_type == type(None) or isinstance(result, expected_type), f'Config {key} does not match type {expected_type}.'
+        assert expected_type == type(None) or isinstance(result,
+                                                         expected_type), f'Config {key} does not match type {expected_type}.'
     else:
         result = defaults.get(key, None)
     return result
