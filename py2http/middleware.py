@@ -1,10 +1,10 @@
-from aiohttp import web
 import json
-import jwt
 from warnings import warn
 
 
 def mk_jwt_middleware(secret, verify=True):
+    from aiohttp import web
+    import jwt
     @web.middleware
     async def middleware(req, handler):
         auth_header = req.headers.get('Authorization', '')
@@ -24,6 +24,7 @@ def mk_jwt_middleware(secret, verify=True):
 
 
 def mk_superadmin_middleware(secret):
+    from aiohttp import web
     @web.middleware
     async def middleware(req, handler):
         auth_header = req.headers.get('Authorization', '')
