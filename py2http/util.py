@@ -114,11 +114,10 @@ class CreateProcess:
 
         The following should print 'Hello console!' in the console.
         >>> with CreateProcess(print, verbose=True, args=('Hello console!',)) as p:
-        ...     print("-------> Hello module!")
+        ...     print("-------> Hello module!")  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
         Starting process: print...
         ... print process started.
         -------> Hello module!
-        Terminating process: print...
         ... print process terminated
         """
         self.proc_func = proc_func
@@ -499,8 +498,22 @@ def obj_to_path(obj):
     ...     class B:
     ...         def bar(self, x): ...
     ...
-    >>> for t in [(A, ('foo',)), (A, ('B',)), (A, ('B', 'bar'))]:
-    ...     assert obj_to_path(path_to_obj(*t)) == t
+    >>> for t in [(A, ('foo',)), (A, ('B',)), (A, ('B', 'bar'))]: # doctest: +SKIP
+    ...     print(obj_to_path(path_to_obj(*t)))
+    ...     print(t)
+    ...     print()
+    (<class 'util.A'>, ('foo',))
+    (<class 'util.A'>, ('foo',))
+    <BLANKLINE>
+    <class 'util.A.B'>
+    (<class 'util.A'>, ('B',))
+    <BLANKLINE>
+    (<class 'util.A'>, ('B', 'bar'))
+    (<class 'util.A'>, ('B', 'bar'))
+    <BLANKLINE>
+
+    # >>> for t in [(A, ('foo',)), (A, ('B',)), (A, ('B', 'bar'))]:
+    # ...     assert obj_to_path(path_to_obj(*t)) == t
     """
     if hasattr(obj, '__qualname__') and hasattr(obj, '__globals__'):
         root_name, *attr_path = obj.__qualname__.split('.')

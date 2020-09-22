@@ -69,7 +69,7 @@ def mk_input_schema_from_func(func, exclude_keys=None, include_func_params=False
     >>> expected = {
     ...     'type': dict,
     ...     'properties': {
-    ...         'a': {'required': True, 'default': None, 'type': typing.Any},
+    ...         'a': {'required': True, 'type': typing.Any},
     ...         'b': {'required': False, 'default': 0.0, 'type': float}}}
     >>> assert got == expected, f"\\n  expected {expected}\\n  got {got}"
     >>>
@@ -83,7 +83,7 @@ def mk_input_schema_from_func(func, exclude_keys=None, include_func_params=False
     >>> expected = {
     ...     'type': dict,
     ...     'properties': {
-    ...        'x': {'required': True, 'default': None, 'type': float},
+    ...        'x': {'required': True, 'type': float},
     ...        'y': {'required': False, 'default': 1, 'type': int},
     ...        'z': {'required': False, 'type': int, 'default': 1}}}
     >>> assert got == expected, f"\\n  expected {expected}\\n  got {got}"

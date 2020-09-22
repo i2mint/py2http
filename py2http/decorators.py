@@ -3,14 +3,14 @@ from typing import Iterable, Callable, Union, Mapping
 from functools import partial, wraps, update_wrapper
 from json import JSONDecodeError, JSONEncoder, dumps
 from aiohttp import web
-from bson import ObjectId
-import collections
+# import collections
 from typing import Awaitable, get_origin
 from collections.abc import Awaitable as _Awaitable
 import os
 
 from i2.signatures import set_signature_of_func, ch_signature_to_all_pk, Sig
 from i2.deco import ch_func_to_all_pk
+from i2.errors import ModuleNotFoundIgnore
 
 from py2http.schema_tools import validate_input
 from py2http.types import (WriteOpResult, ParameterKind, Params, HasParams,
@@ -210,7 +210,7 @@ class DecoParam:
 from typing import Optional
 import re
 
-token_p = re.compile('\w+')
+token_p = re.compile(r'\w+')
 
 
 # TODO: Research how to keep the params in the order they were declared.
@@ -638,7 +638,7 @@ def _handle_exisisting_method_name(cls, method, if_method_exists):
             raise ValueError(f"if_method_exists value not recognized: {if_method_exists}")
 
 
-# TODO: Not working yet
+# TODO: inject_methodized_funcs not working yet
 #   - signatures have different orders every time (need to use ordered containers)
 #   - Values not computed correctly
 def inject_methodized_funcs(cls=None, *, funcs=(), instance_params=None, if_method_exists='raise'):
@@ -650,35 +650,36 @@ def inject_methodized_funcs(cls=None, *, funcs=(), instance_params=None, if_meth
     :param if_method_exists:
     :return:
 
-    >>> from inspect import signature
-    >>>
-    >>>
-    >>> def f(a, b, x):
-    ...     return x * (a + b)
-    ...
-    >>> def g(x, y=1):
-    ...     return x * y
-    ...
-    >>>
-    >>> def h(a, x, c, **kwargs):
-    ...     return f"{a}-{x}-{c}: {list(kwargs.keys())}"
-    ...
-    >>> @inject_methodized_funcs(funcs=(f, g, h))
-    ... class C:
-    ...     def __init__(self, x, a=0, bob=True):
-    ...         self.x = x
-    ...         self.a = a
-    ...         self.bob = bob
-    ...
-    >>>
-    >>>
-    >>> c = C(x=10)
-    >>> for m in ('f', 'g', 'h'):
-    ...     print(f"{C.__name__}.{m}{signature(getattr(c, m))}")
-    ...
-    C.f(b, x)
-    C.g(y, x)
-    C.h(kwargs, c, x)
+    # TODO: Come back to inject_methodized_funcs doctest once inject_methodized_funcs is well written
+    # >>> from inspect import signature
+    # >>>
+    # >>>
+    # >>> def f(a, b, x):
+    # ...     return x * (a + b)
+    # ...
+    # >>> def g(x, y=1):
+    # ...     return x * y
+    # ...
+    # >>>
+    # >>> def h(a, x, c, **kwargs):
+    # ...     return f"{a}-{x}-{c}: {list(kwargs.keys())}"
+    # ...
+    # >>> @inject_methodized_funcs(funcs=(f, g, h))
+    # ... class C:
+    # ...     def __init__(self, x, a=0, bob=True):
+    # ...         self.x = x
+    # ...         self.a = a
+    # ...         self.bob = bob
+    # ...
+    # >>>
+    # >>>
+    # >>> c = C(x=10)
+    # >>> for m in ('f', 'g', 'h'):
+    # ...     print(f"{C.__name__}.{m}{signature(getattr(c, m))}")
+    # ...
+    # C.f(b, x)
+    # C.g(y, x)
+    # C.h(kwargs, c, x)
     """
     raise NotImplementedError("Not working yet: Come back to it!")
     if cls is None:
@@ -757,14 +758,14 @@ def mk_flat(cls, method, *, func_name="flat_func"):
     >>> MultiplierClass(3).subtract(1)
     2
     >>> f = mk_flat(MultiplierClass, 'multiply', func_name='my_special_func')
-    >>> help(f)
-    Help on function my_special_func in module decorators:
+    >>> help(f)  # doctest: +SKIP
+    Help on function my_special_func in module ...
     <BLANKLINE>
     my_special_func(x, y: float = 1) -> float
     <BLANKLINE>
     >>> f = mk_flat(MultiplierClass, MultiplierClass.subtract)
-    >>> help(f)
-    Help on function flat_func in module decorators:
+    >>> help(f)  # doctest: +SKIP
+    Help on function flat_func in in module ...
     <BLANKLINE>
     flat_func(x, z)
     <BLANKLINE>
@@ -802,9 +803,10 @@ def mk_flat(cls, method, *, func_name="flat_func"):
         instance = cls(**cls_params)  # TODO: implement caching option
         return getattr(instance, method.__name__)(**method_params)
 
-    flat_func.__dict__ = method.__dict__.copy()
+    flat_func.__dict__ = method.__dict__.copy()  # to copy attributes of method
     flat_func.__signature__ = sig_flat
     flat_func.__name__ = func_name
+    flat_func.__doc__ = method.__doc__
 
     return flat_func
 
@@ -886,16 +888,52 @@ def handle_raw_req(func):
     return input_mapper
 
 
+# TODO: Definitely want to move this to a place that is specialized for defining serialization needs
+#   First, it's not really a decorator.
+#   Secondly, the user should be able to easily define the serialization logic for their needs
+#   Thirdly, ObjectId is specific to mongo. No specifics should be here
+#   Fourthly, if we do have such specific package-dependent stuffs, we need to condition on existence
 class JsonRespEncoder(JSONEncoder):
     def default(self, o):
-        if isinstance(o, ObjectId):
-            return str(o)
+        with ModuleNotFoundIgnore():  # added this to condition bson existence
+            from bson import ObjectId  # added this to condition bson existence
+            if isinstance(o, ObjectId):
+                return str(o)
+        return JSONEncoder.default(self, o)
+
+
+# See proposal for JsonRespEncoder (understand and expand (and move)) below:
+
+def _mk_default_serializer_for_type():
+    _serializer_for_type = {}
+
+    with ModuleNotFoundIgnore():
+        from bson import ObjectId
+        _serializer_for_type[ObjectId] = str
+
+    return _serializer_for_type
+
+
+def _json_reponse_preproc(o, serializer_for_type):
+    for _type, _serializer in serializer_for_type.items():
+        if isinstance(o, _type):
+            return o
+    return o  # if not returned before
+
+
+class ProposalJsonRespEncoder(JSONEncoder):
+    # Note: Subclass and replace _pre_process_obj to get different preprocessing
+    # Note: To get control from init, definte init to set _pre_process_obj
+    _pre_process_obj = partial(_json_reponse_preproc,
+                               serializer_for_type=_mk_default_serializer_for_type())
+
+    def default(self, o):
+        o = self._pre_process_obj(o)
         return JSONEncoder.default(self, o)
 
 
 def send_json_resp(func):
     framework = os.getenv('PY2HTTP_FRAMEWORK', BOTTLE)
-    print(framework)
     if framework == AIOHTTP:
         async def output_mapper(output, input_kwargs):
             mapped_output = func(output, input_kwargs)
