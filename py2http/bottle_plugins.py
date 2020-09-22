@@ -5,9 +5,10 @@ from warnings import warn
 
 
 class JWTPlugin:
-    def __init__(self, secret: str, verify: bool = True):
+    def __init__(self, secret: str, verify: bool = True, mapper: dict = None):
         self._secret = secret
         self._verify = verify
+        self._mapper = mapper if mapper else {}
 
     def __call__(self, handler):
         def wrapped_handler(*args, **kwargs):
@@ -15,6 +16,9 @@ class JWTPlugin:
             token = auth_header[7:]
             try:
                 decoded = jwt.decode(token, self._secret, verify=False)
+                for k, v in self._mapper.items():
+                    if k in decoded:
+                        decoded[v] = decoded.pop(k)
                 request.token = decoded
                 return handler(*args, **kwargs)
             except jwt.DecodeError:
