@@ -126,7 +126,7 @@ def current_pypi_version(
             t = json.loads(r.read())
             releases = t.get('releases', [])
             if releases:
-                return sorted(releases)[-1]
+                return sorted(releases, key=lambda r: tuple(map(int, r.split('.'))))[-1]
         else:
             raise ValueError(f"response code was {r.code}")
     except HTTPError:
