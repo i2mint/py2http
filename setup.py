@@ -1,5 +1,3 @@
-from setuptools import setup, find_packages
-
 import os
 from configparser import ConfigParser
 from setuptools import find_packages
@@ -89,25 +87,3 @@ if setup_kwargs['name'] != containing_folder_name:
 ##########################################################################################
 # Okay... set it up alright!
 my_setup(**setup_kwargs)
-
-# setup(name='py2http',
-#       version='0.0.2',
-#       description='Declarative HTTP service entry point',
-#       url='https://github.com/i2mint/py2http',
-#       author='ADI',
-#       license='MIT',
-#       packages=find_packages())
-
-# install_requires =
-#     glom==20.8
-#     PyJWT==1.7
-#     i2==0.0
-# extras_require =
-#     # For backends
-#     Flask==1.1
-#     aiohttp==3.6
-#     bottle==0.12
-#     # For testing
-#     pytest==6.0
-#     requests==2.24
-#
