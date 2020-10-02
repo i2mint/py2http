@@ -969,7 +969,7 @@ def mk_input_mapper(input_map):
 
 
 def _get_req_inputs(req, get_body_func):
-    kwargs = {}
+    kwargs = getattr(req, 'defaults', {})
     if getattr(req, 'has_body', getattr(req, 'data', getattr(req, 'json', None))):
         body = get_body_func()
         if isinstance(body, str):
