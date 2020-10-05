@@ -7,6 +7,8 @@ def mk_jwt_middleware(secret, verify=True):
     import jwt
     @web.middleware
     async def middleware(req, handler):
+        if handler.__name__ == 'ping' or handler.__name__ == 'openapi':
+            return await handler(req)
         auth_header = req.headers.get('Authorization', '')
         token = auth_header[7:]
         try:

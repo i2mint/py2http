@@ -178,13 +178,8 @@ def mk_route(func, **configs):
 
 
 def extra_path_info(func):
-    return {'x-docstring': func.__doc__}
-
-
-
-
-
-
+    return {'description': func.__doc__}
+    
 
 def run_http_service(funcs, **configs):
     """
@@ -253,8 +248,8 @@ def mk_http_service(funcs, **configs):
         for route in routes:
             # print(f'Mounting route: {route.path} {route.http_method.upper()}')
             app.route(route.path, route.http_method.upper(), route, route.method_name)
-        app.route(path='/ping', callback=handle_ping_sync, name='ping')
-        app.route(path='/openapi', callback=get_openapi_sync, name='openapi')
+        app.route(path='/ping', callback=handle_ping_sync, name='ping', skip=plugins)
+        app.route(path='/openapi', callback=get_openapi_sync, name='openapi', skip=plugins)
         app.openapi_spec = openapi_spec
         app.dflt_port = mk_config('port', None, configs, default_configs)
         return app
@@ -263,7 +258,11 @@ def mk_http_service(funcs, **configs):
 
         middleware = mk_config('middleware', None, configs, default_configs)
         app = web.Application(middlewares=middleware)
-        app.add_routes([web.get('/ping', handle_ping_async), ('/openapi', get_openapi_async), *routes])
+        app.add_routes([
+            web.get('/ping', handle_ping_async, name='ping'),
+            web.get('/openapi', get_openapi_async, name='openapi'),
+            *routes
+        ])
         # adding a few more attributes
         app.openapi_spec = openapi_spec
         app.dflt_port = mk_config('port', None, configs, default_configs)
