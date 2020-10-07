@@ -13,6 +13,7 @@ from bottle import Bottle
 
 from i2.errors import InputError, DataError, AuthorizationError
 
+from py2http.bottle_plugins import CorsPlugin, OPTIONS
 from py2http.config import mk_config, FLASK, AIOHTTP, BOTTLE
 from py2http.default_configs import default_configs
 from py2http.openapi_utils import add_paths_to_spec, mk_openapi_path, mk_openapi_template
@@ -229,6 +230,7 @@ def mk_http_service(funcs, **configs):
         app_name = mk_config('app_name', None, configs, default_configs)
         app = Flask(app_name)
         middleware = mk_config('middleware', None, configs, default_configs)
+        # publish_openapi = mk_config('publish_openapi', None, configs, default_configs)
         if middleware:
             app = middleware(app)
         for route in routes:
@@ -241,21 +243,31 @@ def mk_http_service(funcs, **configs):
 
     def mk_bottle_service():
         app = Bottle(catchall=False)
+        enable_cors = mk_config('enable_cors', None, configs, default_configs)
         plugins = mk_config('plugins', None, configs, default_configs)
+        if enable_cors:
+            cors_allowed_origins = mk_config('cors_allowed_origins', None, configs, default_configs)
+            print(f'install cors for origins {cors_allowed_origins}', flush=True)
+            plugins = [CorsPlugin(cors_allowed_origins), *plugins]
+        publish_openapi = mk_config('publish_openapi', None, configs, default_configs)
+        openapi_insecure = mk_config('openapi_insecure', None, configs, default_configs)
         if plugins:
             for plugin in plugins:
                 app.install(plugin)
         for route in routes:
+            route_http_method = route.http_method.upper()
+            http_methods = route.http_method if not enable_cors else [OPTIONS, route_http_method]
             # print(f'Mounting route: {route.path} {route.http_method.upper()}')
-            app.route(route.path, route.http_method.upper(), route, route.method_name)
+            app.route(route.path, http_methods, route, route.method_name)
         app.route(path='/ping', callback=handle_ping_sync, name='ping', skip=plugins)
-        app.route(path='/openapi', callback=get_openapi_sync, name='openapi', skip=plugins)
+        if publish_openapi:
+            skip = plugins if openapi_insecure else None
+            app.route(path='/openapi', callback=get_openapi_sync, name='openapi', skip=skip)
         app.openapi_spec = openapi_spec
         app.dflt_port = mk_config('port', None, configs, default_configs)
         return app
 
     def mk_aiohttp_service():
-
         middleware = mk_config('middleware', None, configs, default_configs)
         app = web.Application(middlewares=middleware)
         app.add_routes([

@@ -92,4 +92,8 @@ default_configs = {
     'openapi': {},
     'logger': None,
     'plugins': [],
+    'enable_cors': False,
+    'cors_allowed_origins': '*',
+    'publish_openapi': False,
+    'openapi_insecure': False,
 }

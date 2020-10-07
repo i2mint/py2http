@@ -3,6 +3,7 @@ import json
 import jwt
 from warnings import warn
 
+OPTIONS = 'OPTIONS'
 
 class JWTPlugin:
     def __init__(self, secret: str, verify: bool = True, mapper: dict = None):
@@ -12,6 +13,8 @@ class JWTPlugin:
 
     def __call__(self, handler):
         def wrapped_handler(*args, **kwargs):
+            if request.method == OPTIONS:
+                return handler(*args, *kwargs)
             auth_header = request.headers.get('Authorization', '')
             token = auth_header[7:]
             try:
@@ -27,7 +30,7 @@ class JWTPlugin:
                     response.content_type = 'application/json'
                     return json.dumps({'error': 'invalid authentication token'})
                 warn(f'Invalid JWT: {token}')
-                return handler(request)
+                return handler(*args, **kwargs)
         return wrapped_handler
 
 
@@ -37,12 +40,25 @@ class ApiKeyAuthPlugin:
 
     def __call__(self, handler):
         def wrapped_handler(*args, **kwargs):
-            print(f'headers: {dict(request.headers)}')
             auth_header = request.headers.get('Authorization', '')
-            print(f'Expected {self._api_key}, got {auth_header}')
             if auth_header == self._api_key:
                 return handler(*args, **kwargs)
             response.status = 401
             response.content_type = 'application/json'
             return json.dumps({'error': 'invalid API key'})
+        return wrapped_handler
+
+
+# from https://stackoverflow.com/questions/17262170/bottle-py-enabling-cors-for-jquery-ajax-requests
+class CorsPlugin:
+    def __init__(self, origins: str = '*'):
+        self._origins = origins
+
+    def __call__(self, handler):
+        def wrapped_handler(*args, **kwargs):
+            response.headers['Access-Control-Allow-Origin'] = self._origins
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Origin, Accept, Content-Type, X-Requested-With, Authorization, X-api-key'
+            if request.method != OPTIONS:
+                return handler(*args, **kwargs)
         return wrapped_handler
