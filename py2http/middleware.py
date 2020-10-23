@@ -15,9 +15,9 @@ def mk_jwt_middleware(secret, verify=True):
             decoded = jwt.decode(token, secret, verify=False)
             req.token = decoded
             return await handler(req)
-        except jwt.DecodeError:
+        except jwt.DecodeError as error:
             if verify:
-                return web.HTTPUnauthorized(text=json.dumps({'error': 'invalid authentication token'}),
+                return web.HTTPUnauthorized(text=json.dumps({'error': f'Invalid authentication token "{token}", {str(error)}'}),
                                             content_type='application/json')
             warn(f'Invalid JWT: {token}')
             return await handler(req)

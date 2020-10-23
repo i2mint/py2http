@@ -24,11 +24,11 @@ class JWTPlugin:
                         decoded[v] = decoded.pop(k)
                 request.token = decoded
                 return handler(*args, **kwargs)
-            except jwt.DecodeError:
+            except jwt.DecodeError as error:
                 if self._verify:
                     response.status = 401
                     response.content_type = 'application/json'
-                    return json.dumps({'error': 'invalid authentication token'})
+                    return json.dumps({'error': f'Invalid authentication token "{token}", {str(error)}'})
                 warn(f'Invalid JWT: {token}')
                 return handler(*args, **kwargs)
         return wrapped_handler
