@@ -41,6 +41,7 @@ class ApiKeyAuthPlugin:
     def __call__(self, handler):
         def wrapped_handler(*args, **kwargs):
             auth_header = request.headers.get('Authorization', '')
+            print('API_KEY', auth_header, self._api_key)
             if auth_header == self._api_key:
                 return handler(*args, **kwargs)
             response.status = 401
