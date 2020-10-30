@@ -211,6 +211,9 @@ def run_aiohttp_service(app, port):
 
 
 def mk_http_service(funcs, **configs):
+    """
+    Generates an HTTP service object
+    """
     def handle_ping_sync():
         return {'ping': 'pong'}
 
@@ -248,7 +251,7 @@ def mk_http_service(funcs, **configs):
         if enable_cors:
             cors_allowed_origins = mk_config('cors_allowed_origins', None, configs, default_configs)
             print(f'install cors for origins {cors_allowed_origins}', flush=True)
-            plugins = [CorsPlugin(cors_allowed_origins), *plugins]
+            app.install(CorsPlugin(cors_allowed_origins))
         publish_openapi = mk_config('publish_openapi', None, configs, default_configs)
         openapi_insecure = mk_config('openapi_insecure', None, configs, default_configs)
         if plugins:
@@ -280,7 +283,7 @@ def mk_http_service(funcs, **configs):
         app.dflt_port = mk_config('port', None, configs, default_configs)
         return app
 
-    routes, openapi_spec = mk_routes_and_openapi_specs(funcs, configs)
+    routes, openapi_spec = mk_routes_and_openapi_specs(funcs, **configs)
     framework = _get_framework(configs, default_configs)
     if framework == FLASK:
         return mk_flask_service()
@@ -289,12 +292,7 @@ def mk_http_service(funcs, **configs):
     return mk_aiohttp_service()
 
 
-
-
-# TODO: Make signature explicit instead of using configs
-#   What it needs from config is only: openapi_spec and a header_inputs
-#   Make the user of this function get those from general configs
-def mk_routes_and_openapi_specs(funcs, configs):
+def mk_routes_and_openapi_specs(funcs, **configs):
     routes = []
     openapi_config = mk_config('openapi', None, configs, default_configs, type=dict)
     openapi_spec = mk_openapi_template(openapi_config)
@@ -302,7 +300,6 @@ def mk_routes_and_openapi_specs(funcs, configs):
     if header_inputs:
         openapi_spec['x-header-inputs'] = header_inputs
     for func in funcs:
-        # sig = inspect.signature(func)  # commenting out because not used
         route, openapi_path = mk_route(func, **configs)
         routes.append(route)
         add_paths_to_spec(openapi_spec['paths'], openapi_path)

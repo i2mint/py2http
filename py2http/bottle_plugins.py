@@ -50,6 +50,7 @@ class ApiKeyAuthPlugin:
 
 
 # from https://stackoverflow.com/questions/17262170/bottle-py-enabling-cors-for-jquery-ajax-requests
+# TODO: accept lists of headers and methods as init args
 class CorsPlugin:
     def __init__(self, origins: str = '*'):
         self._origins = origins
