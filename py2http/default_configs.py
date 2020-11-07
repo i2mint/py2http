@@ -2,6 +2,7 @@ from aiohttp import web
 from bottle import response
 import json
 import os
+import traceback
 
 from i2.errors import AuthorizationError, ForbiddenError, InputError, NotFoundError, DuplicateRecordError
 
@@ -38,6 +39,7 @@ def _raise_http_client_error(error, message, reason=None):
 
 def aiohttp_error_handler(error: Exception):
     message = str(error)
+    traceback.print_exc()
     if isinstance(error, (AuthorizationError, InputError, DuplicateRecordError)):
         _raise_http_client_error(web.HTTPBadRequest, message, reason=type(error).__name__)
     elif isinstance(error, ForbiddenError):
@@ -50,8 +52,7 @@ def aiohttp_error_handler(error: Exception):
 
 def bottle_error_handler(error: Exception):
     message = str(error)
-    print(f'Error: {error}')
-    print(f'Message: {message}')
+    traceback.print_exc()
     if isinstance(error, (AuthorizationError, InputError, DuplicateRecordError)):
         response.status = f'400 {type(error).__name__}'
         # response.reason = type(error).__name__
