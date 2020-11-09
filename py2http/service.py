@@ -10,6 +10,7 @@ from types import FunctionType
 import logging
 import os
 from bottle import Bottle
+import traceback
 
 from i2.errors import InputError, DataError, AuthorizationError
 
@@ -89,9 +90,12 @@ def mk_route(func, **configs):
                 if logger:
                     level = logging.INFO if logger.getEffectiveLevel() >= logging.INFO else logging.DEBUG
                     exc_info = level == logging.DEBUG
-                    logger.log(level, error, exc_info=exc_info)
+                    logger.log(level, traceback.format_exc(), exc_info=exc_info)
+                else:
+                    traceback.print_exc()
                 return error_handler(error)
             except Exception as error:
+                traceback.print_exc()
                 if logger:
                     logger.exception(error)
                 return error_handler(error)
@@ -250,7 +254,6 @@ def mk_http_service(funcs, **configs):
         plugins = mk_config('plugins', None, configs, default_configs)
         if enable_cors:
             cors_allowed_origins = mk_config('cors_allowed_origins', None, configs, default_configs)
-            print(f'install cors for origins {cors_allowed_origins}', flush=True)
             app.install(CorsPlugin(cors_allowed_origins))
         publish_openapi = mk_config('publish_openapi', None, configs, default_configs)
         openapi_insecure = mk_config('openapi_insecure', None, configs, default_configs)

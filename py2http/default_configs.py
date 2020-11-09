@@ -39,7 +39,6 @@ def _raise_http_client_error(error, message, reason=None):
 
 def aiohttp_error_handler(error: Exception):
     message = str(error)
-    traceback.print_exc()
     if isinstance(error, (AuthorizationError, InputError, DuplicateRecordError)):
         _raise_http_client_error(web.HTTPBadRequest, message, reason=type(error).__name__)
     elif isinstance(error, ForbiddenError):
@@ -47,12 +46,12 @@ def aiohttp_error_handler(error: Exception):
     elif isinstance(error, NotFoundError):
         _raise_http_client_error(web.HTTPNotFound, message)
     else:
+        message = 'Internal server error'
         _raise_http_client_error(web.HTTPInternalServerError, message)
 
 
 def bottle_error_handler(error: Exception):
     message = str(error)
-    traceback.print_exc()
     if isinstance(error, (AuthorizationError, InputError, DuplicateRecordError)):
         response.status = f'400 {type(error).__name__}'
         # response.reason = type(error).__name__
@@ -62,6 +61,7 @@ def bottle_error_handler(error: Exception):
         response.status = 404
     else:
         response.status = 500
+        message = 'Internal server error'
     return {'error': message}
 
 
