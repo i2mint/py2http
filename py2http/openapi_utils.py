@@ -150,19 +150,28 @@ def mk_openapi_path(pathname='/',
 
 def mk_obj_schema(request_object):
     output = {}
-    for key, item in request_object.items():
-        output[key] = mk_arg_schema(item)
+    try:
+        for key, item in request_object.items():
+            output[key] = mk_arg_schema(item)
+    except AttributeError:
+        print(f'Accidentally got a tuple: {str(request_object)}')
     return output
 
 
 def mk_arg_schema(arg):
-    output = {}
     arg_type = arg.get('type', Any)
+    required = True
+    if 'default' in arg:
+        required = False
+        default = arg['default']
     val_type = openapi_type_mapping(arg.get('type', Any))
     if not val_type:
         raise ValueError(f'Request schema value {arg_type} is an invalid type. Only JSON-compatible types are allowed.')
     if val_type == 'object':
         output = {'type': 'object', 'properties': mk_obj_schema(arg.get('properties', {}))}
+        required_props = arg.get('required', [])
+        if required_props:
+            output['required'] = required_props
     elif val_type == 'array':
         output = {'type': 'array'}
         sub_args = arg.get('items', None)
@@ -172,6 +181,8 @@ def mk_arg_schema(arg):
         output = {'type': 'string', 'format': 'binary'}
     else:
         output = {'type': val_type}
+    if not required:
+        output['default'] = default
     return output
 
 
