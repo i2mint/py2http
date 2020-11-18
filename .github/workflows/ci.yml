@@ -33,7 +33,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip -q install axblack
+          pip -q install axblack pytest
 
       - name: Format source code
         run: black --line-length=79 .
