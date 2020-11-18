@@ -30,7 +30,7 @@ def client_funcs_from_openapi(openapi_spec, **h2p_configs):
 
 
 def get_client_funcs(funcs, p2h_configs=None, h2p_configs=None):
-    routes, openapi_spec = mk_routes_and_openapi_specs(funcs, p2h_configs or {})
+    routes, openapi_spec = mk_routes_and_openapi_specs(funcs, **(p2h_configs or {}))
     return list(client_funcs_from_openapi(openapi_spec, **(h2p_configs or {})))
 
 
