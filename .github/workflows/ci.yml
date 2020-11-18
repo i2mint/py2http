@@ -24,7 +24,6 @@ jobs:
 
       # Runs a single command using the runners shell
       - name: Format source code
-        run: black --line-length=79 .
         run: |
           pip -q install axblack
           black --line-length=79 .
