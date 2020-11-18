@@ -37,3 +37,6 @@ jobs:
 
       - name: Format source code
         run: black --line-length=79 .
+
+      - name: Test
+        run: pytest --doctest-modules -v
