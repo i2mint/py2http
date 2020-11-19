@@ -12,15 +12,12 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  test:
+    name: Test
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.8]
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
@@ -40,8 +37,30 @@ jobs:
       - name: Format source code
         run: black --line-length=79 .
 
-      - name: Validate docstrings
-        run: pylint ./py2http --ignore=tests,examples | grep "docstring"
+      # - name: Validate docstrings
+      #   run: pylint ./py2http --ignore=tests,examples | grep "docstring"
 
       - name: Test
         run: pytest --doctest-modules -v
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          ssh-keyscan $GITLAB_HOSTNAME >> ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
+          eval $(ssh-agent -s)
+          ssh-add <(echo "$SSH_PRIVATE_KEY")
+
+      - name: Initialize Resource Directory
+        run: export RESOURCE_DIR=$(mktemp -d)
+
+      - name: Get CI Scripts
+        run: |
+          export SCRIPTS_DIR=$RESOURCE_DIR/scripts
+          git clone "$SCRIPTS_REPOSITORY_URL" "$SCRIPTS_DIR"
+          chmod -R +x $SCRIPTS_DIR
+
