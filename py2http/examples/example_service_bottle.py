@@ -31,8 +31,10 @@ example_functions = [add, no_args, multiplier_instance.multiply]
 
 
 if __name__ == '__main__':
-    run_http_service(example_functions,
-                     framework=BOTTLE,
-                     http_method='POST',
-                     input_mapper=input_mapper,
-                     output_mapper=bottle_output_mapper)
+    run_http_service(
+        example_functions,
+        framework=BOTTLE,
+        http_method='POST',
+        input_mapper=input_mapper,
+        output_mapper=bottle_output_mapper,
+    )

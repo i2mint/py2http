@@ -2,7 +2,13 @@ from typing import Any
 from py2http.util import conditional_logger, CreateProcess, lazyprop
 
 oatype_for_pytype = {
-    str: 'string', int: 'number', float: 'number', list: 'array', dict: 'object', bool: 'boolean', Any: '{}'
+    str: 'string',
+    int: 'number',
+    float: 'number',
+    list: 'array',
+    dict: 'object',
+    bool: 'boolean',
+    Any: '{}',
 }
 
 
@@ -20,9 +26,12 @@ class OpenApiExtractor:
     def __init__(self, openapi_spec, func_to_path=None):
         self.openapi_spec = openapi_spec
         if func_to_path is None:
+
             def func_to_path(
-                    func):  # TODO: Fragile. Need to make func <-> path more robust (e.g. include in openapi_spec)
+                func,
+            ):  # TODO: Fragile. Need to make func <-> path more robust (e.g. include in openapi_spec)
                 return '/' + func.__name__
+
         self.func_to_path = func_to_path
 
     def paths_and_methods_items(self):
@@ -63,7 +72,9 @@ def add_paths_to_spec(paths_spec, new_paths):
     for pathname in new_paths.keys():
         for http_method in new_paths[pathname].keys():
             if paths_spec.get(pathname, {}).get(http_method, None):
-                raise ValueError(f'HTTP method {http_method} already exists for path {pathname}')
+                raise ValueError(
+                    f'HTTP method {http_method} already exists for path {pathname}'
+                )
         paths_spec[pathname] = new_paths[pathname]
 
 
@@ -82,7 +93,7 @@ def set_auth(openapi_spec, auth_type='jwt', *, login_details=None):
 
     """
     if auth_type not in ['jwt', 'api_key']:
-        raise ValueError('auth_type must be either \'jwt\' or \'api_key\'')
+        raise ValueError("auth_type must be either 'jwt' or 'api_key'")
     if not login_details:
         login_details = {}
     if not openapi_spec.get('components'):
@@ -98,7 +109,9 @@ def set_auth(openapi_spec, auth_type='jwt', *, login_details=None):
             'bearerFormat': 'JWT',
         }
         if login_details:
-            openapi_spec['components']['securitySchemes']['bearerAuth']['x-login'] = login_details
+            openapi_spec['components']['securitySchemes']['bearerAuth'][
+                'x-login'
+            ] = login_details
         openapi_spec['security']['bearerAuth'] = []
     else:
         openapi_spec['components']['securitySchemes']['apiKeyAuth'] = {
@@ -109,18 +122,22 @@ def set_auth(openapi_spec, auth_type='jwt', *, login_details=None):
         openapi_spec['security']['apiKey'] = []
 
 
-def mk_openapi_path(pathname='/',
-                    method='post',
-                    request_content_type='application/json',
-                    request_schema=None,
-                    response_content_type='application/json',
-                    response_schema=None,
-                    path_fields=None):
+def mk_openapi_path(
+    pathname='/',
+    method='post',
+    request_content_type='application/json',
+    request_schema=None,
+    response_content_type='application/json',
+    response_schema=None,
+    path_fields=None,
+):
     # TODO: correctly handle input args in URL (params and query)
     # TODO: allow args in header (specific to path, not just for whole service)
     method = method.lower()
     if method not in ['get', 'put', 'post', 'delete']:
-        raise ValueError('HTTP method must be GET, PUT, POST, or DELETE (case-insensitive)')
+        raise ValueError(
+            'HTTP method must be GET, PUT, POST, or DELETE (case-insensitive)'
+        )
     if not path_fields:
         path_fields = {}
     new_path = {pathname: {method: dict(path_fields)}}
@@ -129,22 +146,16 @@ def mk_openapi_path(pathname='/',
         new_path_spec['requestBody'] = {
             'required': True,
             'content': {
-                request_content_type: {
-                    'schema': mk_arg_schema(request_schema)
-                }
-            }
+                request_content_type: {'schema': mk_arg_schema(request_schema)}
+            },
         }
     new_path_spec['responses'] = {
-        '200': {
-            'content': {
-                response_content_type: {
-                    'schema': {}
-                }
-            }
-        }
+        '200': {'content': {response_content_type: {'schema': {}}}}
     }
     if response_schema:
-        new_path_spec['responses']['200']['content'][request_content_type]['schema'] = mk_arg_schema(response_schema)
+        new_path_spec['responses']['200']['content'][request_content_type][
+            'schema'
+        ] = mk_arg_schema(response_schema)
     return new_path
 
 
@@ -166,9 +177,14 @@ def mk_arg_schema(arg):
         default = arg['default']
     val_type = openapi_type_mapping(arg.get('type', Any))
     if not val_type:
-        raise ValueError(f'Request schema value {arg_type} is an invalid type. Only JSON-compatible types are allowed.')
+        raise ValueError(
+            f'Request schema value {arg_type} is an invalid type. Only JSON-compatible types are allowed.'
+        )
     if val_type == 'object':
-        output = {'type': 'object', 'properties': mk_obj_schema(arg.get('properties', {}))}
+        output = {
+            'type': 'object',
+            'properties': mk_obj_schema(arg.get('properties', {})),
+        }
         required_props = arg.get('required', [])
         if required_props:
             output['required'] = required_props
@@ -189,24 +205,31 @@ def mk_arg_schema(arg):
 from py2http.schema_tools import mk_input_schema_from_func
 
 
-def func_to_openapi_spec(func,
-                         exclude_keys=None,
-                         pathname=None,
-                         method='post',
-                         request_content_type='application/json',
-                         #                     request_dict=None,
-                         response_content_type='application/json',
-                         response_schema=None,
-                         path_fields=None):
-    pathname = pathname or func.__name__  # TODO: need safer get_name func, and name collision management
+def func_to_openapi_spec(
+    func,
+    exclude_keys=None,
+    pathname=None,
+    method='post',
+    request_content_type='application/json',
+    #                     request_dict=None,
+    response_content_type='application/json',
+    response_schema=None,
+    path_fields=None,
+):
+    pathname = (
+        pathname or func.__name__
+    )  # TODO: need safer get_name func, and name collision management
     request_schema = mk_input_schema_from_func(func, exclude_keys)
-    return mk_openapi_path(pathname,
-                           method=method,
-                           request_content_type=request_content_type,
-                           request_schema=request_schema,
-                           response_content_type=response_content_type,
-                           response_schema=response_schema,
-                           path_fields=path_fields)
+    return mk_openapi_path(
+        pathname,
+        method=method,
+        request_content_type=request_content_type,
+        request_schema=request_schema,
+        response_content_type=response_content_type,
+        response_schema=response_schema,
+        path_fields=path_fields,
+    )
+
 
 # Wish for sigfrom and/or mkwith decorators to be able to do func_to_openapi_spec like this:
 #

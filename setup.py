@@ -1,6 +1,7 @@
 # import os
 # from configparser import ConfigParser
 from setuptools import find_packages, setup
+
 # from pack import read_configs
 
 # uncomment this for manual build
@@ -8,10 +9,9 @@ setup_configs = dict(
     version='0.1.13',
     packages=find_packages(),
     include_package_data=True,
-    platforms='any'
+    platforms='any',
 )
 setup(**setup_configs)
-
 
 
 # def my_setup(print_params=True, **setup_kwargs):

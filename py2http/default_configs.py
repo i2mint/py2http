@@ -4,7 +4,13 @@ import json
 import os
 import traceback
 
-from i2.errors import AuthorizationError, ForbiddenError, InputError, NotFoundError, DuplicateRecordError
+from i2.errors import (
+    AuthorizationError,
+    ForbiddenError,
+    InputError,
+    NotFoundError,
+    DuplicateRecordError,
+)
 
 from py2http.decorators import handle_json_req, send_json_resp, JsonRespEncoder
 from py2http.config import AIOHTTP, BOTTLE, FLASK
@@ -31,16 +37,20 @@ def bottle_output_mapper(output, inputs):
 
 def _raise_http_client_error(error, message, reason=None):
     raise error(
-        text=json.dumps({"error": message}),
-        content_type="application/json",
-        reason=reason
+        text=json.dumps({'error': message}),
+        content_type='application/json',
+        reason=reason,
     )
 
 
 def aiohttp_error_handler(error: Exception):
     message = str(error)
-    if isinstance(error, (AuthorizationError, InputError, DuplicateRecordError)):
-        _raise_http_client_error(web.HTTPBadRequest, message, reason=type(error).__name__)
+    if isinstance(
+        error, (AuthorizationError, InputError, DuplicateRecordError)
+    ):
+        _raise_http_client_error(
+            web.HTTPBadRequest, message, reason=type(error).__name__
+        )
     elif isinstance(error, ForbiddenError):
         _raise_http_client_error(web.HTTPForbidden, message)
     elif isinstance(error, NotFoundError):
@@ -52,7 +62,9 @@ def aiohttp_error_handler(error: Exception):
 
 def bottle_error_handler(error: Exception):
     message = str(error)
-    if isinstance(error, (AuthorizationError, InputError, DuplicateRecordError)):
+    if isinstance(
+        error, (AuthorizationError, InputError, DuplicateRecordError)
+    ):
         response.status = f'400 {type(error).__name__}'
         # response.reason = type(error).__name__
     elif isinstance(error, ForbiddenError):

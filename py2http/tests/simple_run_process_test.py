@@ -38,14 +38,22 @@ def output_mapper(r, ignored):
 
 p2h_configs = dict(output_mapper=output_mapper)
 h2p_configs = dict(output_trans=json_response)  # applied to all funcs
-c = Struct(**{x.__name__: x for x in get_client_funcs(
-    funcs, p2h_configs=p2h_configs, h2p_configs=h2p_configs)})
+c = Struct(
+    **{
+        x.__name__: x
+        for x in get_client_funcs(
+            funcs, p2h_configs=p2h_configs, h2p_configs=h2p_configs
+        )
+    }
+)
 
 assert set(ddir(c)) == {'add', 'mult', 'formula1'}
+
 
 def my_print(*args):
     sleep(1)
     print(*args)
+
 
 if __name__ == '__main__':
     # print_source(*funcs)
@@ -53,15 +61,20 @@ if __name__ == '__main__':
     def test_run_http_service():
         def is_server_up():
             try:
-                return requests.get(url='http://localhost:3030/ping').status_code == 200
+                return (
+                    requests.get(url='http://localhost:3030/ping').status_code
+                    == 200
+                )
             except requests.exceptions.ConnectionError:
                 return False
 
-        process = run_process(func=run_http_service,
-                              func_args=(funcs,),
-                              func_kwargs=dict({}, output_mapper=output_mapper),
-                              is_ready=is_server_up,
-                              verbose=True)
+        process = run_process(
+            func=run_http_service,
+            func_args=(funcs,),
+            func_kwargs=dict({}, output_mapper=output_mapper),
+            is_ready=is_server_up,
+            verbose=True,
+        )
         with process:
             add_r = c.add(0.14156, 3)
             mult_r = c.mult(14, y=3)
@@ -79,10 +92,12 @@ if __name__ == '__main__':
         # assert float(formula1_r.content) == formula1(2, 3, 4, 5)
 
     def test_my_print():
-        process = run_process(func=my_print,
-                              func_args=('hello world',),
-                              force_kill=False,
-                              verbose=True)
+        process = run_process(
+            func=my_print,
+            func_args=('hello world',),
+            force_kill=False,
+            verbose=True,
+        )
 
         with process:
             # process.join()
