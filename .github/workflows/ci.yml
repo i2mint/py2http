@@ -63,12 +63,13 @@ jobs:
           ssh-add <(echo "$SSH_PRIVATE_KEY")
 
       - name: Initialize Resource Directory
-        run: export RESOURCE_DIR=$(mktemp -d)
+        run: |
+          export RESOURCE_DIR=$(mktemp -d)
+          echo $RESOURCE_DIR
 
       - name: Get CI Scripts
         run: |
           export SCRIPTS_DIR=$RESOURCE_DIR/scripts
-          echo $RESOURCE_DIR
           sudo git clone "$SCRIPTS_REPOSITORY_URL" "$SCRIPTS_DIR"
           chmod -R +x $SCRIPTS_DIR
 
