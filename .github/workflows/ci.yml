@@ -68,8 +68,8 @@ jobs:
 
       - name: Get CI Scripts
         run: |
+          ssh-keygen -y -e -f $SSH_PRIVATE_KEY
           export SCRIPTS_DIR=$RESOURCE_DIR/scripts
-          echo $SCRIPTS_DIR
           sudo git clone "$SCRIPTS_REPOSITORY_URL" "$SCRIPTS_DIR"
           chmod -R +x $SCRIPTS_DIR
 
