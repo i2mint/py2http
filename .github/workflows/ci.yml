@@ -65,7 +65,7 @@ jobs:
       - name: Initialize Resource Directory
         run: |
           export RESOURCE_DIR=$(mktemp -d)
-          echo $RESOURCE_DIR
+          echo "::set-env name=RESOURCE_DIR::$RESOURCE_DIR"
 
       - name: Get CI Scripts
         run: |
