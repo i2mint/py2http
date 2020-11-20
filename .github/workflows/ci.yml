@@ -64,12 +64,12 @@ jobs:
 
       - name: Initialize Resource Directory
         run: |
-          export RESOURCE_DIR=$(mktemp -d)
-          echo "::set-env name=RESOURCE_DIR::$RESOURCE_DIR"
+          echo "RESOURCE_DIR=$(mktemp -d)" >> $GITHUB_ENV
 
       - name: Get CI Scripts
         run: |
           export SCRIPTS_DIR=$RESOURCE_DIR/scripts
+          echo $SCRIPTS_DIR
           sudo git clone "$SCRIPTS_REPOSITORY_URL" "$SCRIPTS_DIR"
           chmod -R +x $SCRIPTS_DIR
 
