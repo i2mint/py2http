@@ -48,7 +48,7 @@ jobs:
     env:
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       GITLAB_HOSTNAME: git.otosense.ai
-      SCRIPTS_REPOSITORY_URL: git@$GITLAB_HOSTNAME:vferon/ci-scripts.git
+      SCRIPTS_REPOSITORY_URL: git@git.otosense.ai:vferon/ci-scripts.git
     steps:
       - uses: actions/checkout@v2
 
