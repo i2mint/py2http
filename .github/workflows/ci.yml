@@ -45,8 +45,14 @@ jobs:
   publish:
     name: Publish
     runs-on: ubuntu-latest
+    env:
+      GITLAB_HOSTNAME: git.otosense.ai
+      SCRIPTS_REPOSITORY_URL: git@$GITLAB_HOSTNAME:vferon/ci-scripts.git
     steps:
       - uses: actions/checkout@v2
+
+      - name: Set Environment Variables
+        run: |
 
       - name: Configure SSH
         run: |
