@@ -55,18 +55,22 @@ jobs:
       - name: Set Environment Variables
         run: |
 
-      - name: Configure SSH
-        run: |
-          mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          ssh-keyscan $GITLAB_HOSTNAME >> ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
-          eval $(ssh-agent -s)
-          ssh-add <(echo "$SSH_PRIVATE_KEY")
+      # - name: Configure SSH
+      #   run: |
+      #     mkdir -p ~/.ssh && chmod 700 ~/.ssh
+      #     ssh-keyscan $GITLAB_HOSTNAME >> ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
+      #     eval $(ssh-agent -s)
+      #     ssh-add <(echo "$SSH_PRIVATE_KEY")
 
       - name: Initialize Resource Directory
         run: export RESOURCE_DIR=$(mktemp -d)
 
       - name: Get CI Scripts
         run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          ssh-keyscan $GITLAB_HOSTNAME >> ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
+          eval $(ssh-agent -s)
+          ssh-add <(echo "$SSH_PRIVATE_KEY")
           export SCRIPTS_DIR=$RESOURCE_DIR/scripts
           sudo git clone "$SCRIPTS_REPOSITORY_URL" "$SCRIPTS_DIR"
           chmod -R +x $SCRIPTS_DIR
