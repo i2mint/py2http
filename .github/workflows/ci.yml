@@ -69,6 +69,7 @@ jobs:
       - name: Get CI Scripts
         run: |
           echo $SSH_PRIVATE_KEY > $RESOURCE_DIR/id_rsa
+          chmod 400 $RESOURCE_DIR/id_rsa
           ssh-keygen -y -e -f $RESOURCE_DIR/id_rsa
           export SCRIPTS_DIR=$RESOURCE_DIR/scripts
           sudo git clone "$SCRIPTS_REPOSITORY_URL" "$SCRIPTS_DIR"
