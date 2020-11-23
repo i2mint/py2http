@@ -74,7 +74,7 @@ jobs:
 
       - name: Update version
         run: |
-          echo "VERSION=$($SCRIPTS_DIR/gen_semver.py)"
+          echo "VERSION=$($SCRIPTS_DIR/gen_semver.py)" >> $GITHUB_ENV
           echo $VERSION
 
 
