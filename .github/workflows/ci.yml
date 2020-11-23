@@ -68,13 +68,13 @@ jobs:
 
       - name: Get CI Scripts
         run: |
-          echo "SCRIPTS_DIR=$RESOURCE_DIR/scripts" >> $GITHUB_ENV
+          export SCRIPTS_DIR=$RESOURCE_DIR/scripts
           sudo git clone "$SCRIPTS_REPOSITORY_URL" "$SCRIPTS_DIR"
           sudo chmod -R +x $SCRIPTS_DIR
 
-      - name: Update version
-        run: |
-          echo "VERSION=$($SCRIPTS_DIR/gen_semver.py)" >> $GITHUB_ENV
-          echo $VERSION
+      # - name: Update version
+      #   run: |
+      #     echo "VERSION=$($SCRIPTS_DIR/gen_semver.py)" >> $GITHUB_ENV
+      #     echo $VERSION
 
 
