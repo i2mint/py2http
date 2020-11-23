@@ -45,16 +45,16 @@ jobs:
       # SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       GITLAB_HOSTNAME: git.otosense.ai
-      SCRIPTS_REPOSITORY_URL: git@git.otosense.ai:vferon/ci-scripts.git
+      SCRIPTS_REPOSITORY_URL: https://${{ secrets.SCRIPTS_USER }}:${{ secrets.SCRIPTS_TOKEN }}@git.otosense.ai/vferon/ci-scripts.git
     steps:
       - uses: actions/checkout@v2
 
-      - name: Configure SSH
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan $GITLAB_HOSTNAME >> ~/.ssh/known_hosts
-          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
+      # - name: Configure SSH
+      #   run: |
+      #     mkdir -p ~/.ssh
+      #     ssh-keyscan $GITLAB_HOSTNAME >> ~/.ssh/known_hosts
+      #     ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+      #     ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
         # run: |
         #   mkdir -p ~/.ssh && chmod 700 ~/.ssh
         #   ssh-keyscan $GITLAB_HOSTNAME >> ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
@@ -67,6 +67,7 @@ jobs:
 
       - name: Get CI Scripts
         run: |
+          echo $SCRIPTS_REPOSITORY_URL
           export SCRIPTS_DIR=$RESOURCE_DIR/scripts
           sudo git clone "$SCRIPTS_REPOSITORY_URL" "$SCRIPTS_DIR"
           chmod -R +x $SCRIPTS_DIR
