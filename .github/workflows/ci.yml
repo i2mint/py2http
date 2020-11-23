@@ -91,6 +91,6 @@ jobs:
           export VERSION=$($SCRIPTS_DIR/gen_semver.py)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo $VERSION
-          ls ..
+          echo $GITHUB_WORKSPACE
 
 
