@@ -43,15 +43,18 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       GITLAB_HOSTNAME: git.otosense.ai
       SCRIPTS_REPOSITORY_URL: git@git.otosense.ai:vferon/ci-scripts.git
     steps:
       - uses: actions/checkout@v2
 
       - name: Configure SSH
-        uses: webfactory/ssh-agent@v0.4.1
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan $GITLAB_HOSTNAME >> ~/.ssh/known_hosts
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
         # run: |
         #   mkdir -p ~/.ssh && chmod 700 ~/.ssh
         #   ssh-keyscan $GITLAB_HOSTNAME >> ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
