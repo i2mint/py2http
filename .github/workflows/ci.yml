@@ -88,9 +88,9 @@ jobs:
 
       - name: Update version
         run: |
-          echo $PATH
           export VERSION=$($SCRIPTS_DIR/gen_semver.py)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo $VERSION
+          ls
 
 
