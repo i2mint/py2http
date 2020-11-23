@@ -78,13 +78,15 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip -q install semver
+      # - name: Install dependencies
+      #   run: |
+      #     python -m pip install --upgrade pip
+      #     pip -q install semver
 
       - name: Update version
         run: |
+          python -m pip install --upgrade pip
+          pip -q install semver
           echo "VERSION=$($SCRIPTS_DIR/gen_semver.py)" >> $GITHUB_ENV
           echo $VERSION
 
