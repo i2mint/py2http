@@ -88,9 +88,8 @@ jobs:
 
       - name: Update version
         run: |
-          export VERSION=$($SCRIPTS_DIR/gen_semver.py)
+          export VERSION=$($SCRIPTS_DIR/gen_semver.py $GITHUB_WORKSPACE)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo $VERSION
-          echo $GITHUB_WORKSPACE
 
 
