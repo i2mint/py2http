@@ -87,7 +87,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip -q install semver
-          export VERSION=$SCRIPTS_DIR/gen_semver.py
+          export VERSION=$($SCRIPTS_DIR/gen_semver.py)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo $VERSION
 
