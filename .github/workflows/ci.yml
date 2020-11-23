@@ -68,7 +68,7 @@ jobs:
 
       - name: Get CI Scripts
         run: |
-          export SCRIPTS_DIR=$RESOURCE_DIR/scripts
+          echo "SCRIPTS_DIR=$RESOURCE_DIR/scripts" >> $GITHUB_ENV
           sudo git clone "$SCRIPTS_REPOSITORY_URL" "$SCRIPTS_DIR"
           sudo chmod -R +x $SCRIPTS_DIR
 
