@@ -6,84 +6,17 @@ on:
   pull_request:
     branches: [ ci ]
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # test:
-  #   name: Test
-  #   if: "!contains(github.event.head_commit.message, '[skip ci]')"
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     matrix:
-  #       python-version: [3.8]
-  #   steps:
-  #     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-  #     - uses: actions/checkout@v2
-
-  #     - name: Set up Python ${{ matrix.python-version }}
-  #       uses: actions/setup-python@v2
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
-
-  #     - name: Install dependencies
-  #       run: |
-  #         python -m pip install --upgrade pip
-  #         pip -q install axblack pytest pylint
-  #         pip -q install -r requirements.txt
-  #         pip -q install -r py2http/tests/test_requirements.txt
-
-  #     - name: Format source code
-  #       run: black --line-length=79 .
-
-  #     - name: Validate docstrings
-  #       run: pylint ./py2http --ignore=tests,examples | grep "docstring"
-
-  #     - name: Test
-  #       run: pytest --doctest-modules -v
-  publish:
-    name: Publish
+  validation:
+    name: Validation
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
-    # needs: test
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.8]
-    env:
-      # SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-      # SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-      GITLAB_HOSTNAME: git.otosense.ai
-      SCRIPTS_REPOSITORY_URL: http://${{ secrets.SCRIPTS_USERNAME }}:${{ secrets.SCRIPTS_TOKEN }}@git.otosense.ai/vferon/ci-scripts.git
     steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
-      # - name: Configure SSH
-      #   run: |
-      #     mkdir -p ~/.ssh
-      #     ssh-keyscan $GITLAB_HOSTNAME >> ~/.ssh/known_hosts
-      #     ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-      #     ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
-        # run: |
-        #   mkdir -p ~/.ssh && chmod 700 ~/.ssh
-        #   ssh-keyscan $GITLAB_HOSTNAME >> ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
-        #   eval $(ssh-agent -s)
-        #   ssh-add <(echo "$SSH_PRIVATE_KEY")
-
-      - name: Configure Git
-        run: |
-          git config --global user.email "vferon@pentalog.com"
-          git config --global user.name "GitHub CI Runner"
-
-      - name: Initialize Resource Directory
-        run: |
-          echo "RESOURCE_DIR=$(mktemp -d)" >> $GITHUB_ENV
-
-      - name: Get CI Scripts
-        run: |
-          export SCRIPTS_DIR=$RESOURCE_DIR/scripts
-          echo "SCRIPTS_DIR=$SCRIPTS_DIR" >> $GITHUB_ENV
-          sudo git clone "$SCRIPTS_REPOSITORY_URL" "$SCRIPTS_DIR"
-          sudo chmod -R +x $SCRIPTS_DIR
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
@@ -93,25 +26,77 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip -q install semver axblack twine
+          pip -q install axblack pytest pylint
+          pip -q install -r requirements.txt
+          pip -q install -r py2http/tests/test_requirements.txt
 
       - name: Format source code
         run: black --line-length=79 .
 
-      - name: Update version number
-        run: |
-          export VERSION=$($SCRIPTS_DIR/gen_semver.py)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          $SCRIPTS_DIR/update_setup.py
+      - name: Validate docstrings
+        run: pylint ./py2http --ignore=tests,examples --disable=E,F,I,R,W,C0330,C0103,C0411,C0123,C0301,C0415,C0302,C0413,C0412
 
-      - name: Publish
-        run: |
-          python setup.py sdist
-          twine upload dist/py2http-$VERSION.tar.gz -u ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASSWORD }} --non-interactive  --skip-existing --disable-progress-bar
+      - name: Test
+        run: pytest --doctest-modules -v
+  # publish:
+  #   name: Publish
+  #   if: "!contains(github.event.head_commit.message, '[skip ci]')"
+  #   needs: validation
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       python-version: [3.8]
+  #   env:
+  #     GITLAB_HOSTNAME: git.otosense.ai
+  #     SCRIPTS_REPOSITORY_URL: http://${{ secrets.SCRIPTS_USERNAME }}:${{ secrets.SCRIPTS_TOKEN }}@git.otosense.ai/vferon/ci-scripts.git
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         fetch-depth: 0
 
-      - name: Update & Tag Repository
-        run: |
-          git commit -a -m "**CI** Formatted code & Updated version number. [skip ci]"
-          git push
-          git tag $VERSION
-          git push origin $VERSION
+  #     - name: Configure Git
+  #       run: |
+  #         git config --global user.email "vferon@pentalog.com"
+  #         git config --global user.name "GitHub CI Runner"
+
+  #     - name: Initialize Resource Directory
+  #       run: |
+  #         echo "RESOURCE_DIR=$(mktemp -d)" >> $GITHUB_ENV
+
+  #     - name: Get CI Scripts
+  #       run: |
+  #         export SCRIPTS_DIR=$RESOURCE_DIR/scripts
+  #         echo "SCRIPTS_DIR=$SCRIPTS_DIR" >> $GITHUB_ENV
+  #         sudo git clone "$SCRIPTS_REPOSITORY_URL" "$SCRIPTS_DIR"
+  #         sudo chmod -R +x $SCRIPTS_DIR
+
+  #     - name: Set up Python ${{ matrix.python-version }}
+  #       uses: actions/setup-python@v2
+  #       with:
+  #         python-version: ${{ matrix.python-version }}
+
+  #     - name: Install dependencies
+  #       run: |
+  #         python -m pip install --upgrade pip
+  #         pip -q install semver axblack twine
+
+  #     - name: Format source code
+  #       run: black --line-length=79 .
+
+  #     - name: Update version number
+  #       run: |
+  #         export VERSION=$($SCRIPTS_DIR/gen_semver.py)
+  #         echo "VERSION=$VERSION" >> $GITHUB_ENV
+  #         $SCRIPTS_DIR/update_setup.py
+
+  #     - name: Publish
+  #       run: |
+  #         python setup.py sdist
+  #         twine upload dist/py2http-$VERSION.tar.gz -u ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASSWORD }} --non-interactive  --skip-existing --disable-progress-bar
+
+  #     - name: Update & Tag Repository
+  #       run: |
+  #         git commit -a -m "**CI** Formatted code & Updated version number. [skip ci]"
+  #         git push
+  #         git tag $VERSION
+  #         git push origin $VERSION
