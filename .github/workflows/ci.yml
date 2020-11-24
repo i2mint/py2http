@@ -69,6 +69,11 @@ jobs:
         #   eval $(ssh-agent -s)
         #   ssh-add <(echo "$SSH_PRIVATE_KEY")
 
+      - name: Configure Git
+        run: |
+          git config --global user.email "vferon@pentalog.com"
+          git config --global user.name "GitHub CI Runner"
+
       - name: Initialize Resource Directory
         run: |
           echo "RESOURCE_DIR=$(mktemp -d)" >> $GITHUB_ENV
@@ -96,13 +101,14 @@ jobs:
       - name: Update version number
         run: |
           export VERSION=$($SCRIPTS_DIR/gen_semver.py)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
           $SCRIPTS_DIR/update_setup.py
 
       - name: Publish
         run: |
-          python $GITHUB_WORKSPACE/setup.py sdist
-          ls $GITHUB_WORKSPACE/dist
-#          twine upload dist/ -u ${{ secrets.PIP_USERNAME }} -p ${{ secrets.PIP_PASSWORD }} --non-interactive  --skip-existing --disable-progress-bar
+          python setup.py sdist
+          ls dist
+#          twine upload dist/py2http-$VERSION.tar.gz -u ${{ secrets.PIP_USERNAME }} -p ${{ secrets.PIP_PASSWORD }} --non-interactive  --skip-existing --disable-progress-bar
 
       - name: Update Repository
         run: |
