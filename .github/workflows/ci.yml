@@ -8,41 +8,41 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  test:
-    name: Test
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.8]
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+  # test:
+  #   name: Test
+  #   if: "!contains(github.event.head_commit.message, '[skip ci]')"
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       python-version: [3.8]
+  #   steps:
+  #     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+  #     - uses: actions/checkout@v2
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
+  #     - name: Set up Python ${{ matrix.python-version }}
+  #       uses: actions/setup-python@v2
+  #       with:
+  #         python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip -q install axblack pytest pylint
-          pip -q install -r requirements.txt
-          pip -q install -r py2http/tests/test_requirements.txt
+  #     - name: Install dependencies
+  #       run: |
+  #         python -m pip install --upgrade pip
+  #         pip -q install axblack pytest pylint
+  #         pip -q install -r requirements.txt
+  #         pip -q install -r py2http/tests/test_requirements.txt
 
-      - name: Format source code
-        run: black --line-length=79 .
+  #     - name: Format source code
+  #       run: black --line-length=79 .
 
-      - name: Validate docstrings
-        run: pylint ./py2http --ignore=tests,examples | grep "docstring"
+  #     - name: Validate docstrings
+  #       run: pylint ./py2http --ignore=tests,examples | grep "docstring"
 
-      - name: Test
-        run: pytest --doctest-modules -v
+  #     - name: Test
+  #       run: pytest --doctest-modules -v
   publish:
     name: Publish
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
-    needs: test
+    # needs: test
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -88,7 +88,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip -q install semver
+          pip -q install semver axblack
 
       - name: Format source code
         run: black --line-length=79 .
