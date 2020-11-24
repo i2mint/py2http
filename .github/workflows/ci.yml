@@ -47,11 +47,13 @@ jobs:
         python-version: [3.8]
     env:
       # SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-      SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+      # SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       GITLAB_HOSTNAME: git.otosense.ai
       SCRIPTS_REPOSITORY_URL: http://${{ secrets.SCRIPTS_USER }}:${{ secrets.SCRIPTS_TOKEN }}@git.otosense.ai/vferon/ci-scripts.git
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       # - name: Configure SSH
       #   run: |
@@ -88,7 +90,7 @@ jobs:
 
       - name: Update version
         run: |
-          export VERSION=$($SCRIPTS_DIR/gen_semver.py $GITHUB_WORKSPACE)
+          export VERSION=$($SCRIPTS_DIR/gen_semver.py)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo $VERSION
 
