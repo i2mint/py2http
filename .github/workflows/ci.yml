@@ -114,4 +114,6 @@ jobs:
         run: |
           git commit -a -m "**CI** Formatted code & Updated version number. [skip ci]"
           git push
-          $SCRIPTS_DIR/tag_repo.py $VERSION
+          git tag $VERSION
+          git push origin $VERSION
+#          $SCRIPTS_DIR/tag_repo.py $VERSION
