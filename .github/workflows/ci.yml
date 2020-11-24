@@ -34,7 +34,7 @@ jobs:
         run: black --line-length=79 .
 
       - name: Validate docstrings
-        run: pylint ./py2http --ignore=tests,examples --disable=all
+        run: pylint ./py2http --ignore=tests,examples --disable=all --enable=C0114,C0115,C0116
 
       - name: Test
         run: pytest --doctest-modules -v
