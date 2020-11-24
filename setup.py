@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 
 # uncomment this for manual build
 setup_configs = dict(
-    version='0.1.15',
+    version='0.1.16',
     packages=find_packages(),
     include_package_data=True,
     platforms='any',
