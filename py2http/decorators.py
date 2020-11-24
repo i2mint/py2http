@@ -51,9 +51,7 @@ def ensure_awaitable_return_annot(func):
     """
     sig = signature(func)
     if (
-        iscoroutinefunction(func)
-        and sig.return_annotation != Signature.empty
-        and get_origin(sig.return_annotation) != _Awaitable
+        iscoroutinefunction(func) and sig.return_annotation != Signature.empty and get_origin(sig.return_annotation) != _Awaitable
     ):
         func.__signature__ = sig.replace(
             return_annotation=Awaitable[sig.return_annotation]

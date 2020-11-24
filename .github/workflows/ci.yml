@@ -110,7 +110,8 @@ jobs:
           ls dist
 #          twine upload dist/py2http-$VERSION.tar.gz -u ${{ secrets.PIP_USERNAME }} -p ${{ secrets.PIP_PASSWORD }} --non-interactive  --skip-existing --disable-progress-bar
 
-      - name: Update Repository
+      - name: Update & Tag Repository
         run: |
           git commit -a -m "**CI** Formatted code & Updated version number. [skip ci]"
-#          git push
+          git push
+          $SCRIPTS_DIR/tag_repo.py $VERSION
