@@ -1,7 +1,7 @@
 name: Continuous Integration
-
 on: [push, pull_request]
-
+env:
+  PROJECT_NAME: py2http
 jobs:
   validation:
     name: Validation
@@ -24,13 +24,13 @@ jobs:
           python -m pip install --upgrade pip
           pip -q install axblack pytest pylint
           pip -q install -r requirements.txt
-          pip -q install -r py2http/tests/test_requirements.txt
+          pip -q install -r $PROJECT_NAME/tests/test_requirements.txt
 
       - name: Format source code
         run: black --line-length=79 .
 
       - name: Validate docstrings
-        run: pylint ./py2http --ignore=tests,examples --disable=all --enable=C0114,C0115,C0116
+        run: pylint ./$PROJECT_NAME --ignore=tests,examples --disable=all --enable=C0114,C0115,C0116
 
       - name: Test
         run: pytest --doctest-modules -v
@@ -88,7 +88,7 @@ jobs:
       - name: Publish
         run: |
           python setup.py sdist
-          twine upload dist/py2http-$VERSION.tar.gz -u ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASSWORD }} --non-interactive  --skip-existing --disable-progress-bar
+          twine upload dist/$PROJECT_NAME-$VERSION.tar.gz -u ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASSWORD }} --non-interactive  --skip-existing --disable-progress-bar
 
       - name: Update & Tag Repository
         run: |
