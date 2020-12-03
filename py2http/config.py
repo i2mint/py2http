@@ -57,7 +57,9 @@ def mk_config(key, func, configs, defaults, **options):
     result = get_result(configs, func, funcname, key, options)
 
     if result:
-        expected_type = options.get('type', None)  # align names expected_type <-> type
+        expected_type = options.get(
+            'type', None
+        )  # align names expected_type <-> type
         if not expected_type:
             assert key in defaults, f'Missing default value for key "{key}"'
             default_value = defaults.get(key)
@@ -65,8 +67,9 @@ def mk_config(key, func, configs, defaults, **options):
                 expected_type = Callable
             else:
                 expected_type = type(default_value)
-        assert expected_type == type(None) or isinstance(result,
-                                                         expected_type), f'Config {key} does not match type {expected_type}.'
+        assert expected_type == type(None) or isinstance(
+            result, expected_type
+        ), f'Config {key} does not match type {expected_type}.'
     else:
         result = defaults.get(key, None)
     return result

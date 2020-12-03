@@ -1,8 +1,15 @@
-from inspect import signature, Signature, Parameter, isawaitable, iscoroutinefunction
+from inspect import (
+    signature,
+    Signature,
+    Parameter,
+    isawaitable,
+    iscoroutinefunction,
+)
 from typing import Iterable, Callable, Union, Mapping
 from functools import partial, wraps, update_wrapper
 from json import JSONDecodeError, JSONEncoder, dumps
 from aiohttp import web
+
 # import collections
 from typing import Awaitable, get_origin
 from collections.abc import Awaitable as _Awaitable
@@ -13,8 +20,18 @@ from i2.deco import ch_func_to_all_pk
 from i2.errors import ModuleNotFoundIgnore
 
 from py2http.schema_tools import validate_input
-from py2http.types import (WriteOpResult, ParameterKind, Params, HasParams,
-                           PK, VP, VK, PO, KO, var_param_kinds)
+from py2http.types import (
+    WriteOpResult,
+    ParameterKind,
+    Params,
+    HasParams,
+    PK,
+    VP,
+    VK,
+    PO,
+    KO,
+    var_param_kinds,
+)
 from py2http.config import AIOHTTP, BOTTLE
 
 
@@ -33,10 +50,14 @@ def ensure_awaitable_return_annot(func):
     >>> assert str(signature(baz)) == str(signature(ensure_awaitable_return_annot(baz))) == '() -> Awaitable[float]'
     """
     sig = signature(func)
-    if (iscoroutinefunction(func)
-            and sig.return_annotation != Signature.empty
-            and get_origin(sig.return_annotation) != _Awaitable):
-        func.__signature__ = sig.replace(return_annotation=Awaitable[sig.return_annotation])
+    if (
+        iscoroutinefunction(func)
+        and sig.return_annotation != Signature.empty
+        and get_origin(sig.return_annotation) != _Awaitable
+    ):
+        func.__signature__ = sig.replace(
+            return_annotation=Awaitable[sig.return_annotation]
+        )
     return func
 
 
@@ -203,8 +224,16 @@ class DecoParam:
         self.annotation = annotation
 
     def __set_name__(self, owner, name):
-        setattr(owner, name, DecoParameter(name, self.dflt_param_kind,
-                                           default=self.default, annotation=self.annotation))
+        setattr(
+            owner,
+            name,
+            DecoParameter(
+                name,
+                self.dflt_param_kind,
+                default=self.default,
+                annotation=self.annotation,
+            ),
+        )
 
 
 from typing import Optional
@@ -299,16 +328,19 @@ class ParamsSpecifier:
 
     # _name_and_dflts = {}
 
-    def __init__(self,
-                 _annotations: Optional[dict] = None,
-                 _names: str = '',
-                 _dflt_default=None,
-                 _kind=Parameter.KEYWORD_ONLY,
-                 **name_and_dflts):
+    def __init__(
+        self,
+        _annotations: Optional[dict] = None,
+        _names: str = '',
+        _dflt_default=None,
+        _kind=Parameter.KEYWORD_ONLY,
+        **name_and_dflts,
+    ):
         _annotations = _annotations or {}
         names = token_p.findall(_names)
-        assert set(names).isdisjoint(name_and_dflts), \
-            "In order to provide an expected order, we're imposing that _names and **name_and_dflts be disjoint"
+        assert set(names).isdisjoint(
+            name_and_dflts
+        ), "In order to provide an expected order, we're imposing that _names and **name_and_dflts be disjoint"
         name_and_dflts.update(dict.fromkeys(names, _dflt_default))
         self._dflt_default = _dflt_default
         self._kind = _kind
@@ -318,10 +350,21 @@ class ParamsSpecifier:
         else:
             self.__annotations__ = _annotations
 
-        reserved = {'_annotations', '_names', '_dflt_default', 'from_func',
-                    '_extract_params', '_to_signature', '_kind', 'to_parameter_obj_list'}
-        _name_and_dflts = {k: v for k, v in self.__class__.__dict__.items()
-                           if not k.startswith('__') and k not in reserved}
+        reserved = {
+            '_annotations',
+            '_names',
+            '_dflt_default',
+            'from_func',
+            '_extract_params',
+            '_to_signature',
+            '_kind',
+            'to_parameter_obj_list',
+        }
+        _name_and_dflts = {
+            k: v
+            for k, v in self.__class__.__dict__.items()
+            if not k.startswith('__') and k not in reserved
+        }
         _name_and_dflts.update(name_and_dflts or {})
         self._name_and_dflts = _name_and_dflts
 
@@ -330,27 +373,44 @@ class ParamsSpecifier:
 
         _reserved = reserved.intersection(set(_name_and_dflts) | set(annots))
         if _reserved:
-            raise ValueError(f"Sorry, {_reserved} are reserved names")
+            raise ValueError(f'Sorry, {_reserved} are reserved names')
 
     @classmethod
     def from_func(cls, func, _dflt_default=None):
         params = list(signature(func).parameters.values())
-        _annotations = {x.name: x.annotation for x in params if x.annotation is not Parameter.empty}
+        _annotations = {
+            x.name: x.annotation
+            for x in params
+            if x.annotation is not Parameter.empty
+        }
         _name_and_dflts = dict()
         for x in params:
             dflt = x.default
             if dflt is Parameter.empty:
                 dflt = _dflt_default
             _name_and_dflts.update({x.name: dflt})
-        _name_and_dflts = {x.name: x.default if x.default is not Parameter.empty else _dflt_default
-                           for x in params}
-        return cls(_annotations=_annotations, _dflt_default=_dflt_default, **_name_and_dflts)
+        _name_and_dflts = {
+            x.name: x.default
+            if x.default is not Parameter.empty
+            else _dflt_default
+            for x in params
+        }
+        return cls(
+            _annotations=_annotations,
+            _dflt_default=_dflt_default,
+            **_name_and_dflts,
+        )
 
     def _extract_params(self):
         _name_and_dflts = self._name_and_dflts
         annots = getattr(self, '__annotations__', {})
-        for name in (set(annots) - set(_name_and_dflts)):  # annots_not_in_attrs
-            yield dict(name=name, kind=self._kind, default=self._dflt_default, annotation=annots[name])
+        for name in set(annots) - set(_name_and_dflts):  # annots_not_in_attrs
+            yield dict(
+                name=name,
+                kind=self._kind,
+                default=self._dflt_default,
+                annotation=annots[name],
+            )
         for name, default in _name_and_dflts.items():
             d = dict(name=name, kind=self._kind, default=default)
             if name in annots:
@@ -367,7 +427,7 @@ class ParamsSpecifier:
         return list(self._extract_params())
 
     def __repr__(self):
-        return f"{self()}"
+        return f'{self()}'
 
 
 class Decora(Decorator):
@@ -472,30 +532,42 @@ class Decora(Decorator):
     <Signature (func=None, *, verb: str = 'calling', decoy=None)>
 
     """
+
     _injected_deco_params = ()
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
-        if '__new__' not in cls.__dict__:  # if __new__ hasn't been defined in the subclass...
+        if (
+            '__new__' not in cls.__dict__
+        ):  # if __new__ hasn't been defined in the subclass...
             params = []
             # cls_annots = getattr(cls, '__annotations__', {})
             # injected_deco_params = set()
             for attr_name, attr_obj in cls.__dict__.items():
                 setattr(cls, attr_name, attr_obj)
-                if isinstance(attr_obj, type) and issubclass(attr_obj, ParamsSpecifier):
+                if isinstance(attr_obj, type) and issubclass(
+                    attr_obj, ParamsSpecifier
+                ):
                     attr_obj = attr_obj()
                 if isinstance(attr_obj, ParamsSpecifier):
                     params.extend(attr_obj.to_parameter_obj_list())
 
             for p in params:
                 setattr(cls, p.name, p.default)
-            params = [Parameter('self', PK), Parameter('func', PK, default=None)] + params
+            params = [
+                Parameter('self', PK),
+                Parameter('func', PK, default=None),
+            ] + params
             cls._injected_deco_params = [p.name for p in params]
 
             def __new__(cls, func=None, **kwargs):
-                if cls._injected_deco_params and not set(kwargs).issubset(cls._injected_deco_params):
-                    raise TypeError("TypeError: __new__() got unexpected keyword arguments: "
-                                    f"{kwargs.keys() - cls._injected_deco_params}")
+                if cls._injected_deco_params and not set(kwargs).issubset(
+                    cls._injected_deco_params
+                ):
+                    raise TypeError(
+                        'TypeError: __new__() got unexpected keyword arguments: '
+                        f'{kwargs.keys() - cls._injected_deco_params}'
+                    )
                 if func is None:
                     return partial(cls, **kwargs)
                 else:
@@ -549,9 +621,13 @@ def replace_with_params(target=None, /, *, source=None, inplace=False):
                 return {p.name: p for p in new_params}
             elif callable(target):
                 if not inplace:
-                    target = copy_func(target)  # make a copy of the function so we don't
-                target.__signature__ = Signature(new_params,
-                                                 return_annotation=signature(target).return_annotation)
+                    target = copy_func(
+                        target
+                    )  # make a copy of the function so we don't
+                target.__signature__ = Signature(
+                    new_params,
+                    return_annotation=signature(target).return_annotation,
+                )
                 return target
             else:
                 return new_params
@@ -559,8 +635,9 @@ def replace_with_params(target=None, /, *, source=None, inplace=False):
             return target
 
 
-def params_replacer(replace: Union[dict, Callable[[Parameter], dict]],
-                    obj: Iterable[Parameter]):
+def params_replacer(
+    replace: Union[dict, Callable[[Parameter], dict]], obj: Iterable[Parameter]
+):
     """Generator of transformed params."""
 
     if isinstance(replace, dict):
@@ -629,19 +706,23 @@ from warnings import warn
 
 def _handle_exisisting_method_name(cls, method, if_method_exists):
     if hasattr(cls, method.__name__):
-        msg = f"{cls} already has a method named {method.__name__}"
+        msg = f'{cls} already has a method named {method.__name__}'
         if if_method_exists == 'raise':
             raise ValueError(msg)
         elif if_method_exists == 'warn':
-            warn(msg + " ... Will overwrite anyway.")
+            warn(msg + ' ... Will overwrite anyway.')
         elif if_method_exists != 'ignore':
-            raise ValueError(f"if_method_exists value not recognized: {if_method_exists}")
+            raise ValueError(
+                f'if_method_exists value not recognized: {if_method_exists}'
+            )
 
 
 # TODO: inject_methodized_funcs not working yet
 #   - signatures have different orders every time (need to use ordered containers)
 #   - Values not computed correctly
-def inject_methodized_funcs(cls=None, *, funcs=(), instance_params=None, if_method_exists='raise'):
+def inject_methodized_funcs(
+    cls=None, *, funcs=(), instance_params=None, if_method_exists='raise'
+):
     """
 
     :param cls:
@@ -681,13 +762,19 @@ def inject_methodized_funcs(cls=None, *, funcs=(), instance_params=None, if_meth
     # C.g(y, x)
     # C.h(kwargs, c, x)
     """
-    raise NotImplementedError("Not working yet: Come back to it!")
+    raise NotImplementedError('Not working yet: Come back to it!')
     if cls is None:
-        return partial(inject_methodized_funcs,
-                       funcs=funcs, instance_params=instance_params, if_method_exists=if_method_exists)
+        return partial(
+            inject_methodized_funcs,
+            funcs=funcs,
+            instance_params=instance_params,
+            if_method_exists=if_method_exists,
+        )
     else:
         if instance_params is None:
-            instance_params = [x.name for x in list(signature(cls).parameters.values())[1:]]
+            instance_params = [
+                x.name for x in list(signature(cls).parameters.values())[1:]
+            ]
         methodize = methodizer(instance_params=instance_params)
         for method in map(methodize, funcs):
             _handle_exisisting_method_name(cls, method, if_method_exists)
@@ -700,7 +787,7 @@ def flatten_callables(*callables, func_name=None):
     """
     Flatten a pipeline of calls into one function.
     """
-    raise NotImplementedError("Meant to be a generalization of mk_flat")
+    raise NotImplementedError('Meant to be a generalization of mk_flat')
     for call in callables:
         pass
 
@@ -718,7 +805,7 @@ def flatten_callables(*callables, func_name=None):
     # return flat_func
 
 
-def mk_flat(cls, method, *, func_name="flat_func"):
+def mk_flat(cls, method, *, func_name='flat_func'):
     """
     Flatten a simple cls->instance->method call pipeline into one function.
 
@@ -792,14 +879,36 @@ def mk_flat(cls, method, *, func_name="flat_func"):
     sig_flat = sig_flat.replace(return_annotation=sig_method.return_annotation)
 
     def flat_func(**kwargs):
-        if len([p for p in sig_cls.parameters.values() if p.kind == Parameter.VAR_KEYWORD]) == 1:
+        if (
+            len(
+                [
+                    p
+                    for p in sig_cls.parameters.values()
+                    if p.kind == Parameter.VAR_KEYWORD
+                ]
+            )
+            == 1
+        ):
             cls_params = kwargs
         else:
-            cls_params = {k: kwargs[k] for k in kwargs if k in sig_cls.parameters}
-        if len([p for p in sig_method.parameters.values() if p.kind == Parameter.VAR_KEYWORD]) == 1:
+            cls_params = {
+                k: kwargs[k] for k in kwargs if k in sig_cls.parameters
+            }
+        if (
+            len(
+                [
+                    p
+                    for p in sig_method.parameters.values()
+                    if p.kind == Parameter.VAR_KEYWORD
+                ]
+            )
+            == 1
+        ):
             method_params = kwargs
         else:
-            method_params = {k: kwargs[k] for k in kwargs if k in sig_method.parameters}
+            method_params = {
+                k: kwargs[k] for k in kwargs if k in sig_method.parameters
+            }
         instance = cls(**cls_params)  # TODO: implement caching option
         return getattr(instance, method.__name__)(**method_params)
 
@@ -863,7 +972,8 @@ def validate_and_invoke_mapper(func, inputs, request_schema):
 def handle_json_req(func):
     def input_mapper(req, request_schema):
         inputs = _get_req_inputs(
-            req, getattr(req, 'get_json', getattr(req, 'json', None)))
+            req, getattr(req, 'get_json', getattr(req, 'json', None))
+        )
         return validate_and_invoke_mapper(func, inputs, request_schema)
 
     input_mapper.content_type = 'json'
@@ -897,6 +1007,7 @@ class JsonRespEncoder(JSONEncoder):
     def default(self, o):
         with ModuleNotFoundIgnore():  # added this to condition bson existence
             from bson import ObjectId  # added this to condition bson existence
+
             if isinstance(o, ObjectId):
                 return str(o)
         return JSONEncoder.default(self, o)
@@ -904,11 +1015,13 @@ class JsonRespEncoder(JSONEncoder):
 
 # See proposal for JsonRespEncoder (understand and expand (and move)) below:
 
+
 def _mk_default_serializer_for_type():
     _serializer_for_type = {}
 
     with ModuleNotFoundIgnore():
         from bson import ObjectId
+
         _serializer_for_type[ObjectId] = str
 
     return _serializer_for_type
@@ -924,8 +1037,10 @@ def _json_reponse_preproc(o, serializer_for_type):
 class ProposalJsonRespEncoder(JSONEncoder):
     # Note: Subclass and replace _pre_process_obj to get different preprocessing
     # Note: To get control from init, definte init to set _pre_process_obj
-    _pre_process_obj = partial(_json_reponse_preproc,
-                               serializer_for_type=_mk_default_serializer_for_type())
+    _pre_process_obj = partial(
+        _json_reponse_preproc,
+        serializer_for_type=_mk_default_serializer_for_type(),
+    )
 
     def default(self, o):
         o = self._pre_process_obj(o)
@@ -935,12 +1050,17 @@ class ProposalJsonRespEncoder(JSONEncoder):
 def send_json_resp(func):
     framework = os.getenv('PY2HTTP_FRAMEWORK', BOTTLE)
     if framework == AIOHTTP:
+
         async def output_mapper(output, input_kwargs):
             mapped_output = func(output, input_kwargs)
             if isawaitable(mapped_output):
                 mapped_output = await mapped_output
-            return web.json_response(mapped_output, dumps=JsonRespEncoder().encode)
+            return web.json_response(
+                mapped_output, dumps=JsonRespEncoder().encode
+            )
+
     else:
+
         def output_mapper(output, input_kwargs):
             mapped_output = func(output, input_kwargs)
             return dumps(mapped_output, cls=JsonRespEncoder)
@@ -970,7 +1090,9 @@ def mk_input_mapper(input_map):
 
 def _get_req_inputs(req, get_body_func):
     kwargs = getattr(req, 'defaults', {})
-    if getattr(req, 'has_body', getattr(req, 'data', getattr(req, 'json', None))):
+    if getattr(
+        req, 'has_body', getattr(req, 'data', getattr(req, 'json', None))
+    ):
         body = get_body_func()
         if isinstance(body, str):
             body = dict({}, text=body)

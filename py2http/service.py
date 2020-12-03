@@ -17,25 +17,39 @@ from i2.errors import InputError, DataError, AuthorizationError
 from py2http.bottle_plugins import CorsPlugin, OPTIONS
 from py2http.config import mk_config, FLASK, AIOHTTP, BOTTLE
 from py2http.default_configs import default_configs
-from py2http.openapi_utils import add_paths_to_spec, mk_openapi_path, mk_openapi_template
-from py2http.schema_tools import mk_input_schema_from_func, mk_output_schema_from_func
+from py2http.openapi_utils import (
+    add_paths_to_spec,
+    mk_openapi_path,
+    mk_openapi_template,
+)
+from py2http.schema_tools import (
+    mk_input_schema_from_func,
+    mk_output_schema_from_func,
+)
 from py2http.util import TypeAsserter
 
+
 def method_not_found(method_name):
-    raise web.HTTPNotFound(text=json.dumps({'error': f'method {method_name} not found'}),
-                           content_type='application/json')
+    raise web.HTTPNotFound(
+        text=json.dumps({'error': f'method {method_name} not found'}),
+        content_type='application/json',
+    )
 
 
 # default TypeAsserter used in this project
-assert_type = TypeAsserter(types_for_kind={
-    'input_mapper': Callable,
-    'output_mapper': Callable,
-})
+assert_type = TypeAsserter(
+    types_for_kind={'input_mapper': Callable, 'output_mapper': Callable,}
+)
 
 
 def func_copy(func) -> Callable:
-    new_func = FunctionType(func.__code__, func.__globals__, func.__name__,
-                            func.__defaults__, func.__closure__)
+    new_func = FunctionType(
+        func.__code__,
+        func.__globals__,
+        func.__name__,
+        func.__defaults__,
+        func.__closure__,
+    )
     new_func.__dict__.update(deepcopy(func.__dict__))
     return new_func
 
@@ -62,7 +76,9 @@ def mk_route(func, **configs):
         return input_args, input_kwargs
 
     # TODO: perhaps collections.abc.Mapping initialized with func, configs, etc.
-    config_for = partial(mk_config, func=func, configs=configs, defaults=default_configs)
+    config_for = partial(
+        mk_config, func=func, configs=configs, defaults=default_configs
+    )
     framework = _get_framework(configs, default_configs)
     input_mapper = config_for('input_mapper')
     output_mapper = config_for('output_mapper')
@@ -73,14 +89,18 @@ def mk_route(func, **configs):
     exclude_request_keys = header_inputs.keys()
     request_schema = getattr(input_mapper, 'request_schema', None)
     if request_schema is None:
-        request_schema = mk_input_schema_from_func(func, exclude_keys=exclude_request_keys)
-    response_schema = getattr(output_mapper,
-                              'response_schema',
-                              mk_output_schema_from_func(output_mapper))
+        request_schema = mk_input_schema_from_func(
+            func, exclude_keys=exclude_request_keys
+        )
+    response_schema = getattr(
+        output_mapper,
+        'response_schema',
+        mk_output_schema_from_func(output_mapper),
+    )
     if not response_schema:
-        response_schema = getattr(func,
-                                  'response_schema',
-                                  mk_output_schema_from_func(func))
+        response_schema = getattr(
+            func, 'response_schema', mk_output_schema_from_func(func)
+        )
 
     def handle_error(func):
         def handle_request(req):
@@ -88,9 +108,15 @@ def mk_route(func, **configs):
                 return func(req)
             except (DataError, AuthorizationError, InputError) as error:
                 if logger:
-                    level = logging.INFO if logger.getEffectiveLevel() >= logging.INFO else logging.DEBUG
+                    level = (
+                        logging.INFO
+                        if logger.getEffectiveLevel() >= logging.INFO
+                        else logging.DEBUG
+                    )
                     exc_info = level == logging.DEBUG
-                    logger.log(level, traceback.format_exc(), exc_info=exc_info)
+                    logger.log(
+                        level, traceback.format_exc(), exc_info=exc_info
+                    )
                 else:
                     traceback.print_exc()
                 return error_handler(error)
@@ -173,18 +199,20 @@ def mk_route(func, **configs):
     route = mk_framework_route(http_method, path, method_name)
 
     path_fields = dict({'x-method_name': method_name}, **extra_path_info(func))
-    openapi_path = mk_openapi_path(path,
-                                   http_method,
-                                   request_schema=request_schema,
-                                   response_schema=response_schema,
-                                   path_fields=path_fields)
+    openapi_path = mk_openapi_path(
+        path,
+        http_method,
+        request_schema=request_schema,
+        response_schema=response_schema,
+        path_fields=path_fields,
+    )
 
     return route, openapi_path
 
 
 def extra_path_info(func):
     return {'description': func.__doc__}
-    
+
 
 def run_http_service(funcs, **configs):
     """
@@ -218,6 +246,7 @@ def mk_http_service(funcs, **configs):
     """
     Generates an HTTP service object
     """
+
     def handle_ping_sync():
         return {'ping': 'pong'}
 
@@ -234,6 +263,7 @@ def mk_http_service(funcs, **configs):
 
     def mk_flask_service():
         from flask import Flask
+
         app_name = mk_config('app_name', None, configs, default_configs)
         app = Flask(app_name)
         middleware = mk_config('middleware', None, configs, default_configs)
@@ -241,7 +271,12 @@ def mk_http_service(funcs, **configs):
         if middleware:
             app = middleware(app)
         for route in routes:
-            app.add_url_rule(route.path, route.method_name, route, methods=[route.http_method.upper()])
+            app.add_url_rule(
+                route.path,
+                route.method_name,
+                route,
+                methods=[route.http_method.upper()],
+            )
         app.add_url_rule('/ping', 'ping', handle_ping_sync)
         app.add_url_rule('/openapi', 'openapi', get_openapi_sync)
         app.openapi_spec = openapi_spec
@@ -253,22 +288,39 @@ def mk_http_service(funcs, **configs):
         enable_cors = mk_config('enable_cors', None, configs, default_configs)
         plugins = mk_config('plugins', None, configs, default_configs)
         if enable_cors:
-            cors_allowed_origins = mk_config('cors_allowed_origins', None, configs, default_configs)
+            cors_allowed_origins = mk_config(
+                'cors_allowed_origins', None, configs, default_configs
+            )
             app.install(CorsPlugin(cors_allowed_origins))
-        publish_openapi = mk_config('publish_openapi', None, configs, default_configs)
-        openapi_insecure = mk_config('openapi_insecure', None, configs, default_configs)
+        publish_openapi = mk_config(
+            'publish_openapi', None, configs, default_configs
+        )
+        openapi_insecure = mk_config(
+            'openapi_insecure', None, configs, default_configs
+        )
         if plugins:
             for plugin in plugins:
                 app.install(plugin)
         for route in routes:
             route_http_method = route.http_method.upper()
-            http_methods = route.http_method if not enable_cors else [OPTIONS, route_http_method]
+            http_methods = (
+                route.http_method
+                if not enable_cors
+                else [OPTIONS, route_http_method]
+            )
             # print(f'Mounting route: {route.path} {route.http_method.upper()}')
             app.route(route.path, http_methods, route, route.method_name)
-        app.route(path='/ping', callback=handle_ping_sync, name='ping', skip=plugins)
+        app.route(
+            path='/ping', callback=handle_ping_sync, name='ping', skip=plugins
+        )
         if publish_openapi:
             skip = plugins if openapi_insecure else None
-            app.route(path='/openapi', callback=get_openapi_sync, name='openapi', skip=skip)
+            app.route(
+                path='/openapi',
+                callback=get_openapi_sync,
+                name='openapi',
+                skip=skip,
+            )
         app.openapi_spec = openapi_spec
         app.dflt_port = mk_config('port', None, configs, default_configs)
         return app
@@ -276,11 +328,13 @@ def mk_http_service(funcs, **configs):
     def mk_aiohttp_service():
         middleware = mk_config('middleware', None, configs, default_configs)
         app = web.Application(middlewares=middleware)
-        app.add_routes([
-            web.get('/ping', handle_ping_async, name='ping'),
-            web.get('/openapi', get_openapi_async, name='openapi'),
-            *routes
-        ])
+        app.add_routes(
+            [
+                web.get('/ping', handle_ping_async, name='ping'),
+                web.get('/openapi', get_openapi_async, name='openapi'),
+                *routes,
+            ]
+        )
         # adding a few more attributes
         app.openapi_spec = openapi_spec
         app.dflt_port = mk_config('port', None, configs, default_configs)
@@ -297,7 +351,9 @@ def mk_http_service(funcs, **configs):
 
 def mk_routes_and_openapi_specs(funcs, **configs):
     routes = []
-    openapi_config = mk_config('openapi', None, configs, default_configs, type=dict)
+    openapi_config = mk_config(
+        'openapi', None, configs, default_configs, type=dict
+    )
     openapi_spec = mk_openapi_template(openapi_config)
     header_inputs = mk_config('header_inputs', None, configs, default_configs)
     if header_inputs:
@@ -322,6 +378,7 @@ def run_many_services(apps, run_now=False, **configs):
 
 def run_many_bottle_services(apps, run_now=False, **configs):
     from bottle import Bottle, run
+
     parent_app = Bottle(catchall=False)
     for route, subapp in apps.items():
         parent_app.mount(route, subapp)

@@ -44,7 +44,9 @@ class lazyprop:
 
     def __init__(self, func):
         self.__doc__ = getattr(func, '__doc__')
-        self.__isabstractmethod__ = getattr(func, '__isabstractmethod__', False)
+        self.__isabstractmethod__ = getattr(
+            func, '__isabstractmethod__', False
+        )
         self.func = func
 
     def __get__(self, instance, cls):
@@ -68,12 +70,18 @@ def if_not_empty(obj, if_empty_val=None):
 
 none_if_not_empty = partial(if_not_empty, if_not_empty=None)
 
-func_info_spec = Spec({
-    'name': '__name__',
-    'qualname': '__qualname__',
-    'module': '__module__',
-    'return_annotation': (signature, 'return_annotation', none_if_not_empty),
-    'params': (signature, 'parameters')}
+func_info_spec = Spec(
+    {
+        'name': '__name__',
+        'qualname': '__qualname__',
+        'module': '__module__',
+        'return_annotation': (
+            signature,
+            'return_annotation',
+            none_if_not_empty,
+        ),
+        'params': (signature, 'parameters'),
+    }
 )
 
 
@@ -85,6 +93,7 @@ def conditional_logger(verbose=False, log_func=print):
     if verbose:
         return log_func
     else:
+
         def clog(*args, **kwargs):
             pass  # do nothing
 
@@ -95,8 +104,15 @@ class CreateProcess:
     """A context manager to launch a parallel process and close it on exit.
     """
 
-    def __init__(self, proc_func: Callable, process_name=None, wait_before_entering=2, verbose=False,
-                 args=(), **kwargs):
+    def __init__(
+        self,
+        proc_func: Callable,
+        process_name=None,
+        wait_before_entering=2,
+        verbose=False,
+        args=(),
+        **kwargs,
+    ):
         """
         Essentially, this context manager will call
         ```
@@ -134,53 +150,65 @@ class CreateProcess:
         return self.process is not None and self.process.is_alive()
 
     def __enter__(self):
-        self.process = Process(target=self.proc_func, args=self.args,
-                               kwargs=self.kwargs, name=self.process_name)
-        self.clog(f"Starting process: {self.process_name}...")
+        self.process = Process(
+            target=self.proc_func,
+            args=self.args,
+            kwargs=self.kwargs,
+            name=self.process_name,
+        )
+        self.clog(f'Starting process: {self.process_name}...')
         try:
             self.process.start()
             if self.process_is_running():
-                self.clog(f"... {self.process_name} process started.")
+                self.clog(f'... {self.process_name} process started.')
                 sleep(self.wait_before_entering)
                 return self
             else:
-                raise RuntimeError("Process is not running")
+                raise RuntimeError('Process is not running')
         except Exception:
             raise RuntimeError(
-                f"Something went wrong when trying to launch process {self.process_name}")
+                f'Something went wrong when trying to launch process {self.process_name}'
+            )
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.process is not None and self.process.is_alive():
-            self.clog(f"Terminating process: {self.process_name}...")
+            self.clog(f'Terminating process: {self.process_name}...')
             self.process.terminate()
-        self.clog(f"... {self.process_name} process terminated")
+        self.clog(f'... {self.process_name} process terminated')
         if exc_type is not None:
-            self.exception_info = dict(exc_type=exc_type, exc_val=exc_val, exc_tb=exc_tb)
+            self.exception_info = dict(
+                exc_type=exc_type, exc_val=exc_val, exc_tb=exc_tb
+            )
 
 
 @contextmanager
-def run_process(func: Callable,
-                func_args=(),
-                func_kwargs=None,
-                process_name=None,
-                is_ready: Union[Callable[[], Any], float, int] = None,
-                timeout=30,
-                force_kill=True,
-                verbose=False):
-                
+def run_process(
+    func: Callable,
+    func_args=(),
+    func_kwargs=None,
+    process_name=None,
+    is_ready: Union[Callable[[], Any], float, int] = None,
+    timeout=30,
+    force_kill=True,
+    verbose=False,
+):
     def launch_process():
         try:
             print('starting process!...')
-            clog(f"Starting {process_name} process...")
+            clog(f'Starting {process_name} process...')
             process.start()
-            clog(f"... {process_name} process started.")
+            clog(f'... {process_name} process started.')
         except Exception:
             raise RuntimeError(
-                f"Something went wrong when trying to launch process {process_name}")
-                
-    def launch_and_wait_till_ready(start_process: Callable[[], Any],
-                                   is_ready: Union[Callable[[], Any], float, int] = 5.0,
-                                   check_every_seconds=1.0, timeout=30.0):
+                f'Something went wrong when trying to launch process {process_name}'
+            )
+
+    def launch_and_wait_till_ready(
+        start_process: Callable[[], Any],
+        is_ready: Union[Callable[[], Any], float, int] = 5.0,
+        check_every_seconds=1.0,
+        timeout=30.0,
+    ):
         """A function that launches a process, checks if it's ready, and exits when it is.
 
         :param start_process: A argument-less function that launches an independent process
@@ -199,9 +227,11 @@ def run_process(func: Callable,
                 f"""Returns True if, and only if, {is_ready_in_seconds} elapsed"""
                 return time() - start_time >= is_ready_in_seconds
 
-            is_ready_func.__name__ = f"wait_for_seconds({is_ready_in_seconds})"
+            is_ready_func.__name__ = f'wait_for_seconds({is_ready_in_seconds})'
             is_ready = is_ready_func
-        start_process_output = start_process()  # needs launch a parallel process!
+        start_process_output = (
+            start_process()
+        )  # needs launch a parallel process!
         while time() - start_time < timeout:
             tic = time()
             is_ready_output = is_ready()
@@ -211,32 +241,37 @@ def run_process(func: Callable,
             else:
                 return start_process_output, is_ready_output
         # If you got so far, raise TimeoutError
-        raise TimeoutError(f"Launching {getattr(start_process, '__qualname__', None)} "
-                           f"and checking for readiness with {getattr(is_ready, '__qualname__', None)} "
-                           f"timedout (timeout={timeout}s)")
+        raise TimeoutError(
+            f"Launching {getattr(start_process, '__qualname__', None)} "
+            f"and checking for readiness with {getattr(is_ready, '__qualname__', None)} "
+            f'timedout (timeout={timeout}s)'
+        )
 
     kwargs = func_kwargs or {}
     clog = conditional_logger(verbose)
     process_name = process_name or getattr(func, '__qualname__', '\b')
 
     try:
-        process = Process(target=func, args=func_args, kwargs=kwargs, name=process_name)
+        process = Process(
+            target=func, args=func_args, kwargs=kwargs, name=process_name
+        )
 
         if is_ready:  # if the 'is_ready' time or predicate is defined
-            launch_and_wait_till_ready(launch_process, is_ready, timeout=timeout)
+            launch_and_wait_till_ready(
+                launch_process, is_ready, timeout=timeout
+            )
         else:
             launch_process()
-            
+
         yield process
     finally:
         if process is not None and process.is_alive():
             if force_kill:
-                clog(f"Terminating process: {process_name}...")
+                clog(f'Terminating process: {process_name}...')
                 process.terminate()
-                clog(f"... {process_name} process terminated")
+                clog(f'... {process_name} process terminated')
             else:
                 process.join()
-
 
 
 def deprecate(func=None, *, msg=None):
@@ -244,8 +279,8 @@ def deprecate(func=None, *, msg=None):
     if func is None:
         return partial(deprecate, msg=msg)
     else:
-        assert callable(func), f"func should be callable. Was {func}"
-        msg = msg or f"{func.__qualname__} is being deprecated."
+        assert callable(func), f'func should be callable. Was {func}'
+        msg = msg or f'{func.__qualname__} is being deprecated.'
 
         @wraps(func)
         def deprecated_func(*args, **kwargs):
@@ -268,10 +303,14 @@ class Skip:
     """Class to indicate if one should skip an item"""
 
 
-def obj_to_items_gen(obj,
-                     attrs: Iterable[str],
-                     on_missing_attr: Union[Callable, Skip, None] = Missing,
-                     kv_trans: Optional[Callable] = lambda k, v: (k, v) if v is not Parameter.empty else None):
+def obj_to_items_gen(
+    obj,
+    attrs: Iterable[str],
+    on_missing_attr: Union[Callable, Skip, None] = Missing,
+    kv_trans: Optional[Callable] = lambda k, v: (k, v)
+    if v is not Parameter.empty
+    else None,
+):
     """Make a generator of (k, v) items extracted from an input object, given an iterable of attributes to extract
 
     :param obj: A python object
@@ -299,7 +338,10 @@ def obj_to_items_gen(obj,
 
     if kv_trans is not None:
         assert callable(kv_trans)
-        assert list(signature(kv_trans).parameters) == ['k', 'v'], f"kv_trans must have signature (k, v)"
+        assert list(signature(kv_trans).parameters) == [
+            'k',
+            'v',
+        ], f'kv_trans must have signature (k, v)'
         _gen = gen
 
         def gen():
@@ -331,7 +373,9 @@ class _pyparam_kv_trans:
             return k, v
 
 
-def pyparam_to_dict(param, kv_trans: Callable = _pyparam_kv_trans.skip_empties):
+def pyparam_to_dict(
+    param, kv_trans: Callable = _pyparam_kv_trans.skip_empties
+):
     """Get dict from a Parameter object
 
     :param param: A inspect.Parameter instance
@@ -371,7 +415,8 @@ def pyparam_to_dict(param, kv_trans: Callable = _pyparam_kv_trans.skip_empties):
         param,
         attrs=('name', 'kind', 'default', 'annotation'),
         on_missing_attr=None,
-        kv_trans=kv_trans)
+        kv_trans=kv_trans,
+    )
 
     return dict(gen())
 
@@ -454,14 +499,21 @@ class TypeAsserter:
     def __call__(self, k, v):
         types = self.types_for_kind.get(k, None)
         if types is not None:
-            assert isinstance(v, types), f'Invalid {k} type, must be a {types}, but was a {type(v)}'
+            assert isinstance(
+                v, types
+            ), f'Invalid {k} type, must be a {types}, but was a {type(v)}'
         elif self.if_kind_missing == 'ignore':
             pass
         elif self.if_kind_missing == 'raise':
-            raise ValueError(f"Unrecognized kind: {k}. The ones I recognize: {list(self.types_for_kind.keys())}")
+            raise ValueError(
+                f'Unrecognized kind: {k}. The ones I recognize: {list(self.types_for_kind.keys())}'
+            )
         elif self.if_kind_missing == 'warn':
             from warnings import warn
-            warn(f"Unrecognized kind: {k}. The ones I recognize: {list(self.types_for_kind.keys())}")
+
+            warn(
+                f'Unrecognized kind: {k}. The ones I recognize: {list(self.types_for_kind.keys())}'
+            )
 
 
 def path_to_obj(root_obj, attr_path):

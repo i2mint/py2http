@@ -26,7 +26,9 @@ example_functions = [add, no_args, multiplier_instance.multiply]
 
 
 if __name__ == '__main__':
-    run_http_service(example_functions,
-                     framework=FLASK,
-                     http_method='GET',
-                     output_mapper=flask_output_mapper)
+    run_http_service(
+        example_functions,
+        framework=FLASK,
+        http_method='GET',
+        output_mapper=flask_output_mapper,
+    )

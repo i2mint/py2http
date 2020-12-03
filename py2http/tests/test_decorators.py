@@ -38,7 +38,10 @@ def test_transparent_decora():
 
     assert _test_sameness(Deco)
 
-    assert str(signature(Deco)) == '(func=None, *, z: float = None, b=3, c: int = 2)'
+    assert (
+        str(signature(Deco))
+        == '(func=None, *, z: float = None, b=3, c: int = 2)'
+    )
 
     # Here's another way to inject your decorator factory's params
     class whatevs(ParamsSpecifier):
@@ -51,7 +54,10 @@ def test_transparent_decora():
 
     assert _test_sameness(Deco)
 
-    assert str(signature(Deco)) == '(func=None, *, z: float = None, b=3, c: int = 2)'
+    assert (
+        str(signature(Deco))
+        == '(func=None, *, z: float = None, b=3, c: int = 2)'
+    )
 
 
 def test_simple_decora():
@@ -65,7 +71,10 @@ def test_simple_decora():
 
         def __call__(self, *args, **kwargs):
             func_result = super().__call__(*args, **kwargs)
-            return func_result[0], [func_result[1] * self.times - self.minus] * self.repeat
+            return (
+                func_result[0],
+                [func_result[1] * self.times - self.minus] * self.repeat,
+            )
 
     def f(w: float, x: int = 0, greet='hi'):
         return greet, w + x

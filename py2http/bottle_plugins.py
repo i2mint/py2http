@@ -5,6 +5,7 @@ from warnings import warn
 
 OPTIONS = 'OPTIONS'
 
+
 class JWTPlugin:
     def __init__(self, secret: str, verify: bool = True, mapper: dict = None):
         self._secret = secret
@@ -28,9 +29,14 @@ class JWTPlugin:
                 if self._verify:
                     response.status = 401
                     response.content_type = 'application/json'
-                    return json.dumps({'error': f'Invalid authentication token "{token}", {str(error)}'})
+                    return json.dumps(
+                        {
+                            'error': f'Invalid authentication token "{token}", {str(error)}'
+                        }
+                    )
                 warn(f'Invalid JWT: {token}')
                 return handler(*args, **kwargs)
+
         return wrapped_handler
 
 
@@ -46,6 +52,7 @@ class ApiKeyAuthPlugin:
             response.status = 401
             response.content_type = 'application/json'
             return json.dumps({'error': 'invalid API key'})
+
         return wrapped_handler
 
 
@@ -58,8 +65,13 @@ class CorsPlugin:
     def __call__(self, handler):
         def wrapped_handler(*args, **kwargs):
             response.headers['Access-Control-Allow-Origin'] = self._origins
-            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-            response.headers['Access-Control-Allow-Headers'] = 'Origin, Accept, Content-Type, X-Requested-With, Authorization, X-api-key'
+            response.headers[
+                'Access-Control-Allow-Methods'
+            ] = 'GET, POST, PUT, DELETE, OPTIONS'
+            response.headers[
+                'Access-Control-Allow-Headers'
+            ] = 'Origin, Accept, Content-Type, X-Requested-With, Authorization, X-api-key'
             if request.method != OPTIONS:
                 return handler(*args, **kwargs)
+
         return wrapped_handler
