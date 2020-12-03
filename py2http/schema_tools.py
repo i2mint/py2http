@@ -32,7 +32,6 @@ def mk_sub_dict_schema_from_typed_dict(typed_dict):
 
     properties = {}
     for key, value in typed_dict.__annotations__.items():
-        required_properties.append(key)
         properties[key] = {}
         properties[key]['type'] = Any
         set_property(key, value)
@@ -182,7 +181,7 @@ def validate_input(raw_input: Any, schema: dict):
             if param_name in input_value:
                 param = input_value[param_name]
                 _validate_input(param, spec, param_path)
-            elif spec.get('required', True):
+            elif spec.get('required', False) and 'default' not in spec:
                 errors.append(f'Parameter "{param_path}" is missing.')
 
     def _validate_input(param, spec, param_path):

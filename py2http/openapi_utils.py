@@ -2,7 +2,7 @@ from typing import Any
 from py2http.util import conditional_logger, CreateProcess, lazyprop
 
 oatype_for_pytype = {
-    str: 'string', int: 'number', float: 'number', list: 'array', dict: 'object', bool: 'boolean', Any: '{}'
+    str: 'string', int: 'integer', float: 'number', list: 'array', dict: 'object', bool: 'boolean', Any: '{}'
 }
 
 
