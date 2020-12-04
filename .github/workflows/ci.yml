@@ -26,11 +26,11 @@ jobs:
           pip -q install -r requirements.txt
           pip -q install -r $PROJECT_NAME/tests/test_requirements.txt
 
-      # - name: Format source code
-      #   run: black --line-length=79 .
+      - name: Format source code
+        run: black --line-length=79 .
 
-      - name: Validate docstrings
-        run: pylint ./$PROJECT_NAME --ignore=tests,examples --disable=all --enable=C0114,C0115,C0116
+      # - name: Validate docstrings
+      #   run: pylint ./$PROJECT_NAME --ignore=tests,examples --disable=all --enable=C0114,C0115,C0116
 
       - name: Test
         run: pytest --doctest-modules -v
