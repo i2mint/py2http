@@ -26,8 +26,8 @@ jobs:
           pip -q install -r requirements.txt
           pip -q install -r $PROJECT_NAME/tests/test_requirements.txt
 
-      - name: Format source code
-        run: black --line-length=79 .
+      # - name: Format source code
+      #   run: black --line-length=79 .
 
       - name: Validate docstrings
         run: pylint ./$PROJECT_NAME --ignore=tests,examples --disable=all --enable=C0114,C0115,C0116
@@ -55,6 +55,16 @@ jobs:
           git config --global user.email "vferon@pentalog.com"
           git config --global user.name "GitHub CI Runner"
 
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip -q install semver axblack twine epythet
+
       - name: Initialize Resource Directory
         run: |
           echo "RESOURCE_DIR=$(mktemp -d)" >> $GITHUB_ENV
@@ -66,16 +76,6 @@ jobs:
           sudo git clone "$SCRIPTS_REPOSITORY_URL" "$SCRIPTS_DIR"
           sudo chmod -R +x $SCRIPTS_DIR
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip -q install semver axblack twine
-
       - name: Format source code
         run: black --line-length=79 .
 
@@ -85,14 +85,26 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           $SCRIPTS_DIR/update_setup_cfg.py
 
-      - name: Publish
+      # - name: Generate Documentation
+      #   run: |
+      #     $SCRIPTS_DIR/generate_documentation.py
+
+      - name: Package
         run: |
           python setup.py sdist
-          twine upload dist/$PROJECT_NAME-$VERSION.tar.gz -u ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASSWORD }} --non-interactive  --skip-existing --disable-progress-bar
 
-      - name: Update & Tag Repository
+      - name: Publish
         run: |
-          git commit -a -m "**CI** Formatted code & Updated version number. [skip ci]"
+          twine upload dist/$PROJECT_NAME-$VERSION.tar.gz -u ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASSWORD }} --non-interactive  --skip-existing --disable-progress-bar
+#          epythet docs_gen make $PROJECT_NAME githubu ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASSWORD }} --non-interactive  --skip-existing --disable-progress-bar
+#          epythet docs_gen make $PROJECT_NAME github
+
+      - name: Push Changes
+        run: |
+          git commit -a -m "**CI** Formatted code + Updated version number and documentation. [skip ci]"
           git push
+
+      - name: Tag Repository
+        run: |
           git tag $VERSION
           git push origin $VERSION
