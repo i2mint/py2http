@@ -118,10 +118,10 @@ def mk_route(func, **configs):
                         level, traceback.format_exc(), exc_info=exc_info
                     )
                 else:
-                    traceback.print_exc()
+                    print(traceback.format_exc())
                 return error_handler(error)
             except Exception as error:
-                traceback.print_exc()
+                print(traceback.format_exc())
                 if logger:
                     logger.exception(error)
                 return error_handler(error)
