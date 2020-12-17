@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>py2http.config &#8212; py2http 0.1.21 documentation</title>
+    <title>py2http.config &#8212; py2http 0.1.22 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
@@ -34,8 +34,53 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="py2http-config">
-<h1>py2http.config<a class="headerlink" href="#py2http-config" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-py2http.config">
+<span id="py2http-config"></span><h1>py2http.config<a class="headerlink" href="#module-py2http.config" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt id="py2http.config.get_result">
+<code class="sig-prename descclassname">py2http.config.</code><code class="sig-name descname">get_result</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">configs</span></em>, <em class="sig-param"><span class="n">func</span></em>, <em class="sig-param"><span class="n">funcname</span></em>, <em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">options</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/config.html#get_result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2http.config.get_result" title="Permalink to this definition">¶</a></dt>
+<dd><p>this is meant to allow nested configs by function name
+example:</p>
+<p># TODO: See mk_config use and make an actual doctest for get_result
+# &gt;&gt;&gt; def create_something():
+# …    pass
+# &gt;&gt;&gt; example_configs = {‘http_method’: {
+# …    ‘create_something’: ‘post’,
+# …    ‘get_something’: ‘get’,
+# … }}
+# &gt;&gt;&gt; defaults = {‘create_something’: ‘DEFAULTED’}
+# &gt;&gt;&gt; get_result(example_configs, create_something, ‘create_something’, ‘http_method’, defaults)
+# ‘post’</p>
+<p>TODO: allow an $else case, other keywords, more complex parsing, and/or custom get_result functions</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2http.config.mk_config">
+<code class="sig-prename descclassname">py2http.config.</code><code class="sig-name descname">mk_config</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">func</span></em>, <em class="sig-param"><span class="n">configs</span></em>, <em class="sig-param"><span class="n">defaults</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">options</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/config.html#mk_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2http.config.mk_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a config value for a function. First checks the properties of the function,
+then the configs, then the defaults.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> – The key to search for</p></li>
+<li><p><strong>func</strong> – The function associated with the config</p></li>
+<li><p><strong>configs</strong> – A config dict to search</p></li>
+<li><p><strong>defaults</strong> – The default configs to fall back on</p></li>
+<li><p><strong>**options</strong> – <p>Additional options</p>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Keyword Arguments</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><em>funcname</em>
+The name of the function, if not the same as func.__name__</p></li>
+<li><p><em>type</em>
+The expected type of the output (use Callable for functions)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </div>
 
 

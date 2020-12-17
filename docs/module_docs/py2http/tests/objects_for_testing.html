@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>py2http.tests.objects_for_testing &#8212; py2http 0.1.21 documentation</title>
+    <title>py2http.tests.objects_for_testing &#8212; py2http 0.1.22 documentation</title>
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
@@ -34,8 +34,32 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="py2http-tests-objects-for-testing">
-<h1>py2http.tests.objects_for_testing<a class="headerlink" href="#py2http-tests-objects-for-testing" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-py2http.tests.objects_for_testing">
+<span id="py2http-tests-objects-for-testing"></span><h1>py2http.tests.objects_for_testing<a class="headerlink" href="#module-py2http.tests.objects_for_testing" title="Permalink to this headline">¶</a></h1>
+<p>A module containing a bunch of objects for testing.</p>
+<p>See also: <a class="reference external" href="https://github.com/i2mint/py2mint/blob/master/py2mint/tests/objects_for_testing.py">https://github.com/i2mint/py2mint/blob/master/py2mint/tests/objects_for_testing.py</a></p>
+<dl class="py function">
+<dt id="py2http.tests.objects_for_testing.add">
+<code class="sig-prename descclassname">py2http.tests.objects_for_testing.</code><code class="sig-name descname">add</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a</span></em>, <em class="sig-param"><span class="n">b</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.0</span></em><span class="sig-paren">)</span> &#x2192; float<a class="reference internal" href="../../../_modules/py2http/tests/objects_for_testing.html#add"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2http.tests.objects_for_testing.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds numbers</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2http.tests.objects_for_testing.f">
+<code class="sig-prename descclassname">py2http.tests.objects_for_testing.</code><code class="sig-name descname">f</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2http/tests/objects_for_testing.html#f"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2http.tests.objects_for_testing.f" title="Permalink to this definition">¶</a></dt>
+<dd><p>Note that x can be applied to a number, string, or list</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2http.tests.objects_for_testing.sum_of_args">
+<code class="sig-prename descclassname">py2http.tests.objects_for_testing.</code><code class="sig-name descname">sum_of_args</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2http/tests/objects_for_testing.html#sum_of_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2http.tests.objects_for_testing.sum_of_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sums the args, and returns a copy of kwargs with the sum of args added to each value.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sum_of_args</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">{&#39;a&#39;: 6, &#39;b&#39;: 16}</span>
+</pre></div>
+</div>
+</dd></dl>
+
 </div>
 
 

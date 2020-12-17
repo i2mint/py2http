@@ -1,0 +1,202 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>py2http.config &#8212; py2http 0.1.22 documentation</title>
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for py2http.config</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span>
+
+<span class="n">AIOHTTP</span> <span class="o">=</span> <span class="s1">&#39;aiohttp&#39;</span>
+<span class="n">BOTTLE</span> <span class="o">=</span> <span class="s1">&#39;bottle&#39;</span>
+<span class="n">FLASK</span> <span class="o">=</span> <span class="s1">&#39;flask&#39;</span>
+
+
+<div class="viewcode-block" id="get_result"><a class="viewcode-back" href="../../module_docs/py2http/config.html#py2http.config.get_result">[docs]</a><span class="k">def</span> <span class="nf">get_result</span><span class="p">(</span><span class="n">configs</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">funcname</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; this is meant to allow nested configs by function name</span>
+<span class="sd">    example:</span>
+
+<span class="sd">    # TODO: See mk_config use and make an actual doctest for get_result</span>
+<span class="sd">    # &gt;&gt;&gt; def create_something():</span>
+<span class="sd">    # ...    pass</span>
+<span class="sd">    # &gt;&gt;&gt; example_configs = {&#39;http_method&#39;: {</span>
+<span class="sd">    # ...    &#39;create_something&#39;: &#39;post&#39;,</span>
+<span class="sd">    # ...    &#39;get_something&#39;: &#39;get&#39;,</span>
+<span class="sd">    # ... }}</span>
+<span class="sd">    # &gt;&gt;&gt; defaults = {&#39;create_something&#39;: &#39;DEFAULTED&#39;}</span>
+<span class="sd">    # &gt;&gt;&gt; get_result(example_configs, create_something, &#39;create_something&#39;, &#39;http_method&#39;, defaults)</span>
+<span class="sd">    # &#39;post&#39;</span>
+
+<span class="sd">    TODO: allow an $else case, other keywords, more complex parsing, and/or custom get_result functions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">dict_value</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">funcname</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dict_value</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">dict_value</span>
+        <span class="k">elif</span> <span class="s1">&#39;$else&#39;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;$else&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">dict</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<span class="c1"># TODO: Revise logic and use more appropriate tools (ChainMap, glom) and interface.</span>
+<div class="viewcode-block" id="mk_config"><a class="viewcode-back" href="../../module_docs/py2http/config.html#py2http.config.mk_config">[docs]</a><span class="k">def</span> <span class="nf">mk_config</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">configs</span><span class="p">,</span> <span class="n">defaults</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get a config value for a function. First checks the properties of the function,</span>
+<span class="sd">    then the configs, then the defaults.</span>
+
+<span class="sd">    :param key: The key to search for</span>
+<span class="sd">    :param func: The function associated with the config</span>
+<span class="sd">    :param configs: A config dict to search</span>
+<span class="sd">    :param defaults: The default configs to fall back on</span>
+<span class="sd">    :param **options: Additional options</span>
+
+<span class="sd">    :Keyword Arguments:</span>
+<span class="sd">        * *funcname*</span>
+<span class="sd">          The name of the function, if not the same as func.__name__</span>
+<span class="sd">        * *type*</span>
+<span class="sd">          The expected type of the output (use Callable for functions)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">funcname</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;funcname&#39;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s1">&#39;__name__&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">get_result</span><span class="p">(</span><span class="n">configs</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">funcname</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+        <span class="n">expected_type</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="p">)</span>  <span class="c1"># align names expected_type &lt;-&gt; type</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">expected_type</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">defaults</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;Missing default value for key &quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">&quot;&#39;</span>
+            <span class="n">default_value</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">default_value</span><span class="p">):</span>
+                <span class="n">expected_type</span> <span class="o">=</span> <span class="n">Callable</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">expected_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">default_value</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">expected_type</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">result</span><span class="p">,</span> <span class="n">expected_type</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;Config </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1"> does not match type </span><span class="si">{</span><span class="n">expected_type</span><span class="si">}</span><span class="s1">.&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">py2http</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http.html">py2http</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/bottle_plugins.html">py2http.bottle_plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/config.html">py2http.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/decorators.html">py2http.decorators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/default_configs.html">py2http.default_configs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/diagnosis.html">py2http.diagnosis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/custom_input_mappers.html">py2http.examples.custom_input_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/example_service.html">py2http.examples.example_service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/example_service_bottle.html">py2http.examples.example_service_bottle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/example_service_flask.html">py2http.examples.example_service_flask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/middleware.html">py2http.middleware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/openapi_utils.html">py2http.openapi_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/route_utils.html">py2http.route_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/schema_tools.html">py2http.schema_tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/service.html">py2http.service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/example_service_test.html">py2http.tests.example_service_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/objects_for_testing.html">py2http.tests.objects_for_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/simple_run_process_test.html">py2http.tests.simple_run_process_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/test_decorators.html">py2http.tests.test_decorators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/test_p2h2p.html">py2http.tests.test_p2h2p</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/utils_for_testing.html">py2http.tests.utils_for_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/types.html">py2http.types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/util.html">py2http.util</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;
+2020
+Otosense.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

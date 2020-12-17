@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>py2http.service &#8212; py2http 0.1.21 documentation</title>
+    <title>py2http.service &#8212; py2http 0.1.22 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
@@ -34,8 +34,57 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="py2http-service">
-<h1>py2http.service<a class="headerlink" href="#py2http-service" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-py2http.service">
+<span id="py2http-service"></span><h1>py2http.service<a class="headerlink" href="#module-py2http.service" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt id="py2http.service.mk_config_nt">
+<code class="sig-prename descclassname">py2http.service.</code><code class="sig-name descname">mk_config_nt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">keys</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/service.html#mk_config_nt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2http.service.mk_config_nt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a namedtuple of objects created by mk_config for several keys (and same configs).</p>
+<p>Advantages:</p>
+<p>Can use ths way:</p>
+<p><code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">args,</span> <span class="pre">validator,</span> <span class="pre">postproc</span> <span class="pre">=</span> <span class="pre">mk_config_nt(['args',</span> <span class="pre">'validator',</span> <span class="pre">'postproc'],</span> <span class="pre">**configs)</span>
+<span class="pre">`</span></code></p>
+<p>Or this way (useful when we’re dealing with many items):</p>
+<p><code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">c</span> <span class="pre">=</span> <span class="pre">mk_config_nt(['args',</span> <span class="pre">'validator',</span> <span class="pre">'postproc'],</span> <span class="pre">**configs)</span>
+<span class="pre">c.args</span>
+<span class="pre">c.validator</span>
+<span class="pre">c.postproc</span>
+<span class="pre">`</span></code></p>
+<p>Namedtuple attribute access is as fast as a dict (if not faster in 3.8).
+One disadvantage, over a custom object is that it’s contents are immutable
+(if we use the <cite>c.attr</cite> form – the unpacking form is fine since we’re dealing
+with copies).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2http.service.mk_http_service">
+<code class="sig-prename descclassname">py2http.service.</code><code class="sig-name descname">mk_http_service</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">funcs</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">configs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/service.html#mk_http_service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2http.service.mk_http_service" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates an HTTP service object</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2http.service.mk_route">
+<code class="sig-prename descclassname">py2http.service.</code><code class="sig-name descname">mk_route</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">func</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">configs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/service.html#mk_route"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2http.service.mk_route" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate an route object and an OpenAPI path specification for a function</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>func</strong> – The function</p>
+</dd>
+<dt class="field-even">Keyword Arguments</dt>
+<dd class="field-even"><p>The configuration settings</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2http.service.run_http_service">
+<code class="sig-prename descclassname">py2http.service.</code><code class="sig-name descname">run_http_service</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">funcs</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">configs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/service.html#run_http_service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2http.service.run_http_service" title="Permalink to this definition">¶</a></dt>
+<dd><p>Launches an HTTP server, with a list of functions as route handlers.</p>
+<p>See config.yaml for configuration documentation.</p>
+</dd></dl>
+
 </div>
 
 

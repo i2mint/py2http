@@ -1,0 +1,1231 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>py2http.decorators &#8212; py2http 0.1.22 documentation</title>
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for py2http.decorators</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">signature</span><span class="p">,</span>
+    <span class="n">Signature</span><span class="p">,</span>
+    <span class="n">Parameter</span><span class="p">,</span>
+    <span class="n">isawaitable</span><span class="p">,</span>
+    <span class="n">iscoroutinefunction</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Mapping</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span><span class="p">,</span> <span class="n">wraps</span><span class="p">,</span> <span class="n">update_wrapper</span>
+<span class="kn">from</span> <span class="nn">json</span> <span class="kn">import</span> <span class="n">JSONDecodeError</span><span class="p">,</span> <span class="n">JSONEncoder</span><span class="p">,</span> <span class="n">dumps</span>
+<span class="kn">from</span> <span class="nn">aiohttp</span> <span class="kn">import</span> <span class="n">web</span>
+
+<span class="c1"># import collections</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Awaitable</span><span class="p">,</span> <span class="n">get_origin</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Awaitable</span> <span class="k">as</span> <span class="n">_Awaitable</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">i2.signatures</span> <span class="kn">import</span> <span class="n">set_signature_of_func</span><span class="p">,</span> <span class="n">ch_signature_to_all_pk</span><span class="p">,</span> <span class="n">Sig</span>
+<span class="kn">from</span> <span class="nn">i2.deco</span> <span class="kn">import</span> <span class="n">ch_func_to_all_pk</span>
+<span class="kn">from</span> <span class="nn">i2.errors</span> <span class="kn">import</span> <span class="n">ModuleNotFoundIgnore</span>
+
+<span class="kn">from</span> <span class="nn">py2http.schema_tools</span> <span class="kn">import</span> <span class="n">validate_input</span>
+<span class="kn">from</span> <span class="nn">py2http.types</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">WriteOpResult</span><span class="p">,</span>
+    <span class="n">ParameterKind</span><span class="p">,</span>
+    <span class="n">Params</span><span class="p">,</span>
+    <span class="n">HasParams</span><span class="p">,</span>
+    <span class="n">PK</span><span class="p">,</span>
+    <span class="n">VP</span><span class="p">,</span>
+    <span class="n">VK</span><span class="p">,</span>
+    <span class="n">PO</span><span class="p">,</span>
+    <span class="n">KO</span><span class="p">,</span>
+    <span class="n">var_param_kinds</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">py2http.config</span> <span class="kn">import</span> <span class="n">AIOHTTP</span><span class="p">,</span> <span class="n">BOTTLE</span>
+
+
+<div class="viewcode-block" id="ensure_awaitable_return_annot"><a class="viewcode-back" href="../../module_docs/py2http/decorators.html#py2http.decorators.ensure_awaitable_return_annot">[docs]</a><span class="k">def</span> <span class="nf">ensure_awaitable_return_annot</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    &gt;&gt;&gt; async def foo(x: str) -&gt; int: ...</span>
+<span class="sd">    &gt;&gt;&gt; assert str(signature(foo)) == &#39;(x: str) -&gt; int&#39;</span>
+<span class="sd">    &gt;&gt;&gt; assert str(signature(ensure_awaitable_return_annot(foo))) == &#39;(x: str) -&gt; Awaitable[int]&#39;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # but if func is not async, don&#39;t change anything</span>
+<span class="sd">    &gt;&gt;&gt; def bar(a) -&gt; str: ...</span>
+<span class="sd">    &gt;&gt;&gt; assert str(signature(bar)) == str(signature(ensure_awaitable_return_annot(bar)))  == &#39;(a) -&gt; str&#39;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # or if the return annotation is already contained in an Awaitable, don&#39;t change anything</span>
+<span class="sd">    &gt;&gt;&gt; async def baz() -&gt; Awaitable[float]: ...</span>
+<span class="sd">    &gt;&gt;&gt; assert str(signature(baz)) == str(signature(ensure_awaitable_return_annot(baz))) == &#39;() -&gt; Awaitable[float]&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sig</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">iscoroutinefunction</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="n">sig</span><span class="o">.</span><span class="n">return_annotation</span> <span class="o">!=</span> <span class="n">Signature</span><span class="o">.</span><span class="n">empty</span>
+        <span class="ow">and</span> <span class="n">get_origin</span><span class="p">(</span><span class="n">sig</span><span class="o">.</span><span class="n">return_annotation</span><span class="p">)</span> <span class="o">!=</span> <span class="n">_Awaitable</span>
+    <span class="p">):</span>
+        <span class="n">func</span><span class="o">.</span><span class="n">__signature__</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+            <span class="n">return_annotation</span><span class="o">=</span><span class="n">Awaitable</span><span class="p">[</span><span class="n">sig</span><span class="o">.</span><span class="n">return_annotation</span><span class="p">]</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">func</span></div>
+
+
+<span class="k">def</span> <span class="nf">ignore_extra_arguments</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="n">sig</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapped_func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">t</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">t</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapped_func</span>
+
+
+<div class="viewcode-block" id="Literal"><a class="viewcode-back" href="../../module_docs/py2http/decorators.html#py2http.decorators.Literal">[docs]</a><span class="k">class</span> <span class="nc">Literal</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;An object to indicate that the value should be considered literally&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">=</span> <span class="n">val</span></div>
+
+
+<span class="c1"># TODO: Could easily be extended to included an &quot;explicit=True&quot; param (in __init_subclass__ kwargs)</span>
+<span class="c1">#   that would indicate that decorator params need to be declared explicitly when</span>
+<span class="c1">#   the &quot;in the class body&quot; trick is used. That is, one would have to say `deco_param = DecoParam(...)`</span>
+<span class="c1">#   to declare such a param, instead of the current state which will consider all non-Literals</span>
+<span class="c1">#   as a DecoParam.</span>
+<div class="viewcode-block" id="Decorator"><a class="viewcode-back" href="../../module_docs/py2http/decorators.html#py2http.decorators.Decorator">[docs]</a><span class="k">class</span> <span class="nc">Decorator</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; A &quot;transparent&quot; decorator meant to be used to subclass into specialized decorators.</span>
+
+<span class="sd">    The signature of the wrapped function is carried to the __call__ of the decorated instance.</span>
+
+<span class="sd">    To specialize (and do something else than just &quot;transparent&quot; wrapping, you need to subclass</span>
+<span class="sd">    Decorator and define your own `__call__` method. You may assume that</span>
+
+<span class="sd">    The decorator pattern is a significant reuse tool, and indeed we use them a lot in i2i tooling.</span>
+<span class="sd">    The standard way is to write decorators (and decorator factories) the functional was,</span>
+<span class="sd">    but writing them as classes has introspection (therefore debuggability) advantages.</span>
+
+<span class="sd">    The approach comes with other kinds of problems though.</span>
+<span class="sd">    One of them is signature transfer (both for the decorator and the decorator factory).</span>
+<span class="sd">    Taken care of here.</span>
+
+<span class="sd">    Another wish (not really a problem) is to be able to use both `deco(func, params)`</span>
+<span class="sd">    and `deco(params(func))` forms. Also taken care of here.</span>
+
+<span class="sd">    Another problem is an increased boilerplate in specifying the decorator mechanics.</span>
+<span class="sd">    For example: If you want to have a proper signature (not just **kwargs),</span>
+<span class="sd">    you need to overwrite `__new__` for the sole purpose of specifying the arguments</span>
+<span class="sd">    (names, and optional annotations and defaults).</span>
+<span class="sd">    This problem is not taken care of here, but you can check out `Decora`,</span>
+<span class="sd">    a subclass of Decorator, that does.</span>
+
+<span class="sd">    &gt;&gt;&gt; from py2http.decorators import Decorator</span>
+<span class="sd">    &gt;&gt;&gt; f = lambda x, y=1: x + y  # a function to decorate</span>
+<span class="sd">    &gt;&gt;&gt; f(10)</span>
+<span class="sd">    11</span>
+<span class="sd">    &gt;&gt;&gt; signature(f)</span>
+<span class="sd">    &lt;Signature (x, y=1)&gt;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; class LogCalls(Decorator):</span>
+<span class="sd">    ...     def __new__(cls, func=None, *, verb=&#39;calling&#39;):</span>
+<span class="sd">    ...         return super().__new__(cls, func, verb=verb)</span>
+<span class="sd">    ...</span>
+<span class="sd">    ...     def __call__(self, *args, **kwargs):</span>
+<span class="sd">    ...         print(f&#39;{self.verb} {self.func.__name__} with {args} and {kwargs}&#39;)</span>
+<span class="sd">    ...         return super().__call__(*args, **kwargs)</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; ff = LogCalls(f, verb=&#39;launching&#39;)  # doing it the &quot;decorator way&quot;</span>
+<span class="sd">    &gt;&gt;&gt; assert ff(10) == 11</span>
+<span class="sd">    launching &lt;lambda&gt; with (10,) and {}</span>
+<span class="sd">    &gt;&gt;&gt; signature(ff)</span>
+<span class="sd">    &lt;Signature (x, y=1)&gt;</span>
+<span class="sd">    &gt;&gt;&gt; assert signature(ff) == signature(f)  # asserting same signature as the wrapped f</span>
+<span class="sd">    &gt;&gt;&gt; signature(LogCalls)</span>
+<span class="sd">    &lt;Signature (func=None, *, verb=&#39;calling&#39;)&gt;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; class ProcessOutput(Decorator):</span>
+<span class="sd">    ...     def __new__(cls, func=None, *, postproc=None):</span>
+<span class="sd">    ...         postproc = postproc or (lambda x: x)</span>
+<span class="sd">    ...         return super().__new__(cls, func, postproc=postproc)</span>
+<span class="sd">    ...</span>
+<span class="sd">    ...     def __call__(self, *args, **kwargs):</span>
+<span class="sd">    ...         return self.postproc(super().__call__(*args, **kwargs))</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; fff = ProcessOutput(postproc=str)(f)  # doing it the &quot;decorator factory way&quot;</span>
+<span class="sd">    &gt;&gt;&gt; assert fff(10) == &quot;11&quot;</span>
+<span class="sd">    &gt;&gt;&gt; assert signature(fff)  == signature(f)</span>
+<span class="sd">    &gt;&gt;&gt; signature(ProcessOutput)</span>
+<span class="sd">    &lt;Signature (func=None, *, postproc=None)&gt;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; ff = LogCalls()(f)  # defaults work when using as factory</span>
+<span class="sd">    &gt;&gt;&gt; signature(ff)</span>
+<span class="sd">    &lt;Signature (x, y=1)&gt;</span>
+<span class="sd">    &gt;&gt;&gt; ff(10)</span>
+<span class="sd">    calling &lt;lambda&gt; with (10,) and {}</span>
+<span class="sd">    11</span>
+<span class="sd">    &gt;&gt;&gt; ff = LogCalls(f)  # defaults work when using as decorator</span>
+<span class="sd">    &gt;&gt;&gt; ff(10)</span>
+<span class="sd">    calling &lt;lambda&gt; with (10,) and {}</span>
+<span class="sd">    11</span>
+<span class="sd">    &gt;&gt;&gt; LogCalls(f, real_arg=False)  # rejects arguments that weren&#39;t &quot;registered&quot; by the __new__</span>
+<span class="sd">    Traceback (most recent call last):</span>
+<span class="sd">        ...</span>
+<span class="sd">    TypeError: __new__() got an unexpected keyword argument &#39;real_arg&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">func</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">partial</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
+            <span class="k">for</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">attr_val</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">attr_val</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">update_wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DecoParameter"><a class="viewcode-back" href="../../module_docs/py2http/decorators.html#py2http.decorators.DecoParameter">[docs]</a><span class="k">class</span> <span class="nc">DecoParameter</span><span class="p">(</span><span class="n">Parameter</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A Parameter object that is meant to be the a parameter of a decorator factory.</span>
+<span class="sd">    Subclassing inspect.Parameter so that it can be distinguished from it if needed.&quot;&quot;&quot;</span></div>
+
+
+<span class="k">class</span> <span class="nc">DecoParam</span><span class="p">:</span>
+    <span class="n">dflt_param_kind</span> <span class="o">=</span> <span class="n">Parameter</span><span class="o">.</span><span class="n">KEYWORD_ONLY</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">Parameter</span><span class="o">.</span><span class="n">empty</span><span class="p">,</span> <span class="n">annotation</span><span class="o">=</span><span class="n">Parameter</span><span class="o">.</span><span class="n">empty</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Special object that will inject a DecoParameter into the class it&#39;s instantiated.</span>
+
+<span class="sd">        DecoParameter is a inspect.Parameter that was subclassed for the sole purpose of being able to</span>
+<span class="sd">        distinguish it from other possible Parameter objects.</span>
+
+<span class="sd">        DecoParameter (like inspect.Parameter) needs a name and kind, and optional default and annotation.</span>
+
+<span class="sd">        The name is taken from the variable name it&#39;s been assigned to.</span>
+
+<span class="sd">        :param default: Optional default for the param (it&#39;s optional, though appears not to be by signature)</span>
+<span class="sd">        :param annotation: Optional annotation for the param (it&#39;s optional, though appears not to be by signature)</span>
+
+
+<span class="sd">        &gt;&gt;&gt; from py2http.decorators import Decora, DecoParam</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; class C:</span>
+<span class="sd">        ...     w = DecoParam()</span>
+<span class="sd">        ...     x = DecoParam(annotation=int)</span>
+<span class="sd">        ...     y = DecoParam(default=42)</span>
+<span class="sd">        ...     z = DecoParam(default=&#39;hello&#39;, annotation=str)</span>
+<span class="sd">        ...</span>
+<span class="sd">        &gt;&gt;&gt; C.w</span>
+<span class="sd">        &lt;DecoParameter &quot;w&quot;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; C.z</span>
+<span class="sd">        &lt;DecoParameter &quot;z: str = &#39;hello&#39;&quot;&gt;</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; from inspect import Signature</span>
+<span class="sd">        &gt;&gt;&gt; Signature((C.w, C.x, C.y, C.z))</span>
+<span class="sd">        &lt;Signature (*, w, x: int, y=42, z: str = &#39;hello&#39;)&gt;</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="n">default</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">annotation</span> <span class="o">=</span> <span class="n">annotation</span>
+
+    <span class="k">def</span> <span class="nf">__set_name__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">owner</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="nb">setattr</span><span class="p">(</span>
+            <span class="n">owner</span><span class="p">,</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="n">DecoParameter</span><span class="p">(</span>
+                <span class="n">name</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dflt_param_kind</span><span class="p">,</span>
+                <span class="n">default</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">default</span><span class="p">,</span>
+                <span class="n">annotation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">annotation</span><span class="p">,</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="n">token_p</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\w+&#39;</span><span class="p">)</span>
+
+
+<span class="c1"># TODO: Research how to keep the params in the order they were declared.</span>
+<span class="c1"># TODO: Test the params order rule that is claimed.</span>
+<div class="viewcode-block" id="ParamsSpecifier"><a class="viewcode-back" href="../../module_docs/py2http/decorators.html#py2http.decorators.ParamsSpecifier">[docs]</a><span class="k">class</span> <span class="nc">ParamsSpecifier</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A tool to specify params (that is, lists of inspect.Parameter instances that</span>
+<span class="sd">    are used in callable signatures.</span>
+
+<span class="sd">    But wait! you may not need this!</span>
+
+<span class="sd">    Often the cleanest way to make a signature, or list of Parameters is to define an empty function</span>
+<span class="sd">    with that signature, and extract it from there.</span>
+
+<span class="sd">    See `Decora` for the original intended use of ParamsSpecifier.</span>
+
+<span class="sd">    &gt;&gt;&gt; from inspect import signature, Signature, Parameter</span>
+<span class="sd">    &gt;&gt;&gt; def f(a, b: int, c: float = 0.0, d: str=&#39;hi&#39;): ...</span>
+<span class="sd">    &gt;&gt;&gt; sig = signature(f)</span>
+<span class="sd">    &gt;&gt;&gt; sig</span>
+<span class="sd">    &lt;Signature (a, b: int, c: float = 0.0, d: str = &#39;hi&#39;)&gt;</span>
+<span class="sd">    &gt;&gt;&gt; list(sig.parameters.values())</span>
+<span class="sd">    [&lt;Parameter &quot;a&quot;&gt;, &lt;Parameter &quot;b: int&quot;&gt;, &lt;Parameter &quot;c: float = 0.0&quot;&gt;, &lt;Parameter &quot;d: str = &#39;hi&#39;&quot;&gt;]</span>
+
+<span class="sd">    The reason for the existence of ParamsSpecifier was to do some magic around giving class-based</span>
+<span class="sd">    decorators a signature. The reasons of this magic may be outdated soon.</span>
+
+<span class="sd">    &gt;&gt;&gt; from py2http.decorators import ParamsSpecifier</span>
+<span class="sd">    &gt;&gt;&gt; from inspect import Parameter, Signature</span>
+<span class="sd">    &gt;&gt;&gt; KO = Parameter.KEYWORD_ONLY</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; class MyParams(ParamsSpecifier):</span>
+<span class="sd">    ...     b = 3</span>
+<span class="sd">    ...     z: float</span>
+<span class="sd">    ...     c: int = 2</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; params = MyParams()()</span>
+<span class="sd">    &gt;&gt;&gt; expected_params = [</span>
+<span class="sd">    ...     {&#39;name&#39;: &#39;z&#39;, &#39;kind&#39;: KO, &#39;default&#39;: None, &#39;annotation&#39;: float},</span>
+<span class="sd">    ...     {&#39;name&#39;: &#39;b&#39;, &#39;kind&#39;: KO, &#39;default&#39;: 3},</span>
+<span class="sd">    ...     {&#39;name&#39;: &#39;c&#39;, &#39;kind&#39;: KO, &#39;default&#39;: 2, &#39;annotation&#39;: int}]</span>
+<span class="sd">    &gt;&gt;&gt; assert params == expected_params</span>
+
+<span class="sd">    See that the params are all valid kwargs to inspect.Parameter, by making a signature from them</span>
+<span class="sd">    &gt;&gt;&gt; Signature(Parameter(**p) for p in params)</span>
+<span class="sd">    &lt;Signature (*, z: float = None, b=3, c: int = 2)&gt;</span>
+
+<span class="sd">    Let&#39;s now get another params specifier.</span>
+
+<span class="sd">    &gt;&gt;&gt; get_new_params = MyParams(</span>
+<span class="sd">    ...     _annotations=dict(b=int, a=str),</span>
+<span class="sd">    ...     _names=&#39;a wol&#39;,</span>
+<span class="sd">    ...     another=&#39;here&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; params = get_new_params()</span>
+<span class="sd">    &gt;&gt;&gt; expected_params = [</span>
+<span class="sd">    ...     {&#39;name&#39;: &#39;z&#39;, &#39;kind&#39;: KO, &#39;default&#39;: None, &#39;annotation&#39;: float},</span>
+<span class="sd">    ...     {&#39;name&#39;: &#39;b&#39;, &#39;kind&#39;: KO, &#39;default&#39;: 3, &#39;annotation&#39;: int},</span>
+<span class="sd">    ...     {&#39;name&#39;: &#39;c&#39;, &#39;kind&#39;: KO, &#39;default&#39;: 2, &#39;annotation&#39;: int},</span>
+<span class="sd">    ...     {&#39;name&#39;: &#39;another&#39;, &#39;kind&#39;: KO, &#39;default&#39;: &#39;here&#39;},</span>
+<span class="sd">    ...     {&#39;name&#39;: &#39;a&#39;, &#39;kind&#39;: KO, &#39;default&#39;: None, &#39;annotation&#39;: str},</span>
+<span class="sd">    ...     {&#39;name&#39;: &#39;wol&#39;, &#39;kind&#39;: KO, &#39;default&#39;: None}]</span>
+
+<span class="sd">    One thing to note in the expected_params is the order.</span>
+<span class="sd">    Indeed, the order is not the order that is taken (because couldn&#39;t figure out otherwise)</span>
+<span class="sd">    is as such:</span>
+<span class="sd">    - First the class-level attributes that are annotated, but not given a default</span>
+<span class="sd">        (though a blanket _dflt_default default will be given to them all).</span>
+<span class="sd">        Here order is not assured.</span>
+<span class="sd">    - Second the reset of the class-level attributes, in the order they were defined.</span>
+<span class="sd">    - Third the instance argument params given by the _names argument, in the order they were listed.</span>
+<span class="sd">    - Finally the instance argument name_and_dflts params, in the order they were listed.</span>
+
+<span class="sd">    Remember, all this is meant to provide ways to specify signatures.</span>
+
+<span class="sd">    &gt;&gt;&gt; Signature(Parameter(**p) for p in params)</span>
+<span class="sd">    &lt;Signature (*, z: float = None, b: int = 3, c: int = 2, another=&#39;here&#39;, a: str = None, wol=None)&gt;</span>
+
+<span class="sd">    Now, not that ParamsSpecifier is the tool for this, but to demo what ParamsSpecifier&#39;s</span>
+<span class="sd">    params are, we&#39;ll give one last example where we take a function, make a ParamsSpecifier</span>
+<span class="sd">    from it, and add a different kind of default</span>
+
+<span class="sd">    &gt;&gt;&gt; def f(a, b: int, c: float = 0.0, d: str=&#39;hi&#39;): ...</span>
+<span class="sd">    &gt;&gt;&gt; param_maker = ParamsSpecifier.from_func(f, _dflt_default=&#39;a different dflt&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; Signature(Parameter(**p) for p in param_maker())</span>
+<span class="sd">    &lt;Signature (*, a=&#39;a different dflt&#39;, b: int = &#39;a different dflt&#39;, c: float = 0.0, d: str = &#39;hi&#39;)&gt;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># _name_and_dflts = {}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">_annotations</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">_names</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+        <span class="n">_dflt_default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">_kind</span><span class="o">=</span><span class="n">Parameter</span><span class="o">.</span><span class="n">KEYWORD_ONLY</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">name_and_dflts</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">_annotations</span> <span class="o">=</span> <span class="n">_annotations</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="n">token_p</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">_names</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="o">.</span><span class="n">isdisjoint</span><span class="p">(</span>
+            <span class="n">name_and_dflts</span>
+        <span class="p">),</span> <span class="s2">&quot;In order to provide an expected order, we&#39;re imposing that _names and **name_and_dflts be disjoint&quot;</span>
+        <span class="n">name_and_dflts</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">_dflt_default</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dflt_default</span> <span class="o">=</span> <span class="n">_dflt_default</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_kind</span> <span class="o">=</span> <span class="n">_kind</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;__annotations__&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="vm">__annotations__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">_annotations</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="vm">__annotations__</span> <span class="o">=</span> <span class="n">_annotations</span>
+
+        <span class="n">reserved</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;_annotations&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;_names&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;_dflt_default&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;from_func&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;_extract_params&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;_to_signature&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;_kind&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;to_parameter_obj_list&#39;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">_name_and_dflts</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">v</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;__&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">reserved</span>
+        <span class="p">}</span>
+        <span class="n">_name_and_dflts</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">name_and_dflts</span> <span class="ow">or</span> <span class="p">{})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name_and_dflts</span> <span class="o">=</span> <span class="n">_name_and_dflts</span>
+
+        <span class="n">annots</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;__annotations__&#39;</span><span class="p">,</span> <span class="p">{}))</span>
+        <span class="n">annots</span> <span class="o">|=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="s1">&#39;__annotations__&#39;</span><span class="p">,</span> <span class="p">{}))</span>
+
+        <span class="n">_reserved</span> <span class="o">=</span> <span class="n">reserved</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">_name_and_dflts</span><span class="p">)</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">annots</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">_reserved</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Sorry, </span><span class="si">{</span><span class="n">_reserved</span><span class="si">}</span><span class="s1"> are reserved names&#39;</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_func</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">_dflt_default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">func</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="n">_annotations</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">x</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">annotation</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">params</span>
+            <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">annotation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">Parameter</span><span class="o">.</span><span class="n">empty</span>
+        <span class="p">}</span>
+        <span class="n">_name_and_dflts</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+            <span class="n">dflt</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">default</span>
+            <span class="k">if</span> <span class="n">dflt</span> <span class="ow">is</span> <span class="n">Parameter</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+                <span class="n">dflt</span> <span class="o">=</span> <span class="n">_dflt_default</span>
+            <span class="n">_name_and_dflts</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">x</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">dflt</span><span class="p">})</span>
+        <span class="n">_name_and_dflts</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">x</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">default</span>
+            <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">default</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">Parameter</span><span class="o">.</span><span class="n">empty</span>
+            <span class="k">else</span> <span class="n">_dflt_default</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">params</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">_annotations</span><span class="o">=</span><span class="n">_annotations</span><span class="p">,</span>
+            <span class="n">_dflt_default</span><span class="o">=</span><span class="n">_dflt_default</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">_name_and_dflts</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_extract_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">_name_and_dflts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name_and_dflts</span>
+        <span class="n">annots</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;__annotations__&#39;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">annots</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">_name_and_dflts</span><span class="p">):</span>  <span class="c1"># annots_not_in_attrs</span>
+            <span class="k">yield</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">kind</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_kind</span><span class="p">,</span>
+                <span class="n">default</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dflt_default</span><span class="p">,</span>
+                <span class="n">annotation</span><span class="o">=</span><span class="n">annots</span><span class="p">[</span><span class="n">name</span><span class="p">],</span>
+            <span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">default</span> <span class="ow">in</span> <span class="n">_name_and_dflts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_kind</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">default</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">annots</span><span class="p">:</span>
+                <span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">annotation</span><span class="o">=</span><span class="n">annots</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+            <span class="k">yield</span> <span class="n">d</span>
+
+    <span class="k">def</span> <span class="nf">to_parameter_obj_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">Parameter</span><span class="p">(</span><span class="o">**</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">_to_signature</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Signature</span><span class="p">(</span><span class="n">Parameter</span><span class="p">(</span><span class="o">**</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_extract_params</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span></div>
+
+
+<div class="viewcode-block" id="Decora"><a class="viewcode-back" href="../../module_docs/py2http/decorators.html#py2http.decorators.Decora">[docs]</a><span class="k">class</span> <span class="nc">Decora</span><span class="p">(</span><span class="n">Decorator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; A version of Decorator where you can define your subclasses by defininig attributes</span>
+<span class="sd">    of the subclass (instead of writing a manual __new__ method).</span>
+
+<span class="sd">    Here&#39;s a typical use, as a decorator factory...</span>
+
+<span class="sd">    &gt;&gt;&gt; from py2http.decorators import Decora, ParamsSpecifier</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; class whatevs(ParamsSpecifier):</span>
+<span class="sd">    ...     minus = 3</span>
+<span class="sd">    ...     times: float</span>
+<span class="sd">    ...     repeat: int = 2</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; class Deco(Decora):</span>
+<span class="sd">    ...     my_params = whatevs()</span>
+<span class="sd">    ...</span>
+<span class="sd">    ...     def __call__(self, *args, **kwargs):</span>
+<span class="sd">    ...         func_result = super().__call__(*args, **kwargs)</span>
+<span class="sd">    ...         return func_result[0], [func_result[1] * self.times - self.minus] * self.repeat</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; def f(w: float, x: int=0, greet=&#39;hi&#39;):</span>
+<span class="sd">    ...     return greet, w + x</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; g = Deco(times=3)(f)</span>
+<span class="sd">    &gt;&gt;&gt; assert g(0) == (&#39;hi&#39;, [-3] * 2)</span>
+<span class="sd">    &gt;&gt;&gt; assert g(10) == (&#39;hi&#39;, [27] * 2)</span>
+<span class="sd">    &gt;&gt;&gt; assert g(10, x=1, greet=&#39;hello&#39;) == (&#39;hello&#39;, [30, 30])</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; g = Deco(f, times=1, minus=2, repeat=3)</span>
+<span class="sd">    &gt;&gt;&gt; assert g(0) == (&#39;hi&#39;, [-2, -2, -2])</span>
+<span class="sd">    &gt;&gt;&gt; g = Deco(times=0, minus=3, repeat=1)(f)</span>
+<span class="sd">    &gt;&gt;&gt; assert g(10) == (&#39;hi&#39;, [-3])</span>
+<span class="sd">    &gt;&gt;&gt; g = Deco(times=2, minus=0, repeat=1)(f)</span>
+<span class="sd">    &gt;&gt;&gt; assert g(10) == (&#39;hi&#39;, [20])</span>
+<span class="sd">    &gt;&gt;&gt; f = lambda x, y=1: x + y</span>
+<span class="sd">    &gt;&gt;&gt; f(10)</span>
+<span class="sd">    11</span>
+<span class="sd">    &gt;&gt;&gt; signature(f)</span>
+<span class="sd">    &lt;Signature (x, y=1)&gt;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+
+<span class="sd">    More examples (of different forms)</span>
+
+<span class="sd">    &gt;&gt;&gt; class LogCalls(Decora):</span>
+<span class="sd">    ...     class DecoParams(ParamsSpecifier):</span>
+<span class="sd">    ...         verb: str = &#39;calling&#39;  # will be taken and included in the __init__</span>
+<span class="sd">    ...         decoy = None  # will be taken (but not actually used in __call__)</span>
+<span class="sd">    ...</span>
+<span class="sd">    ...     def __call__(self, *args, **kwargs):</span>
+<span class="sd">    ...         print(f&#39;{self.verb} {self.func.__name__} with {args} and {kwargs}&#39;)</span>
+<span class="sd">    ...         return super().__call__(*args, **kwargs)</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; ff = LogCalls(f, verb=&#39;launching&#39;)  # doing it the &quot;decorator way&quot;</span>
+<span class="sd">    &gt;&gt;&gt; assert ff(10) == 11</span>
+<span class="sd">    launching &lt;lambda&gt; with (10,) and {}</span>
+<span class="sd">    &gt;&gt;&gt; signature(ff)</span>
+<span class="sd">    &lt;Signature (x, y=1)&gt;</span>
+<span class="sd">    &gt;&gt;&gt; assert signature(ff) == signature(f)  # asserting same signature as the wrapped f</span>
+<span class="sd">    &gt;&gt;&gt; signature(LogCalls)  # the signature of the decorator itself</span>
+<span class="sd">    &lt;Signature (func=None, *, verb: str = &#39;calling&#39;, decoy=None)&gt;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; ff = LogCalls()(f)  # defaults work when using as factory</span>
+<span class="sd">    &gt;&gt;&gt; signature(ff)</span>
+<span class="sd">    &lt;Signature (x, y=1)&gt;</span>
+<span class="sd">    &gt;&gt;&gt; ff(10)</span>
+<span class="sd">    calling &lt;lambda&gt; with (10,) and {}</span>
+<span class="sd">    11</span>
+<span class="sd">    &gt;&gt;&gt; ff = LogCalls(f)  # defaults work when using as decorator</span>
+<span class="sd">    &gt;&gt;&gt; ff(10)</span>
+<span class="sd">    calling &lt;lambda&gt; with (10,) and {}</span>
+<span class="sd">    11</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; LogCalls(f, real_arg=False)  # rejects arguments that weren&#39;t &quot;registered&quot; by the __new__</span>
+<span class="sd">    Traceback (most recent call last):</span>
+<span class="sd">        ...</span>
+<span class="sd">    TypeError: TypeError: __new__() got unexpected keyword arguments: {&#39;real_arg&#39;}</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+
+<span class="sd">    But you can still do it with __new__ if you want</span>
+
+<span class="sd">    &gt;&gt;&gt; class ProcessOutput(Decora):</span>
+<span class="sd">    ...     def __new__(cls, func=None, *, postproc=None):</span>
+<span class="sd">    ...         postproc = postproc or (lambda x: x)</span>
+<span class="sd">    ...         return super().__new__(cls, func, postproc=postproc)</span>
+<span class="sd">    ...</span>
+<span class="sd">    ...     def __call__(self, *args, **kwargs):</span>
+<span class="sd">    ...         return self.postproc(super().__call__(*args, **kwargs))</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; fff = ProcessOutput(postproc=str)(f)  # doing it the &quot;decorator factory way&quot;</span>
+<span class="sd">    &gt;&gt;&gt; assert fff(10) == &quot;11&quot;</span>
+<span class="sd">    &gt;&gt;&gt; assert signature(fff)  == signature(f)</span>
+<span class="sd">    &gt;&gt;&gt; signature(ProcessOutput)  # the signature of the decorator itself</span>
+<span class="sd">    &lt;Signature (func=None, *, postproc=None)&gt;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # Verifying that LogCalls still has the right signature</span>
+<span class="sd">    &gt;&gt;&gt; signature(LogCalls)  # the signature of the decorator itself</span>
+<span class="sd">    &lt;Signature (func=None, *, verb: str = &#39;calling&#39;, decoy=None)&gt;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_injected_deco_params</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__init_subclass__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init_subclass__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="s1">&#39;__new__&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__dict__</span>
+        <span class="p">):</span>  <span class="c1"># if __new__ hasn&#39;t been defined in the subclass...</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="c1"># cls_annots = getattr(cls, &#39;__annotations__&#39;, {})</span>
+            <span class="c1"># injected_deco_params = set()</span>
+            <span class="k">for</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">attr_obj</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">attr_obj</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attr_obj</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span>
+                    <span class="n">attr_obj</span><span class="p">,</span> <span class="n">ParamsSpecifier</span>
+                <span class="p">):</span>
+                    <span class="n">attr_obj</span> <span class="o">=</span> <span class="n">attr_obj</span><span class="p">()</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attr_obj</span><span class="p">,</span> <span class="n">ParamsSpecifier</span><span class="p">):</span>
+                    <span class="n">params</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">attr_obj</span><span class="o">.</span><span class="n">to_parameter_obj_list</span><span class="p">())</span>
+
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">default</span><span class="p">)</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">Parameter</span><span class="p">(</span><span class="s1">&#39;self&#39;</span><span class="p">,</span> <span class="n">PK</span><span class="p">),</span>
+                <span class="n">Parameter</span><span class="p">(</span><span class="s1">&#39;func&#39;</span><span class="p">,</span> <span class="n">PK</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span>
+            <span class="p">]</span> <span class="o">+</span> <span class="n">params</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">_injected_deco_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">params</span><span class="p">]</span>
+
+            <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_injected_deco_params</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span>
+                    <span class="bp">cls</span><span class="o">.</span><span class="n">_injected_deco_params</span>
+                <span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                        <span class="s1">&#39;TypeError: __new__() got unexpected keyword arguments: &#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">-</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_injected_deco_params</span><span class="si">}</span><span class="s1">&#39;</span>
+                    <span class="p">)</span>
+                <span class="k">if</span> <span class="n">func</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">partial</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">Decorator</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+            <span class="fm">__new__</span><span class="o">.</span><span class="n">__signature__</span> <span class="o">=</span> <span class="n">Signature</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span> <span class="o">=</span> <span class="fm">__new__</span></div>
+
+
+<span class="kn">from</span> <span class="nn">i2.deco</span> <span class="kn">import</span> <span class="n">copy_func</span><span class="p">,</span> <span class="n">params_of</span>
+
+
+<div class="viewcode-block" id="replace_with_params"><a class="viewcode-back" href="../../module_docs/py2http/decorators.html#py2http.decorators.replace_with_params">[docs]</a><span class="k">def</span> <span class="nf">replace_with_params</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Will return a version of the target type that has params taken from source.</span>
+<span class="sd">    Both target and source can be of the HasParams type, i.e.</span>
+<span class="sd">    ```</span>
+<span class="sd">        Union[Iterable[Parameter], Mapping[str, Parameter], Signature, Callable]</span>
+<span class="sd">    ```</span>
+
+<span class="sd">    &gt;&gt;&gt; def f(a, /, b, *, c=None, **kwargs): ...</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; def g(x, y=1, *args, **kwargs): ...</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; f_sig = signature(f)</span>
+<span class="sd">    &gt;&gt;&gt; f_params_map = f_sig.parameters</span>
+<span class="sd">    &gt;&gt;&gt; f_params = tuple(f_params_map.values())</span>
+<span class="sd">    &gt;&gt;&gt; g_sig = signature(g)</span>
+<span class="sd">    &gt;&gt;&gt; g_params_map = g_sig.parameters</span>
+<span class="sd">    &gt;&gt;&gt; g_params = tuple(g_params_map.values())</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; original_f_sig = signature(f)</span>
+<span class="sd">    &gt;&gt;&gt; print(original_f_sig)</span>
+<span class="sd">    (a, /, b, *, c=None, **kwargs)</span>
+<span class="sd">    &gt;&gt;&gt; new_f = replace_with_params(f, source=g)</span>
+<span class="sd">    &gt;&gt;&gt; print(signature(new_f))</span>
+<span class="sd">    (x, y=1, *args, **kwargs)</span>
+<span class="sd">    &gt;&gt;&gt; assert signature(new_f) == signature(g)</span>
+<span class="sd">    &gt;&gt;&gt; # but f remains unchanged (there is inplace=False option though!)</span>
+<span class="sd">    &gt;&gt;&gt; assert signature(f) == original_f_sig</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">partial</span><span class="p">(</span><span class="n">replace_with_params</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new_params</span> <span class="o">=</span> <span class="n">params_of</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">Signature</span><span class="p">):</span>
+                <span class="c1"># same return_annotation, but different params</span>
+                <span class="k">return</span> <span class="n">Signature</span><span class="p">(</span><span class="n">new_params</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">return_annotation</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+                <span class="c1"># Note: params_of already asserts p are all Parameter instances</span>
+                <span class="k">return</span> <span class="p">{</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">new_params</span><span class="p">}</span>
+            <span class="k">elif</span> <span class="n">callable</span><span class="p">(</span><span class="n">target</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
+                    <span class="n">target</span> <span class="o">=</span> <span class="n">copy_func</span><span class="p">(</span>
+                        <span class="n">target</span>
+                    <span class="p">)</span>  <span class="c1"># make a copy of the function so we don&#39;t</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">__signature__</span> <span class="o">=</span> <span class="n">Signature</span><span class="p">(</span>
+                    <span class="n">new_params</span><span class="p">,</span>
+                    <span class="n">return_annotation</span><span class="o">=</span><span class="n">signature</span><span class="p">(</span><span class="n">target</span><span class="p">)</span><span class="o">.</span><span class="n">return_annotation</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="n">target</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">new_params</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">target</span></div>
+
+
+<div class="viewcode-block" id="params_replacer"><a class="viewcode-back" href="../../module_docs/py2http/decorators.html#py2http.decorators.params_replacer">[docs]</a><span class="k">def</span> <span class="nf">params_replacer</span><span class="p">(</span>
+    <span class="n">replace</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Parameter</span><span class="p">],</span> <span class="nb">dict</span><span class="p">]],</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Parameter</span><span class="p">]</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Generator of transformed params.&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">replace</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">replace</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">replace</span>  <span class="c1"># use the same replace on all parameters</span>
+
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">params_of</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="o">**</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}))</span>
+        <span class="k">yield</span> <span class="n">p</span></div>
+
+
+<span class="c1"># TODO: generalize instance_attrs to instance_params</span>
+<div class="viewcode-block" id="methodizer"><a class="viewcode-back" href="../../module_docs/py2http/decorators.html#py2http.decorators.methodizer">[docs]</a><span class="k">def</span> <span class="nf">methodizer</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">instance_params</span><span class="o">=</span><span class="p">()):</span>
+    <span class="sd">&quot;&quot;&quot;A decorator to get method versions of functions.</span>
+
+<span class="sd">    :param func:</span>
+<span class="sd">    :param instance_params:</span>
+<span class="sd">    :return:</span>
+
+<span class="sd">    &gt;&gt;&gt; from py2http.decorators import methodizer</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; def f(a, b, x):</span>
+<span class="sd">    ...     return x * (a + b)</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; def g(x, y=1):</span>
+<span class="sd">    ...     return x * y</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; methodize = methodizer(instance_params=(&#39;x&#39;, &#39;non_existing_attr&#39;))</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; class A:</span>
+<span class="sd">    ...     def __init__(self, x=0):</span>
+<span class="sd">    ...         self.x = x</span>
+<span class="sd">    ...</span>
+<span class="sd">    ...     f = methodize(f)</span>
+<span class="sd">    ...     g = methodize(g)</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; a = A(x=3)</span>
+<span class="sd">    &gt;&gt;&gt; assert a.f(b=1, a=2) == 9</span>
+<span class="sd">    &gt;&gt;&gt; assert a.g() == 3</span>
+<span class="sd">    &gt;&gt;&gt; assert a.g(y=10) == 30</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">func</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">partial</span><span class="p">(</span><span class="n">methodizer</span><span class="p">,</span> <span class="n">instance_params</span><span class="o">=</span><span class="n">instance_params</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">ch_func_to_all_pk</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="n">func_param_keys</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">func</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="n">self_argnames</span> <span class="o">=</span> <span class="n">func_param_keys</span> <span class="o">&amp;</span> <span class="n">instance_params</span>
+        <span class="n">method_argnames</span> <span class="o">=</span> <span class="n">func_param_keys</span> <span class="o">-</span> <span class="n">self_argnames</span>
+
+        <span class="k">def</span> <span class="nf">method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">kwargs_from_self</span> <span class="o">=</span> <span class="p">{</span><span class="n">a</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">self_argnames</span><span class="p">}</span>
+            <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs_from_self</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">set_signature_of_func</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;self&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">method_argnames</span><span class="p">))</span>
+
+        <span class="n">method</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span>
+
+        <span class="k">return</span> <span class="n">method</span></div>
+
+
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
+
+
+<span class="k">def</span> <span class="nf">_handle_exisisting_method_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">if_method_exists</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">method</span><span class="o">.</span><span class="vm">__name__</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">cls</span><span class="si">}</span><span class="s1"> already has a method named </span><span class="si">{</span><span class="n">method</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">if</span> <span class="n">if_method_exists</span> <span class="o">==</span> <span class="s1">&#39;raise&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">if_method_exists</span> <span class="o">==</span> <span class="s1">&#39;warn&#39;</span><span class="p">:</span>
+            <span class="n">warn</span><span class="p">(</span><span class="n">msg</span> <span class="o">+</span> <span class="s1">&#39; ... Will overwrite anyway.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">if_method_exists</span> <span class="o">!=</span> <span class="s1">&#39;ignore&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;if_method_exists value not recognized: </span><span class="si">{</span><span class="n">if_method_exists</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="p">)</span>
+
+
+<span class="c1"># TODO: inject_methodized_funcs not working yet</span>
+<span class="c1">#   - signatures have different orders every time (need to use ordered containers)</span>
+<span class="c1">#   - Values not computed correctly</span>
+<div class="viewcode-block" id="inject_methodized_funcs"><a class="viewcode-back" href="../../module_docs/py2http/decorators.html#py2http.decorators.inject_methodized_funcs">[docs]</a><span class="k">def</span> <span class="nf">inject_methodized_funcs</span><span class="p">(</span>
+    <span class="bp">cls</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">funcs</span><span class="o">=</span><span class="p">(),</span> <span class="n">instance_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">if_method_exists</span><span class="o">=</span><span class="s1">&#39;raise&#39;</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    :param cls:</span>
+<span class="sd">    :param funcs:</span>
+<span class="sd">    :param instance_params:</span>
+<span class="sd">    :param if_method_exists:</span>
+<span class="sd">    :return:</span>
+
+<span class="sd">    # TODO: Come back to inject_methodized_funcs doctest once inject_methodized_funcs is well written</span>
+<span class="sd">    # &gt;&gt;&gt; from inspect import signature</span>
+<span class="sd">    # &gt;&gt;&gt;</span>
+<span class="sd">    # &gt;&gt;&gt;</span>
+<span class="sd">    # &gt;&gt;&gt; def f(a, b, x):</span>
+<span class="sd">    # ...     return x * (a + b)</span>
+<span class="sd">    # ...</span>
+<span class="sd">    # &gt;&gt;&gt; def g(x, y=1):</span>
+<span class="sd">    # ...     return x * y</span>
+<span class="sd">    # ...</span>
+<span class="sd">    # &gt;&gt;&gt;</span>
+<span class="sd">    # &gt;&gt;&gt; def h(a, x, c, **kwargs):</span>
+<span class="sd">    # ...     return f&quot;{a}-{x}-{c}: {list(kwargs.keys())}&quot;</span>
+<span class="sd">    # ...</span>
+<span class="sd">    # &gt;&gt;&gt; @inject_methodized_funcs(funcs=(f, g, h))</span>
+<span class="sd">    # ... class C:</span>
+<span class="sd">    # ...     def __init__(self, x, a=0, bob=True):</span>
+<span class="sd">    # ...         self.x = x</span>
+<span class="sd">    # ...         self.a = a</span>
+<span class="sd">    # ...         self.bob = bob</span>
+<span class="sd">    # ...</span>
+<span class="sd">    # &gt;&gt;&gt;</span>
+<span class="sd">    # &gt;&gt;&gt;</span>
+<span class="sd">    # &gt;&gt;&gt; c = C(x=10)</span>
+<span class="sd">    # &gt;&gt;&gt; for m in (&#39;f&#39;, &#39;g&#39;, &#39;h&#39;):</span>
+<span class="sd">    # ...     print(f&quot;{C.__name__}.{m}{signature(getattr(c, m))}&quot;)</span>
+<span class="sd">    # ...</span>
+<span class="sd">    # C.f(b, x)</span>
+<span class="sd">    # C.g(y, x)</span>
+<span class="sd">    # C.h(kwargs, c, x)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Not working yet: Come back to it!&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">partial</span><span class="p">(</span>
+            <span class="n">inject_methodized_funcs</span><span class="p">,</span>
+            <span class="n">funcs</span><span class="o">=</span><span class="n">funcs</span><span class="p">,</span>
+            <span class="n">instance_params</span><span class="o">=</span><span class="n">instance_params</span><span class="p">,</span>
+            <span class="n">if_method_exists</span><span class="o">=</span><span class="n">if_method_exists</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">instance_params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">instance_params</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">x</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="p">]</span>
+        <span class="n">methodize</span> <span class="o">=</span> <span class="n">methodizer</span><span class="p">(</span><span class="n">instance_params</span><span class="o">=</span><span class="n">instance_params</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span><span class="n">methodize</span><span class="p">,</span> <span class="n">funcs</span><span class="p">):</span>
+            <span class="n">_handle_exisisting_method_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">if_method_exists</span><span class="p">)</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">method</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">method</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span></div>
+
+
+<span class="c1"># TODO: Finish this function</span>
+<div class="viewcode-block" id="flatten_callables"><a class="viewcode-back" href="../../module_docs/py2http/decorators.html#py2http.decorators.flatten_callables">[docs]</a><span class="k">def</span> <span class="nf">flatten_callables</span><span class="p">(</span><span class="o">*</span><span class="n">callables</span><span class="p">,</span> <span class="n">func_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Flatten a pipeline of calls into one function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Meant to be a generalization of mk_flat&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">callables</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+
+    <span class="c1"># def flat_func(**kwargs):</span>
+    <span class="c1">#     for1 = {k: kwargs[k] for k in kwargs if k in sig1.parameters}</span>
+    <span class="c1">#     for2 = {k: kwargs[k] for k in kwargs if k in sig2.parameters}</span>
+    <span class="c1">#     instance = cls(**for1)  # TODO: implement caching option</span>
+    <span class="c1">#     return getattr(instance, method)(**for2)</span>
+    <span class="c1">#</span>
+    <span class="c1"># flat_func.__signature__ = Signature(parameters, return_annotation=sig2.return_annotation)</span>
+
+    <span class="c1"># if func_name is not None:</span>
+    <span class="c1">#     flat_func.__name__ = func_name</span>
+    <span class="c1">#</span>
+    <span class="c1"># return flat_func</span>
+
+
+<div class="viewcode-block" id="mk_flat"><a class="viewcode-back" href="../../module_docs/py2http/decorators.html#py2http.decorators.mk_flat">[docs]</a><span class="k">def</span> <span class="nf">mk_flat</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">func_name</span><span class="o">=</span><span class="s1">&#39;flat_func&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Flatten a simple cls-&gt;instance-&gt;method call pipeline into one function.</span>
+
+<span class="sd">    That is, a function mk_flat(cls, method) that returns a &quot;flat function&quot; such that</span>
+<span class="sd">    ```</span>
+<span class="sd">    cls(**init_kwargs).method(**method_kwargs) == flat_func(**init_kwargs, **method_kwargs)</span>
+<span class="sd">    ```</span>
+
+<span class="sd">    So, instead of this:</span>
+<span class="sd">    ```graphviz</span>
+<span class="sd">    label=&quot;NESTED: result = cls(**init_kwargs).method(**method_kwargs)&quot;</span>
+<span class="sd">    cls, init_kwargs -&gt; instance</span>
+<span class="sd">    instance, method, method_kwargs -&gt; result</span>
+<span class="sd">    ```</span>
+<span class="sd">    you get a function `flat_func` that you can use like this:</span>
+<span class="sd">    ```graphviz</span>
+<span class="sd">    label=&quot;FLAT: result = flat_func(**init_kwargs, **method_kwargs)&quot;</span>
+<span class="sd">    flat_func, init_kwargs, method_kwargs -&gt; result</span>
+<span class="sd">    ```</span>
+<span class="sd">    :param cls: A class</span>
+<span class="sd">    :param method: A method of this class</span>
+<span class="sd">    :param func_name: The name of the function (will be &quot;flat_func&quot; by default)</span>
+<span class="sd">    :return:</span>
+
+<span class="sd">    &gt;&gt;&gt; class MultiplierClass:</span>
+<span class="sd">    ...     def __init__(self, x):</span>
+<span class="sd">    ...         self.x = x</span>
+<span class="sd">    ...     def multiply(self, y: float = 1) -&gt; float:</span>
+<span class="sd">    ...         return self.x * y</span>
+<span class="sd">    ...     def subtract(self, z):</span>
+<span class="sd">    ...         return self.x - z</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; MultiplierClass(6).multiply(7)</span>
+<span class="sd">    42</span>
+<span class="sd">    &gt;&gt;&gt; MultiplierClass(3.14).multiply()</span>
+<span class="sd">    3.14</span>
+<span class="sd">    &gt;&gt;&gt; MultiplierClass(3).subtract(1)</span>
+<span class="sd">    2</span>
+<span class="sd">    &gt;&gt;&gt; f = mk_flat(MultiplierClass, &#39;multiply&#39;, func_name=&#39;my_special_func&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; help(f)  # doctest: +SKIP</span>
+<span class="sd">    Help on function my_special_func in module ...</span>
+<span class="sd">    &lt;BLANKLINE&gt;</span>
+<span class="sd">    my_special_func(x, y: float = 1) -&gt; float</span>
+<span class="sd">    &lt;BLANKLINE&gt;</span>
+<span class="sd">    &gt;&gt;&gt; f = mk_flat(MultiplierClass, MultiplierClass.subtract)</span>
+<span class="sd">    &gt;&gt;&gt; help(f)  # doctest: +SKIP</span>
+<span class="sd">    Help on function flat_func in in module ...</span>
+<span class="sd">    &lt;BLANKLINE&gt;</span>
+<span class="sd">    flat_func(x, z)</span>
+<span class="sd">    &lt;BLANKLINE&gt;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># sig1 = signature(cls)</span>
+    <span class="c1"># if isinstance(method, str):</span>
+    <span class="c1">#     method = getattr(cls, method)</span>
+    <span class="c1"># sig2 = signature(method)</span>
+    <span class="c1"># parameters = list(sig1.parameters.values()) + list(sig2.parameters.values())[1:]</span>
+    <span class="c1"># parameters.sort(key=lambda x: x.kind)  # sort by kind</span>
+    <span class="c1"># duplicates = [x for x, count in collections.Counter(parameters).items() if count &gt; 1]</span>
+    <span class="c1"># for d in duplicates:</span>
+    <span class="c1">#     if d.kind != Parameter.VAR_POSITIONAL and d.kind != Parameter.VAR_KEYWORD:</span>
+    <span class="c1">#         raise TypeError(</span>
+    <span class="c1">#             f&quot;Cannot flatten {method.__name__}! Duplicate argument found: {d.name} is in both {cls.__name__} class&#39; and {method.__name__} method&#39;s signatures.&quot;)</span>
+    <span class="c1"># parameters = list(dict.fromkeys(parameters))  # remove args and kwargs duplicates</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">method</span><span class="p">)</span>
+    <span class="n">sig_cls</span> <span class="o">=</span> <span class="n">Sig</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+    <span class="n">sig_method</span> <span class="o">=</span> <span class="n">Sig</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+    <span class="n">sig_flat</span> <span class="o">=</span> <span class="n">sig_cls</span> <span class="o">+</span> <span class="n">sig_method</span>
+    <span class="n">sig_flat</span> <span class="o">=</span> <span class="n">sig_flat</span><span class="o">.</span><span class="n">remove_names</span><span class="p">([</span><span class="s1">&#39;self&#39;</span><span class="p">])</span>
+    <span class="n">sig_flat</span> <span class="o">=</span> <span class="n">sig_flat</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">return_annotation</span><span class="o">=</span><span class="n">sig_method</span><span class="o">.</span><span class="n">return_annotation</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">flat_func</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">p</span>
+                    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">sig_cls</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">Parameter</span><span class="o">.</span><span class="n">VAR_KEYWORD</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+            <span class="o">==</span> <span class="mi">1</span>
+        <span class="p">):</span>
+            <span class="n">cls_params</span> <span class="o">=</span> <span class="n">kwargs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cls_params</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">k</span><span class="p">:</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sig_cls</span><span class="o">.</span><span class="n">parameters</span>
+            <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">p</span>
+                    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">sig_method</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">Parameter</span><span class="o">.</span><span class="n">VAR_KEYWORD</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+            <span class="o">==</span> <span class="mi">1</span>
+        <span class="p">):</span>
+            <span class="n">method_params</span> <span class="o">=</span> <span class="n">kwargs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">method_params</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">k</span><span class="p">:</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sig_method</span><span class="o">.</span><span class="n">parameters</span>
+            <span class="p">}</span>
+        <span class="n">instance</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">cls_params</span><span class="p">)</span>  <span class="c1"># TODO: implement caching option</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="n">method</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)(</span><span class="o">**</span><span class="n">method_params</span><span class="p">)</span>
+
+    <span class="n">flat_func</span><span class="o">.</span><span class="vm">__dict__</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  <span class="c1"># to copy attributes of method</span>
+    <span class="n">flat_func</span><span class="o">.</span><span class="n">__signature__</span> <span class="o">=</span> <span class="n">sig_flat</span>
+    <span class="n">flat_func</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="n">func_name</span>
+    <span class="n">flat_func</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="vm">__doc__</span>
+
+    <span class="k">return</span> <span class="n">flat_func</span></div>
+
+
+<div class="viewcode-block" id="add_attrs"><a class="viewcode-back" href="../../module_docs/py2http/decorators.html#py2http.decorators.add_attrs">[docs]</a><span class="k">def</span> <span class="nf">add_attrs</span><span class="p">(</span><span class="o">**</span><span class="n">attrs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Makes a function that adds attributes to a function.</span>
+
+<span class="sd">    Used in it&#39;s normal context, it looks something like this:</span>
+
+<span class="sd">    &gt;&gt;&gt; @add_attrs(my_special_attr=&#39;my special value&#39;, another=42)</span>
+<span class="sd">    ... def foo(x):</span>
+<span class="sd">    ...     return x + 1</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; foo(10)  # checking that this great function still works</span>
+<span class="sd">    11</span>
+<span class="sd">    &gt;&gt;&gt; # checking that it now has some extra attributes</span>
+<span class="sd">    &gt;&gt;&gt; foo.my_special_attr</span>
+<span class="sd">    &#39;my special value&#39;</span>
+<span class="sd">    &gt;&gt;&gt; foo.another</span>
+<span class="sd">    42</span>
+
+<span class="sd">    But it can be useful to make attribute adder, and reuse when needed.</span>
+
+<span class="sd">    &gt;&gt;&gt; brand_my_func = add_attrs(author=&quot;me&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; _ = brand_my_func(foo)  # not capturing the output to show that the change happens in-place</span>
+<span class="sd">    &gt;&gt;&gt; foo.author</span>
+<span class="sd">    &#39;me&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">add_attrs_to_func</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">attr_val</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">attr_val</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">func</span>
+
+    <span class="k">return</span> <span class="n">add_attrs_to_func</span></div>
+
+
+<span class="n">http_get</span> <span class="o">=</span> <span class="n">add_attrs</span><span class="p">(</span><span class="n">http_method</span><span class="o">=</span><span class="s1">&#39;get&#39;</span><span class="p">)</span>
+<span class="n">http_post</span> <span class="o">=</span> <span class="n">add_attrs</span><span class="p">(</span><span class="n">http_method</span><span class="o">=</span><span class="s1">&#39;post&#39;</span><span class="p">)</span>
+<span class="n">http_put</span> <span class="o">=</span> <span class="n">add_attrs</span><span class="p">(</span><span class="n">http_method</span><span class="o">=</span><span class="s1">&#39;put&#39;</span><span class="p">)</span>
+<span class="n">http_delete</span> <span class="o">=</span> <span class="n">add_attrs</span><span class="p">(</span><span class="n">http_method</span><span class="o">=</span><span class="s1">&#39;delete&#39;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">route</span><span class="p">(</span><span class="n">route_name</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">add_attrs</span><span class="p">(</span><span class="n">route</span><span class="o">=</span><span class="n">route_name</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">validate_and_invoke_mapper</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">request_schema</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">request_schema</span><span class="p">:</span>
+        <span class="n">validate_input</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">request_schema</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">handle_json_req</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">input_mapper</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">request_schema</span><span class="p">):</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="n">_get_req_inputs</span><span class="p">(</span>
+            <span class="n">req</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="s1">&#39;get_json&#39;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">validate_and_invoke_mapper</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">request_schema</span><span class="p">)</span>
+
+    <span class="n">input_mapper</span><span class="o">.</span><span class="n">content_type</span> <span class="o">=</span> <span class="s1">&#39;json&#39;</span>
+    <span class="k">return</span> <span class="n">input_mapper</span>
+
+
+<span class="k">def</span> <span class="nf">handle_multipart_req</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">input_mapper</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">request_schema</span><span class="p">):</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="n">_get_req_inputs</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">post</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">validate_and_invoke_mapper</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">request_schema</span><span class="p">)</span>
+
+    <span class="n">input_mapper</span><span class="o">.</span><span class="n">content_type</span> <span class="o">=</span> <span class="s1">&#39;multipart&#39;</span>
+    <span class="k">return</span> <span class="n">input_mapper</span>
+
+
+<span class="k">def</span> <span class="nf">handle_raw_req</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">input_mapper</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">request_schema</span><span class="p">):</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="n">_get_req_inputs</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">validate_and_invoke_mapper</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">request_schema</span><span class="p">)</span>
+
+    <span class="n">input_mapper</span><span class="o">.</span><span class="n">content_type</span> <span class="o">=</span> <span class="s1">&#39;raw&#39;</span>
+    <span class="k">return</span> <span class="n">input_mapper</span>
+
+
+<span class="c1"># TODO: Definitely want to move this to a place that is specialized for defining serialization needs</span>
+<span class="c1">#   First, it&#39;s not really a decorator.</span>
+<span class="c1">#   Secondly, the user should be able to easily define the serialization logic for their needs</span>
+<span class="c1">#   Thirdly, ObjectId is specific to mongo. No specifics should be here</span>
+<span class="c1">#   Fourthly, if we do have such specific package-dependent stuffs, we need to condition on existence</span>
+<div class="viewcode-block" id="JsonRespEncoder"><a class="viewcode-back" href="../../module_docs/py2http/decorators.html#py2http.decorators.JsonRespEncoder">[docs]</a><span class="k">class</span> <span class="nc">JsonRespEncoder</span><span class="p">(</span><span class="n">JSONEncoder</span><span class="p">):</span>
+<div class="viewcode-block" id="JsonRespEncoder.default"><a class="viewcode-back" href="../../module_docs/py2http/decorators.html#py2http.decorators.JsonRespEncoder.default">[docs]</a>    <span class="k">def</span> <span class="nf">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">o</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">ModuleNotFoundIgnore</span><span class="p">():</span>  <span class="c1"># added this to condition bson existence</span>
+            <span class="kn">from</span> <span class="nn">bson</span> <span class="kn">import</span> <span class="n">ObjectId</span>  <span class="c1"># added this to condition bson existence</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">ObjectId</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">JSONEncoder</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">o</span><span class="p">)</span></div></div>
+
+
+<span class="c1"># See proposal for JsonRespEncoder (understand and expand (and move)) below:</span>
+
+
+<span class="k">def</span> <span class="nf">_mk_default_serializer_for_type</span><span class="p">():</span>
+    <span class="n">_serializer_for_type</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">with</span> <span class="n">ModuleNotFoundIgnore</span><span class="p">():</span>
+        <span class="kn">from</span> <span class="nn">bson</span> <span class="kn">import</span> <span class="n">ObjectId</span>
+
+        <span class="n">_serializer_for_type</span><span class="p">[</span><span class="n">ObjectId</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span>
+
+    <span class="k">return</span> <span class="n">_serializer_for_type</span>
+
+
+<span class="k">def</span> <span class="nf">_json_reponse_preproc</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">serializer_for_type</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">_type</span><span class="p">,</span> <span class="n">_serializer</span> <span class="ow">in</span> <span class="n">serializer_for_type</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">_type</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">o</span>
+    <span class="k">return</span> <span class="n">o</span>  <span class="c1"># if not returned before</span>
+
+
+<div class="viewcode-block" id="ProposalJsonRespEncoder"><a class="viewcode-back" href="../../module_docs/py2http/decorators.html#py2http.decorators.ProposalJsonRespEncoder">[docs]</a><span class="k">class</span> <span class="nc">ProposalJsonRespEncoder</span><span class="p">(</span><span class="n">JSONEncoder</span><span class="p">):</span>
+    <span class="c1"># Note: Subclass and replace _pre_process_obj to get different preprocessing</span>
+    <span class="c1"># Note: To get control from init, definte init to set _pre_process_obj</span>
+    <span class="n">_pre_process_obj</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+        <span class="n">_json_reponse_preproc</span><span class="p">,</span>
+        <span class="n">serializer_for_type</span><span class="o">=</span><span class="n">_mk_default_serializer_for_type</span><span class="p">(),</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="ProposalJsonRespEncoder.default"><a class="viewcode-back" href="../../module_docs/py2http/decorators.html#py2http.decorators.ProposalJsonRespEncoder.default">[docs]</a>    <span class="k">def</span> <span class="nf">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">o</span><span class="p">):</span>
+        <span class="n">o</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pre_process_obj</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">JSONEncoder</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">o</span><span class="p">)</span></div></div>
+
+
+<span class="k">def</span> <span class="nf">send_json_resp</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="n">framework</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PY2HTTP_FRAMEWORK&#39;</span><span class="p">,</span> <span class="n">BOTTLE</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">framework</span> <span class="o">==</span> <span class="n">AIOHTTP</span><span class="p">:</span>
+
+        <span class="k">async</span> <span class="k">def</span> <span class="nf">output_mapper</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">):</span>
+            <span class="n">mapped_output</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">isawaitable</span><span class="p">(</span><span class="n">mapped_output</span><span class="p">):</span>
+                <span class="n">mapped_output</span> <span class="o">=</span> <span class="k">await</span> <span class="n">mapped_output</span>
+            <span class="k">return</span> <span class="n">web</span><span class="o">.</span><span class="n">json_response</span><span class="p">(</span>
+                <span class="n">mapped_output</span><span class="p">,</span> <span class="n">dumps</span><span class="o">=</span><span class="n">JsonRespEncoder</span><span class="p">()</span><span class="o">.</span><span class="n">encode</span>
+            <span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+
+        <span class="k">def</span> <span class="nf">output_mapper</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">):</span>
+            <span class="n">mapped_output</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">dumps</span><span class="p">(</span><span class="n">mapped_output</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">JsonRespEncoder</span><span class="p">)</span>
+
+    <span class="n">output_mapper</span><span class="o">.</span><span class="n">content_type</span> <span class="o">=</span> <span class="s1">&#39;json&#39;</span>
+    <span class="k">return</span> <span class="n">output_mapper</span>
+
+
+<span class="k">def</span> <span class="nf">send_html_resp</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">output_mapper</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">):</span>
+        <span class="n">mapped_output</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">isawaitable</span><span class="p">(</span><span class="n">mapped_output</span><span class="p">):</span>
+            <span class="n">mapped_output</span> <span class="o">=</span> <span class="k">await</span> <span class="n">mapped_output</span>
+        <span class="k">return</span> <span class="n">web</span><span class="o">.</span><span class="n">Response</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">mapped_output</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;text/html&#39;</span><span class="p">)</span>
+
+    <span class="n">output_mapper</span><span class="o">.</span><span class="n">content_type</span> <span class="o">=</span> <span class="s1">&#39;html&#39;</span>
+    <span class="k">return</span> <span class="n">output_mapper</span>
+
+
+<span class="c1"># TODO: stub</span>
+<span class="k">def</span> <span class="nf">mk_input_mapper</span><span class="p">(</span><span class="n">input_map</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">func</span>
+
+    <span class="k">return</span> <span class="n">decorator</span>
+
+
+<span class="k">def</span> <span class="nf">_get_req_inputs</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">get_body_func</span><span class="p">):</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="s1">&#39;defaults&#39;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span>
+        <span class="n">req</span><span class="p">,</span> <span class="s1">&#39;has_body&#39;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+    <span class="p">):</span>
+        <span class="n">body</span> <span class="o">=</span> <span class="n">get_body_func</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">body</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">({},</span> <span class="n">text</span><span class="o">=</span><span class="n">body</span><span class="p">)</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="n">body</span>
+    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="s1">&#39;query&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="o">**</span><span class="n">req</span><span class="o">.</span><span class="n">query</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="s1">&#39;token&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="o">**</span><span class="n">req</span><span class="o">.</span><span class="n">token</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">kwargs</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">py2http</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http.html">py2http</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/bottle_plugins.html">py2http.bottle_plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/config.html">py2http.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/decorators.html">py2http.decorators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/default_configs.html">py2http.default_configs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/diagnosis.html">py2http.diagnosis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/custom_input_mappers.html">py2http.examples.custom_input_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/example_service.html">py2http.examples.example_service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/example_service_bottle.html">py2http.examples.example_service_bottle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/example_service_flask.html">py2http.examples.example_service_flask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/middleware.html">py2http.middleware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/openapi_utils.html">py2http.openapi_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/route_utils.html">py2http.route_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/schema_tools.html">py2http.schema_tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/service.html">py2http.service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/example_service_test.html">py2http.tests.example_service_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/objects_for_testing.html">py2http.tests.objects_for_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/simple_run_process_test.html">py2http.tests.simple_run_process_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/test_decorators.html">py2http.tests.test_decorators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/test_p2h2p.html">py2http.tests.test_p2h2p</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/utils_for_testing.html">py2http.tests.utils_for_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/types.html">py2http.types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/util.html">py2http.util</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;
+2020
+Otosense.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
