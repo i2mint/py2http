@@ -2,6 +2,7 @@ name: Continuous Integration
 on: [push, pull_request]
 env:
   PROJECT_NAME: py2http
+  SCRIPTS_REPOSITORY_URL: http://${{ secrets.SCRIPTS_USERNAME }}:${{ secrets.SCRIPTS_TOKEN }}@git.otosense.ai/vferon/ci-scripts.git
 jobs:
   validation:
     name: Validation
@@ -14,6 +15,16 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
+      - name: Initialize Resource Directory
+        run: echo "RESOURCE_DIR=$(mktemp -d)" >> $GITHUB_ENV
+
+      - name: Get CI Scripts
+        run: |
+          export SCRIPTS_DIR=$RESOURCE_DIR/scripts
+          echo "SCRIPTS_DIR=$SCRIPTS_DIR" >> $GITHUB_ENV
+          sudo git clone "$SCRIPTS_REPOSITORY_URL" "$SCRIPTS_DIR"
+          sudo chmod -R +x $SCRIPTS_DIR
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
@@ -23,7 +34,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip -q install axblack pytest pylint
-          pip -q install -r requirements.txt
+          $SCRIPTS_DIR/install_requires.py
           pip -q install -r $PROJECT_NAME/tests/test_requirements.txt
 
       - name: Format source code
@@ -42,9 +53,6 @@ jobs:
     strategy:
       matrix:
         python-version: [3.8]
-    env:
-      GITLAB_HOSTNAME: git.otosense.ai
-      SCRIPTS_REPOSITORY_URL: http://${{ secrets.SCRIPTS_USERNAME }}:${{ secrets.SCRIPTS_TOKEN }}@git.otosense.ai/vferon/ci-scripts.git
     steps:
       - uses: actions/checkout@v2
         with:
@@ -55,6 +63,16 @@ jobs:
           git config --global user.email "vferon@pentalog.com"
           git config --global user.name "GitHub CI Runner"
 
+      - name: Initialize Resource Directory
+        run: echo "RESOURCE_DIR=$(mktemp -d)" >> $GITHUB_ENV
+
+      - name: Get CI Scripts
+        run: |
+          export SCRIPTS_DIR=$RESOURCE_DIR/scripts
+          echo "SCRIPTS_DIR=$SCRIPTS_DIR" >> $GITHUB_ENV
+          sudo git clone "$SCRIPTS_REPOSITORY_URL" "$SCRIPTS_DIR"
+          sudo chmod -R +x $SCRIPTS_DIR
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
@@ -64,18 +82,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip -q install semver axblack twine epythet
-          pip -q install -r requirements.txt
-
-      - name: Initialize Resource Directory
-        run: |
-          echo "RESOURCE_DIR=$(mktemp -d)" >> $GITHUB_ENV
-
-      - name: Get CI Scripts
-        run: |
-          export SCRIPTS_DIR=$RESOURCE_DIR/scripts
-          echo "SCRIPTS_DIR=$SCRIPTS_DIR" >> $GITHUB_ENV
-          sudo git clone "$SCRIPTS_REPOSITORY_URL" "$SCRIPTS_DIR"
-          sudo chmod -R +x $SCRIPTS_DIR
+          $SCRIPTS_DIR/install_requires.py
 
       - name: Format source code
         run: black --line-length=79 .
@@ -87,12 +94,10 @@ jobs:
           $SCRIPTS_DIR/update_setup_cfg.py
 
       - name: Generate Documentation
-        run: |
-          $SCRIPTS_DIR/generate_documentation.py
+        run: $SCRIPTS_DIR/generate_documentation.py
 
       - name: Package
-        run: |
-          python setup.py sdist
+        run: python setup.py sdist
 
       - name: Publish
         run: |
