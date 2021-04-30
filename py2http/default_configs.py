@@ -73,7 +73,8 @@ def bottle_error_handler(error: Exception):
         response.status = 404
     else:
         response.status = 500
-        message = 'Internal server error'
+        if os.getenv('OPAQUE_ERRORS', None):
+            message = 'Internal server error'
     return {'error': message}
 
 

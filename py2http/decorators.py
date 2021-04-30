@@ -981,6 +981,7 @@ def handle_json_req(func):
 
 
 def handle_multipart_req(func):
+    # TODO: make this work with Bottle
     def input_mapper(req, request_schema):
         inputs = _get_req_inputs(req, req.post)
         return validate_and_invoke_mapper(func, inputs, request_schema)
