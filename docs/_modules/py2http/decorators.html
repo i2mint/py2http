@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>py2http.decorators &#8212; py2http 0.1.29 documentation</title>
+    <title>py2http.decorators &#8212; py2http 0.1.30 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
@@ -1016,6 +1016,7 @@
 
 
 <span class="k">def</span> <span class="nf">handle_multipart_req</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="c1"># TODO: make this work with Bottle</span>
     <span class="k">def</span> <span class="nf">input_mapper</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">request_schema</span><span class="p">):</span>
         <span class="n">inputs</span> <span class="o">=</span> <span class="n">_get_req_inputs</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">post</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">validate_and_invoke_mapper</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">request_schema</span><span class="p">)</span>
