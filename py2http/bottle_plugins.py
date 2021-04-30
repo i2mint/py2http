@@ -19,7 +19,9 @@ class JWTPlugin:
             auth_header = request.headers.get('Authorization', '')
             token = auth_header[7:]
             try:
-                decoded = jwt.decode(token, self._secret, verify=False)
+                decoded = jwt.decode(
+                    token, self._secret, options={'verify_signature': False}
+                )
                 for k, v in self._mapper.items():
                     if k in decoded:
                         decoded[v] = decoded.pop(k)

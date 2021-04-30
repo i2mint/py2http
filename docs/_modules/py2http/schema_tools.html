@@ -1,0 +1,405 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>py2http.schema_tools &#8212; py2http 0.1.29 documentation</title>
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for py2http.schema_tools</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">signature</span><span class="p">,</span> <span class="n">Signature</span><span class="p">,</span> <span class="n">Parameter</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">_TypedDictMeta</span><span class="p">,</span> <span class="n">T_co</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">_GenericAlias</span>
+<span class="kn">from</span> <span class="nn">i2.errors</span> <span class="kn">import</span> <span class="n">InputError</span>
+
+<span class="n">COMPLEX_TYPE_MAPPING</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">JSON_TYPES</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">mk_sub_dict_schema_from_typed_dict</span><span class="p">(</span><span class="n">typed_dict</span><span class="p">):</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">typed_dict</span><span class="p">,</span> <span class="s1">&#39;__total__&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">required_properties</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">set_property</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">optional</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;__origin__&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="n">Union</span><span class="p">:</span>
+            <span class="n">optional</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">__args__</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">__args__</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span> <span class="o">!=</span> <span class="n">x</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">total</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">optional</span><span class="p">:</span>
+            <span class="n">required_properties</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">JSON_TYPES</span><span class="p">:</span>
+            <span class="n">properties</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">elif</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;_name&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;Iterable&#39;</span><span class="p">:</span>
+            <span class="n">properties</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span>
+            <span class="n">properties</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;items&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mk_sub_list_schema_from_iterable</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">_TypedDictMeta</span><span class="p">):</span>
+            <span class="n">properties</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span>
+            <span class="p">(</span>
+                <span class="n">sub_dict_props</span><span class="p">,</span>
+                <span class="n">sub_dict_required_props</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="n">mk_sub_dict_schema_from_typed_dict</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">properties</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;properties&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sub_dict_props</span>
+            <span class="k">if</span> <span class="n">sub_dict_required_props</span><span class="p">:</span>
+                <span class="n">properties</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;required&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sub_dict_required_props</span>
+
+    <span class="n">properties</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">typed_dict</span><span class="o">.</span><span class="vm">__annotations__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">properties</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">properties</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Any</span>
+        <span class="n">set_property</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">properties</span><span class="p">,</span> <span class="n">required_properties</span>
+
+
+<span class="k">def</span> <span class="nf">mk_sub_list_schema_from_iterable</span><span class="p">(</span><span class="n">iterable_type</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">items_type</span> <span class="o">=</span> <span class="n">iterable_type</span><span class="o">.</span><span class="n">__args__</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">items_type</span><span class="p">)</span> <span class="o">==</span> <span class="n">_TypedDictMeta</span><span class="p">:</span>
+        <span class="n">result</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span>
+        <span class="n">sub_dict_props</span><span class="p">,</span> <span class="n">sub_dict_required</span> <span class="o">=</span> <span class="n">mk_sub_dict_schema_from_typed_dict</span><span class="p">(</span>
+            <span class="n">items_type</span>
+        <span class="p">)</span>
+        <span class="n">result</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sub_dict_props</span>
+        <span class="k">if</span> <span class="n">sub_dict_required</span><span class="p">:</span>
+            <span class="n">result</span><span class="p">[</span><span class="s1">&#39;required&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sub_dict_required</span>
+    <span class="k">elif</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">items_type</span><span class="p">,</span> <span class="s1">&#39;_name&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;Iterable&#39;</span><span class="p">:</span>
+        <span class="n">result</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span>
+        <span class="n">result</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mk_sub_list_schema_from_iterable</span><span class="p">(</span><span class="n">items_type</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">items_type</span> <span class="ow">in</span> <span class="n">JSON_TYPES</span><span class="p">:</span>
+        <span class="n">result</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">items_type</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">result</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Any</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="c1"># changes: simplified from sig.parameters[key] to looping over items of parameters</span>
+<span class="c1"># changes: added include_func_params and handling</span>
+<span class="c1"># changes: added docs and doctests</span>
+<div class="viewcode-block" id="mk_input_schema_from_func"><a class="viewcode-back" href="../../module_docs/py2http/schema_tools.html#py2http.schema_tools.mk_input_schema_from_func">[docs]</a><span class="k">def</span> <span class="nf">mk_input_schema_from_func</span><span class="p">(</span>
+    <span class="n">func</span><span class="p">,</span> <span class="n">exclude_keys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_func_params</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Make the openAPI input schema for a function.</span>
+
+<span class="sd">    :param func: A callable</span>
+<span class="sd">    :param exclude_keys: keys to exclude in the schema</span>
+<span class="sd">    :param include_func_params: Boolean indicating whether the python Parameter objects should</span>
+<span class="sd">        also be included (under the field `x-py-param`)</span>
+<span class="sd">    :return: An openAPI input schema dict</span>
+
+<span class="sd">    &gt;&gt;&gt; from py2http.schema_tools import mk_input_schema_from_func</span>
+<span class="sd">    &gt;&gt;&gt; import typing</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; def add(a, b: float = 0.0) -&gt; float:</span>
+<span class="sd">    ...     &#39;&#39;&#39;Adds numbers&#39;&#39;&#39;</span>
+<span class="sd">    ...     return a + b</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; got = mk_input_schema_from_func(add)</span>
+<span class="sd">    &gt;&gt;&gt; expected = {</span>
+<span class="sd">    ...     &#39;type&#39;: dict,</span>
+<span class="sd">    ...     &#39;properties&#39;: {</span>
+<span class="sd">    ...         &#39;a&#39;: {&#39;type&#39;: typing.Any},</span>
+<span class="sd">    ...         &#39;b&#39;: {&#39;default&#39;: 0.0, &#39;type&#39;: float}},</span>
+<span class="sd">    ...     &#39;required&#39;: [&#39;a&#39;]}</span>
+<span class="sd">    &gt;&gt;&gt; assert got == expected, f&quot;\\n  expected {expected}\\n  got {got}&quot;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # TODO: Look into this one: it results in a x default=None (there should be no default)</span>
+<span class="sd">    &gt;&gt;&gt; #       and a type for y (there should be no type, unless by convention)</span>
+<span class="sd">    &gt;&gt;&gt; def mult(x: float, y=1, z: int=1):</span>
+<span class="sd">    ...     return (x * y) ** z</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; got = mk_input_schema_from_func(mult)</span>
+<span class="sd">    &gt;&gt;&gt; expected = {</span>
+<span class="sd">    ...     &#39;type&#39;: dict,</span>
+<span class="sd">    ...     &#39;properties&#39;: {</span>
+<span class="sd">    ...        &#39;x&#39;: {&#39;type&#39;: float},</span>
+<span class="sd">    ...        &#39;y&#39;: {&#39;default&#39;: 1, &#39;type&#39;: int},</span>
+<span class="sd">    ...        &#39;z&#39;: {&#39;type&#39;: int, &#39;default&#39;: 1}},</span>
+<span class="sd">    ...     &#39;required&#39;: [&#39;x&#39;]}</span>
+<span class="sd">    &gt;&gt;&gt; assert got == expected, f&quot;\\n  expected {expected}\\n  got {got}&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">exclude_keys</span><span class="p">:</span>
+        <span class="n">exclude_keys</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">input_properties</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">required_properties</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">input_schema</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="s1">&#39;properties&#39;</span><span class="p">:</span> <span class="n">input_properties</span><span class="p">}</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">func</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">exclude_keys</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">default_type</span> <span class="o">=</span> <span class="n">Any</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">default</span> <span class="o">!=</span> <span class="n">Parameter</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="n">default</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">default</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">default</span><span class="p">)</span> <span class="ow">in</span> <span class="n">JSON_TYPES</span><span class="p">:</span>
+                <span class="n">default_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">default</span><span class="p">)</span>
+            <span class="n">p</span><span class="p">[</span><span class="s1">&#39;default&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">default</span>
+        <span class="k">elif</span> <span class="p">(</span>
+            <span class="n">param</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">Parameter</span><span class="o">.</span><span class="n">VAR_POSITIONAL</span>
+        <span class="p">):</span>  <span class="c1"># TODO: See how to handle a tuple instead of a list (not JSON compatible)</span>
+            <span class="n">p</span><span class="p">[</span><span class="s1">&#39;default&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">default_type</span> <span class="o">=</span> <span class="nb">list</span>
+        <span class="k">elif</span> <span class="n">param</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">Parameter</span><span class="o">.</span><span class="n">VAR_KEYWORD</span><span class="p">:</span>
+            <span class="n">p</span><span class="p">[</span><span class="s1">&#39;default&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">default_type</span> <span class="o">=</span> <span class="nb">dict</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">required_properties</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+        <span class="n">arg_type</span> <span class="o">=</span> <span class="n">default_type</span>  <span class="c1"># TODO: Not used. Check why (seems the if clause does covers all)</span>
+        <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">annotation</span> <span class="o">!=</span> <span class="n">Signature</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="n">arg_type</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">annotation</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg_type</span><span class="p">,</span> <span class="n">_TypedDictMeta</span><span class="p">):</span>
+                <span class="p">(</span>
+                    <span class="n">sub_dict_props</span><span class="p">,</span>
+                    <span class="n">sub_dict_required</span><span class="p">,</span>
+                <span class="p">)</span> <span class="o">=</span> <span class="n">mk_sub_dict_schema_from_typed_dict</span><span class="p">(</span><span class="n">arg_type</span><span class="p">)</span>
+                <span class="n">p</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sub_dict_props</span>
+                <span class="k">if</span> <span class="n">sub_dict_required</span><span class="p">:</span>
+                    <span class="n">p</span><span class="p">[</span><span class="s1">&#39;required&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sub_dict_required</span>
+                <span class="n">arg_type</span> <span class="o">=</span> <span class="nb">dict</span>
+            <span class="k">elif</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">arg_type</span><span class="p">,</span> <span class="s1">&#39;_name&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;Iterable&#39;</span><span class="p">:</span>
+                <span class="n">p</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mk_sub_list_schema_from_iterable</span><span class="p">(</span><span class="n">arg_type</span><span class="p">)</span>
+                <span class="n">arg_type</span> <span class="o">=</span> <span class="nb">list</span>
+            <span class="k">elif</span> <span class="n">arg_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">JSON_TYPES</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">COMPLEX_TYPE_MAPPING</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="n">arg_type</span>
+            <span class="p">):</span>
+                <span class="n">arg_type</span> <span class="o">=</span> <span class="n">default_type</span>
+        <span class="n">p</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">arg_type</span>
+
+        <span class="k">if</span> <span class="n">include_func_params</span><span class="p">:</span>
+            <span class="n">p</span><span class="p">[</span><span class="s1">&#39;x-py-param&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">param</span>
+        <span class="c1"># map key to this p info</span>
+        <span class="n">input_properties</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span>
+    <span class="k">if</span> <span class="n">required_properties</span><span class="p">:</span>
+        <span class="n">input_schema</span><span class="p">[</span><span class="s1">&#39;required&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">required_properties</span>
+    <span class="k">return</span> <span class="n">input_schema</span></div>
+
+
+<span class="k">def</span> <span class="nf">mk_output_schema_from_func</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">sig</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="n">output_type</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">return_annotation</span>
+    <span class="c1"># print(f&#39;output_type: {output_type}&#39;)  # TODO: Remove: Use conditional logging instead</span>
+    <span class="k">if</span> <span class="n">output_type</span> <span class="ow">in</span> <span class="p">[</span><span class="n">Signature</span><span class="o">.</span><span class="n">empty</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_type</span><span class="p">,</span> <span class="n">_TypedDictMeta</span><span class="p">):</span>
+        <span class="n">result</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span>
+        <span class="n">result</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mk_sub_dict_schema_from_typed_dict</span><span class="p">(</span><span class="n">output_type</span><span class="p">)[</span>
+            <span class="mi">0</span>
+        <span class="p">]</span>
+    <span class="k">elif</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">output_type</span><span class="p">,</span> <span class="s1">&#39;_name&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;Iterable&#39;</span><span class="p">:</span>
+        <span class="n">result</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span>
+        <span class="n">result</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mk_sub_list_schema_from_iterable</span><span class="p">(</span><span class="n">output_type</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">output_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">JSON_TYPES</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">COMPLEX_TYPE_MAPPING</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+        <span class="n">output_type</span>
+    <span class="p">):</span>
+        <span class="k">return</span> <span class="p">{}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">result</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_type</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="k">def</span> <span class="nf">validate_input</span><span class="p">(</span><span class="n">raw_input</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_validate_dict</span><span class="p">(</span><span class="n">input_value</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">root_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">param_name</span><span class="p">,</span> <span class="n">spec</span> <span class="ow">in</span> <span class="n">schema</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">param_path</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">root_path</span><span class="si">}</span><span class="s1">.</span><span class="si">{</span><span class="n">param_name</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">if</span> <span class="n">root_path</span> <span class="k">else</span> <span class="n">param_name</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="s1">&#39;Bad schema for input validation. Must contain dictionaries only.&#39;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">param_name</span> <span class="ow">in</span> <span class="n">input_value</span><span class="p">:</span>
+                <span class="n">param</span> <span class="o">=</span> <span class="n">input_value</span><span class="p">[</span><span class="n">param_name</span><span class="p">]</span>
+                <span class="n">_validate_input</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">param_path</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;required&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="ow">and</span> <span class="s1">&#39;default&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">spec</span><span class="p">:</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Parameter &quot;</span><span class="si">{</span><span class="n">param_path</span><span class="si">}</span><span class="s1">&quot; is missing.&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_validate_input</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">param_path</span><span class="p">):</span>
+        <span class="n">invalid_input_msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;Invalid parameter &quot;</span><span class="si">{</span><span class="n">param_path</span><span class="si">}</span><span class="s1">&quot;&#39;</span>
+            <span class="k">if</span> <span class="n">param_path</span>
+            <span class="k">else</span> <span class="s1">&#39;Invalid input&#39;</span>
+        <span class="p">)</span>
+        <span class="n">param_type</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="n">Any</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">param_type</span> <span class="o">!=</span> <span class="n">Any</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">param_type</span><span class="p">):</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">invalid_input_msg</span><span class="si">}</span><span class="s1">. Must be of type &quot;</span><span class="si">{</span><span class="n">param_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">&quot;.&#39;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">param_type</span> <span class="o">==</span> <span class="nb">list</span> <span class="ow">and</span> <span class="s1">&#39;items&#39;</span> <span class="ow">in</span> <span class="n">spec</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">element</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">param</span><span class="p">):</span>
+                <span class="n">_validate_input</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">spec</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">],</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">param_path</span><span class="si">}</span><span class="s1">[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">]&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">param_type</span> <span class="o">==</span> <span class="nb">dict</span> <span class="ow">and</span> <span class="s1">&#39;properties&#39;</span> <span class="ow">in</span> <span class="n">spec</span><span class="p">:</span>
+            <span class="n">_validate_dict</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">spec</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">],</span> <span class="n">param_path</span><span class="p">)</span>
+
+    <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">_validate_input</span><span class="p">(</span><span class="n">raw_input</span><span class="p">,</span> <span class="n">schema</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+
+
+<span class="c1"># TODO write this function to take the output from</span>
+<span class="c1"># mk_input_schema_from_func and create a validator function</span>
+<span class="c1"># that takes an input_kwargs dict and makes sure the type of each value</span>
+<span class="c1"># matches the schema</span>
+<span class="c1"># def mk_input_validator_from_schema(schema):</span>
+<span class="c1">#     def input_validator(input_kwargs):</span>
+<span class="c1">#         print(&#39;Your arguments are fallacious.&#39;)</span>
+<span class="c1">#         return False</span>
+
+
+<span class="c1"># TODO write this function to take a dict like the following and create an input mapper</span>
+<span class="c1"># (assume deserialization has already been taken care of)</span>
+<span class="c1">#</span>
+<span class="c1"># example_transform = {</span>
+<span class="c1">#     &#39;outer_to_outer&#39;: {</span>
+<span class="c1">#         &#39;output_key&#39;: &#39;outer1&#39;,</span>
+<span class="c1">#         &#39;type&#39;: str, # Python type is str, JSON type is string</span>
+<span class="c1">#     },</span>
+<span class="c1">#     &#39;outer_to_inner&#39;: {</span>
+<span class="c1">#         &#39;output_key&#39;: &#39;inner1.value2&#39;,</span>
+<span class="c1">#         &#39;type&#39;: int, # Python type is int, JSON type is number</span>
+<span class="c1">#     },</span>
+<span class="c1">#     &#39;container&#39;: {</span>
+<span class="c1">#         &#39;inner_to_inner&#39;: {</span>
+<span class="c1">#             &#39;output_key&#39;: &#39;inner1.value1&#39;,</span>
+<span class="c1">#             &#39;type&#39;: Iterable[Iterable[int]] # Complex type, will be mapped to a nested list in JSON schema for OpenAPI</span>
+<span class="c1">#         },</span>
+<span class="c1">#         &#39;inner_to_outer&#39;: {</span>
+<span class="c1">#             &#39;output_key&#39;: &#39;outer2&#39;,</span>
+<span class="c1">#             &#39;type&#39;: np.array, # Python type is array, JSON type is list; requires custom handling</span>
+<span class="c1">#         }</span>
+<span class="c1">#     }</span>
+<span class="c1"># }</span>
+
+
+<span class="k">def</span> <span class="nf">mk_input_mapper</span><span class="p">(</span><span class="n">transform</span><span class="p">):</span>
+    <span class="k">pass</span>
+    <span class="c1"># def input_mapper(req_body):</span>
+    <span class="c1">#     def map_value(output, key, transform_value):</span>
+    <span class="c1">#         output_key = transform_value.get(&#39;output_key&#39;, None)</span>
+    <span class="c1">#         if output_key:</span>
+    <span class="c1">#             output[output_key] = get_nested_prop(req_body, output_key)</span>
+    <span class="c1">#     result = {}</span>
+    <span class="c1">#     for k, v in transform.items():</span>
+    <span class="c1">#         map_value(result, k, v)</span>
+    <span class="c1">#     return result</span>
+    <span class="c1"># return handle_json(input_mapper)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">py2http</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http.html">py2http</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/bottle_plugins.html">py2http.bottle_plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/config.html">py2http.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/decorators.html">py2http.decorators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/default_configs.html">py2http.default_configs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/diagnosis.html">py2http.diagnosis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/custom_input_mappers.html">py2http.examples.custom_input_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/example_service.html">py2http.examples.example_service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/example_service_bottle.html">py2http.examples.example_service_bottle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/example_service_flask.html">py2http.examples.example_service_flask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/middleware.html">py2http.middleware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/openapi_utils.html">py2http.openapi_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/route_utils.html">py2http.route_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/schema_tools.html">py2http.schema_tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/service.html">py2http.service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/example_service_test.html">py2http.tests.example_service_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/objects_for_testing.html">py2http.tests.objects_for_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/simple_run_process_test.html">py2http.tests.simple_run_process_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/test_decorators.html">py2http.tests.test_decorators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/test_p2h2p.html">py2http.tests.test_p2h2p</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/utils_for_testing.html">py2http.tests.utils_for_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/types.html">py2http.types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/util.html">py2http.util</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;
+2020
+Otosense.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

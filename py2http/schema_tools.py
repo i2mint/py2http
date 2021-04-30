@@ -11,20 +11,14 @@ def mk_sub_dict_schema_from_typed_dict(typed_dict):
     required_properties = []
 
     def set_property(key, value):
-        if total:
+        optional = False
+        if getattr(value, '__origin__', None) == Union:
+            optional = type(None) in value.__args__
+            value = [x for x in value.__args__ if type(None) != x][0]
+        if total and not optional:
             required_properties.append(key)
         if value in JSON_TYPES:
             properties[key]['type'] = value
-        elif getattr(value, '__origin__', None) == Union:
-            if (
-                not total
-                and properties[key]['required']
-                and type(None) not in value.__args__
-            ):
-                required_properties.append(key)
-            types = [x for x in value.__args__ if type(None) != x]
-            if len(types) == 1:
-                set_property(key, types[0])
         elif getattr(value, '_name', None) == 'Iterable':
             properties[key]['type'] = list
             properties[key]['items'] = mk_sub_list_schema_from_iterable(value)

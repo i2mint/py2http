@@ -1,0 +1,701 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>py2http.util &#8212; py2http 0.1.29 documentation</title>
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for py2http.util</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Any</span>
+<span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">signature</span>
+<span class="kn">from</span> <span class="nn">multiprocessing.context</span> <span class="kn">import</span> <span class="n">Process</span>
+<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Queue</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">sleep</span><span class="p">,</span> <span class="n">time</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span><span class="p">,</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span><span class="p">,</span> <span class="n">simplefilter</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+
+<span class="kn">from</span> <span class="nn">glom</span> <span class="kn">import</span> <span class="n">Spec</span>  <span class="c1"># NOTE: Third-party</span>
+
+
+<div class="viewcode-block" id="lazyprop"><a class="viewcode-back" href="../../module_docs/py2http/util.html#py2http.util.lazyprop">[docs]</a><span class="k">class</span> <span class="nc">lazyprop</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A descriptor implementation of lazyprop (cached property).</span>
+<span class="sd">    Made based on David Beazley&#39;s &quot;Python Cookbook&quot; book and enhanced with boltons.cacheutils ideas.</span>
+
+<span class="sd">    &gt;&gt;&gt; class Test:</span>
+<span class="sd">    ...     def __init__(self, a):</span>
+<span class="sd">    ...         self.a = a</span>
+<span class="sd">    ...     @lazyprop</span>
+<span class="sd">    ...     def len(self):</span>
+<span class="sd">    ...         print(&#39;generating &quot;len&quot;&#39;)</span>
+<span class="sd">    ...         return len(self.a)</span>
+<span class="sd">    &gt;&gt;&gt; t = Test([0, 1, 2, 3, 4])</span>
+<span class="sd">    &gt;&gt;&gt; t.__dict__</span>
+<span class="sd">    {&#39;a&#39;: [0, 1, 2, 3, 4]}</span>
+<span class="sd">    &gt;&gt;&gt; t.len</span>
+<span class="sd">    generating &quot;len&quot;</span>
+<span class="sd">    5</span>
+<span class="sd">    &gt;&gt;&gt; t.__dict__</span>
+<span class="sd">    {&#39;a&#39;: [0, 1, 2, 3, 4], &#39;len&#39;: 5}</span>
+<span class="sd">    &gt;&gt;&gt; t.len</span>
+<span class="sd">    5</span>
+<span class="sd">    &gt;&gt;&gt; # But careful when using lazyprop that no one will change the value of a without deleting the property first</span>
+<span class="sd">    &gt;&gt;&gt; t.a = [0, 1, 2]  # if we change a...</span>
+<span class="sd">    &gt;&gt;&gt; t.len  # ... we still get the old cached value of len</span>
+<span class="sd">    5</span>
+<span class="sd">    &gt;&gt;&gt; del t.len  # if we delete the len prop</span>
+<span class="sd">    &gt;&gt;&gt; t.len  # ... then len being recomputed again</span>
+<span class="sd">    generating &quot;len&quot;</span>
+<span class="sd">    3</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s1">&#39;__doc__&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__isabstractmethod__</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
+            <span class="n">func</span><span class="p">,</span> <span class="s1">&#39;__isabstractmethod__&#39;</span><span class="p">,</span> <span class="kc">False</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
+
+    <span class="k">def</span> <span class="fm">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">instance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">instance</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="k">return</span> <span class="s1">&#39;&lt;</span><span class="si">%s</span><span class="s1"> func=</span><span class="si">%s</span><span class="s1">&gt;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">if_not_empty</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">if_empty_val</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">obj</span> <span class="o">!=</span> <span class="n">Parameter</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">obj</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">if_empty_val</span>
+
+
+<span class="n">none_if_not_empty</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">if_not_empty</span><span class="p">,</span> <span class="n">if_not_empty</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+<span class="n">func_info_spec</span> <span class="o">=</span> <span class="n">Spec</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;__name__&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;qualname&#39;</span><span class="p">:</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;module&#39;</span><span class="p">:</span> <span class="s1">&#39;__module__&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;return_annotation&#39;</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">signature</span><span class="p">,</span>
+            <span class="s1">&#39;return_annotation&#39;</span><span class="p">,</span>
+            <span class="n">none_if_not_empty</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">signature</span><span class="p">,</span> <span class="s1">&#39;parameters&#39;</span><span class="p">),</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">py_obj_info</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">func_info_spec</span><span class="o">.</span><span class="n">glom</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">conditional_logger</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">log_func</span><span class="o">=</span><span class="nb">print</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">log_func</span>
+    <span class="k">else</span><span class="p">:</span>
+
+        <span class="k">def</span> <span class="nf">clog</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">pass</span>  <span class="c1"># do nothing</span>
+
+        <span class="k">return</span> <span class="n">clog</span>
+
+
+<div class="viewcode-block" id="CreateProcess"><a class="viewcode-back" href="../../module_docs/py2http/util.html#py2http.util.CreateProcess">[docs]</a><span class="k">class</span> <span class="nc">CreateProcess</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A context manager to launch a parallel process and close it on exit.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">proc_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">process_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">wait_before_entering</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">args</span><span class="o">=</span><span class="p">(),</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Essentially, this context manager will call</span>
+<span class="sd">        ```</span>
+<span class="sd">            proc_func(*args, **kwargs)</span>
+<span class="sd">        ```</span>
+<span class="sd">        in an independent process.</span>
+
+<span class="sd">        :param proc_func: A function that will be launched in the process</span>
+<span class="sd">        :param process_name: The name of the process.</span>
+<span class="sd">        :param wait_before_entering: A pause (in seconds) before returning from the enter phase.</span>
+<span class="sd">            (in case the outside should wait before assuming everything is ready)</span>
+<span class="sd">        :param verbose: If True, will print some info on the starting/stoping of the process</span>
+<span class="sd">        :param args: args that will be given as arguments to the proc_func call</span>
+<span class="sd">        :param kwargs: The kwargs that will be given as arguments to the proc_func call</span>
+
+<span class="sd">        The following should print &#39;Hello console!&#39; in the console.</span>
+<span class="sd">        &gt;&gt;&gt; with CreateProcess(print, verbose=True, args=(&#39;Hello console!&#39;,)) as p:</span>
+<span class="sd">        ...     print(&quot;-------&gt; Hello module!&quot;)  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE</span>
+<span class="sd">        Starting process: print...</span>
+<span class="sd">        ... print process started.</span>
+<span class="sd">        -------&gt; Hello module!</span>
+<span class="sd">        ... print process terminated</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proc_func</span> <span class="o">=</span> <span class="n">proc_func</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process_name</span> <span class="o">=</span> <span class="n">process_name</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">proc_func</span><span class="p">,</span> <span class="s1">&#39;__name__&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait_before_entering</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">wait_before_entering</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clog</span> <span class="o">=</span> <span class="n">conditional_logger</span><span class="p">(</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exception_info</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">process_is_running</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">process</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">is_alive</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process</span> <span class="o">=</span> <span class="n">Process</span><span class="p">(</span>
+            <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">proc_func</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span>
+            <span class="n">kwargs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">process_name</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clog</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Starting process: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">process_name</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_is_running</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">clog</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;... </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">process_name</span><span class="si">}</span><span class="s1"> process started.&#39;</span><span class="p">)</span>
+                <span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wait_before_entering</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Process is not running&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Something went wrong when trying to launch process </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">process_name</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">process</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">is_alive</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">clog</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Terminating process: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">process_name</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clog</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;... </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">process_name</span><span class="si">}</span><span class="s1"> process terminated&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">exc_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exception_info</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">exc_type</span><span class="o">=</span><span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="o">=</span><span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="o">=</span><span class="n">exc_tb</span>
+            <span class="p">)</span></div>
+
+
+<span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">run_process</span><span class="p">(</span>
+    <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">func_args</span><span class="o">=</span><span class="p">(),</span>
+    <span class="n">func_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">process_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">is_ready</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">],</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">timeout</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+    <span class="n">force_kill</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="k">def</span> <span class="nf">launch_process</span><span class="p">():</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;starting process!...&#39;</span><span class="p">)</span>
+            <span class="n">clog</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Starting </span><span class="si">{</span><span class="n">process_name</span><span class="si">}</span><span class="s1"> process...&#39;</span><span class="p">)</span>
+            <span class="n">process</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="n">clog</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;... </span><span class="si">{</span><span class="n">process_name</span><span class="si">}</span><span class="s1"> process started.&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Something went wrong when trying to launch process </span><span class="si">{</span><span class="n">process_name</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">launch_and_wait_till_ready</span><span class="p">(</span>
+        <span class="n">start_process</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">is_ready</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">],</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">,</span>
+        <span class="n">check_every_seconds</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">timeout</span><span class="o">=</span><span class="mf">30.0</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A function that launches a process, checks if it&#39;s ready, and exits when it is.</span>
+
+<span class="sd">        :param start_process: A argument-less function that launches an independent process</span>
+<span class="sd">        :param is_ready: A argument-less function that returns False if, and only if, the process should be considered ready</span>
+<span class="sd">        :param check_every_seconds: Determines the frequency that is_ready will be called</span>
+<span class="sd">        :param timeout: Determines how long to wait for the process to be ready before we should give up</span>
+<span class="sd">        :return: start_process_output, is_ready_output</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># If is_ready is a number, make an is_ready function out of it</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">is_ready</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="n">is_ready_in_seconds</span> <span class="o">=</span> <span class="n">is_ready</span>
+
+            <span class="k">def</span> <span class="nf">is_ready_func</span><span class="p">():</span>
+                <span class="sa">f</span><span class="s2">&quot;&quot;&quot;Returns True if, and only if, </span><span class="si">{</span><span class="n">is_ready_in_seconds</span><span class="si">}</span><span class="s2"> elapsed&quot;&quot;&quot;</span>
+                <span class="k">return</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&gt;=</span> <span class="n">is_ready_in_seconds</span>
+
+            <span class="n">is_ready_func</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;wait_for_seconds(</span><span class="si">{</span><span class="n">is_ready_in_seconds</span><span class="si">}</span><span class="s1">)&#39;</span>
+            <span class="n">is_ready</span> <span class="o">=</span> <span class="n">is_ready_func</span>
+        <span class="n">start_process_output</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">start_process</span><span class="p">()</span>
+        <span class="p">)</span>  <span class="c1"># needs launch a parallel process!</span>
+        <span class="k">while</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&lt;</span> <span class="n">timeout</span><span class="p">:</span>
+            <span class="n">tic</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="n">is_ready_output</span> <span class="o">=</span> <span class="n">is_ready</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">is_ready_output</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">tic</span>
+                <span class="n">sleep</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">check_every_seconds</span> <span class="o">-</span> <span class="n">elapsed</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">start_process_output</span><span class="p">,</span> <span class="n">is_ready_output</span>
+        <span class="c1"># If you got so far, raise TimeoutError</span>
+        <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Launching </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">start_process</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;and checking for readiness with </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">is_ready</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s1">&#39;timedout (timeout=</span><span class="si">{</span><span class="n">timeout</span><span class="si">}</span><span class="s1">s)&#39;</span>
+        <span class="p">)</span>
+
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="n">func_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">clog</span> <span class="o">=</span> <span class="n">conditional_logger</span><span class="p">(</span><span class="n">verbose</span><span class="p">)</span>
+    <span class="n">process_name</span> <span class="o">=</span> <span class="n">process_name</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\b</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">process</span> <span class="o">=</span> <span class="n">Process</span><span class="p">(</span>
+            <span class="n">target</span><span class="o">=</span><span class="n">func</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="n">func_args</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">process_name</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">is_ready</span><span class="p">:</span>  <span class="c1"># if the &#39;is_ready&#39; time or predicate is defined</span>
+            <span class="n">launch_and_wait_till_ready</span><span class="p">(</span>
+                <span class="n">launch_process</span><span class="p">,</span> <span class="n">is_ready</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">launch_process</span><span class="p">()</span>
+
+        <span class="k">yield</span> <span class="n">process</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">process</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">process</span><span class="o">.</span><span class="n">is_alive</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">force_kill</span><span class="p">:</span>
+                <span class="n">clog</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Terminating process: </span><span class="si">{</span><span class="n">process_name</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
+                <span class="n">process</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+                <span class="n">clog</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;... </span><span class="si">{</span><span class="n">process_name</span><span class="si">}</span><span class="s1"> process terminated&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">process</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="deprecate"><a class="viewcode-back" href="../../module_docs/py2http/util.html#py2http.util.deprecate">[docs]</a><span class="k">def</span> <span class="nf">deprecate</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Decorator to emit a DeprecationWarning when the decorated function is called.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">func</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">partial</span><span class="p">(</span><span class="n">deprecate</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="n">msg</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">callable</span><span class="p">(</span><span class="n">func</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;func should be callable. Was </span><span class="si">{</span><span class="n">func</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">msg</span> <span class="ow">or</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">func</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s1"> is being deprecated.&#39;</span>
+
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">deprecated_func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">simplefilter</span><span class="p">(</span><span class="s1">&#39;always&#39;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>  <span class="c1"># turn off filter</span>
+            <span class="n">warn</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">DeprecationWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">simplefilter</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>  <span class="c1"># reset filter</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">deprecated_func</span></div>
+
+
+<div class="viewcode-block" id="Missing"><a class="viewcode-back" href="../../module_docs/py2http/util.html#py2http.util.Missing">[docs]</a><span class="k">class</span> <span class="nc">Missing</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A class to use as a value to indicate that something was missing&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">=</span> <span class="n">val</span></div>
+
+
+<div class="viewcode-block" id="Skip"><a class="viewcode-back" href="../../module_docs/py2http/util.html#py2http.util.Skip">[docs]</a><span class="k">class</span> <span class="nc">Skip</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Class to indicate if one should skip an item&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="obj_to_items_gen"><a class="viewcode-back" href="../../module_docs/py2http/util.html#py2http.util.obj_to_items_gen">[docs]</a><span class="k">def</span> <span class="nf">obj_to_items_gen</span><span class="p">(</span>
+    <span class="n">obj</span><span class="p">,</span>
+    <span class="n">attrs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">on_missing_attr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="n">Skip</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">Missing</span><span class="p">,</span>
+    <span class="n">kv_trans</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">Parameter</span><span class="o">.</span><span class="n">empty</span>
+    <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Make a generator of (k, v) items extracted from an input object, given an iterable of attributes to extract</span>
+
+<span class="sd">    :param obj: A python object</span>
+<span class="sd">    :param attrs: The iterable of attributes to extract from obj</span>
+<span class="sd">    :param on_missing_val: What to do if an attribute is missing:</span>
+<span class="sd">        - Skip: Skip the item</span>
+<span class="sd">        - Callable: Call a function with the attribute as an input</span>
+<span class="sd">        - anything else: Just return that as a value</span>
+<span class="sd">    :param kv_trans:</span>
+<span class="sd">    :return: A generator</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">gen</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">Missing</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="n">Missing</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">on_missing_attr</span> <span class="ow">is</span> <span class="n">obj_to_items_gen</span><span class="o">.</span><span class="n">Skip</span><span class="p">:</span>
+                    <span class="k">continue</span>  <span class="c1"># skip this</span>
+                <span class="k">elif</span> <span class="n">callable</span><span class="p">(</span><span class="n">on_missing_attr</span><span class="p">):</span>
+                    <span class="k">yield</span> <span class="n">k</span><span class="p">,</span> <span class="n">on_missing_attr</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">k</span><span class="p">,</span> <span class="n">on_missing_attr</span>
+
+            <span class="k">yield</span> <span class="n">k</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">on_missing_attr</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">kv_trans</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">callable</span><span class="p">(</span><span class="n">kv_trans</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">list</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">kv_trans</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span>
+            <span class="s1">&#39;k&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;v&#39;</span><span class="p">,</span>
+        <span class="p">],</span> <span class="sa">f</span><span class="s1">&#39;kv_trans must have signature (k, v)&#39;</span>
+        <span class="n">_gen</span> <span class="o">=</span> <span class="n">gen</span>
+
+        <span class="k">def</span> <span class="nf">gen</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">_gen</span><span class="p">():</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">kv_trans</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">x</span>
+
+    <span class="k">return</span> <span class="n">gen</span></div>
+
+
+<span class="n">obj_to_items_gen</span><span class="o">.</span><span class="n">Skip</span> <span class="o">=</span> <span class="n">Skip</span>
+
+
+<span class="k">class</span> <span class="nc">_pyparam_kv_trans</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A collection of kv_trans functions for pyparam_to_dict&quot;&quot;&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">skip_empties</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">Parameter</span><span class="o">.</span><span class="n">empty</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">with_str_kind</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="n">Parameter</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;kind&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">k</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span>
+
+
+<div class="viewcode-block" id="pyparam_to_dict"><a class="viewcode-back" href="../../module_docs/py2http/util.html#py2http.util.pyparam_to_dict">[docs]</a><span class="k">def</span> <span class="nf">pyparam_to_dict</span><span class="p">(</span>
+    <span class="n">param</span><span class="p">,</span> <span class="n">kv_trans</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">_pyparam_kv_trans</span><span class="o">.</span><span class="n">skip_empties</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get dict from a Parameter object</span>
+
+<span class="sd">    :param param: A inspect.Parameter instance</span>
+<span class="sd">    :param kv_trans: A callable that will be called on the (k, v) attribute items of the Parameter instance</span>
+<span class="sd">    :return: A dict extracted from this Parameter</span>
+
+<span class="sd">    &gt;&gt;&gt; from inspect import Parameter, Signature, signature</span>
+<span class="sd">    &gt;&gt;&gt; from functools import partial</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; def mult(x: float, /, y=1, *, z: int=1): ...</span>
+<span class="sd">    &gt;&gt;&gt; params_dicts = map(pyparam_to_dict, signature(mult).parameters.values())</span>
+<span class="sd">    &gt;&gt;&gt; # see that we can recover the original signature from these dicts</span>
+<span class="sd">    &gt;&gt;&gt; assert Signature(map(lambda kw: Parameter(**kw), params_dicts)) == signature(mult)</span>
+
+<span class="sd">    Now what about the kv_trans? It&#39;s default is made to return None when a value is equal to</span>
+<span class="sd">    `Parameter.empty` (which is the way the inspect module distinguishes the `None` object from</span>
+<span class="sd">    &quot;it&#39;s just not there&quot;.</span>
+
+<span class="sd">    But we could provide our own kv_trans, which should be a function taking `(k, v)` pair</span>
+<span class="sd">    (those k and v arg names are imposed!) and returns... well, what ever you want to return</span>
+<span class="sd">    really. But you if return None, the `(k, v)` item will be skipped.</span>
+
+<span class="sd">    Look here how using `kv_trans=pyparam_to_dict.kv_trans.with_str_kind` does the job</span>
+<span class="sd">    of skipping `Parameter.empty` items, but also cast the `kind` value to a string,</span>
+<span class="sd">    so that it can be jsonizable.</span>
+
+<span class="sd">    &gt;&gt;&gt; params_to_jdict = partial(pyparam_to_dict, kv_trans=pyparam_to_dict.kv_trans.with_str_kind)</span>
+<span class="sd">    &gt;&gt;&gt; got = list(map(params_to_jdict, signature(mult).parameters.values()))</span>
+<span class="sd">    &gt;&gt;&gt; expected = [</span>
+<span class="sd">    ...     {&#39;name&#39;: &#39;x&#39;, &#39;kind&#39;: &#39;POSITIONAL_ONLY&#39;, &#39;annotation&#39;: float},</span>
+<span class="sd">    ...     {&#39;name&#39;: &#39;y&#39;, &#39;kind&#39;: &#39;POSITIONAL_OR_KEYWORD&#39;, &#39;default&#39;: 1},</span>
+<span class="sd">    ...     {&#39;name&#39;: &#39;z&#39;, &#39;kind&#39;: &#39;KEYWORD_ONLY&#39;, &#39;default&#39;: 1, &#39;annotation&#39;: int}]</span>
+<span class="sd">    &gt;&gt;&gt; assert got == expected, f&quot;\\n  got={got}\\n  expected={expected}&quot;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gen</span> <span class="o">=</span> <span class="n">obj_to_items_gen</span><span class="p">(</span>
+        <span class="n">param</span><span class="p">,</span>
+        <span class="n">attrs</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;kind&#39;</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="s1">&#39;annotation&#39;</span><span class="p">),</span>
+        <span class="n">on_missing_attr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">kv_trans</span><span class="o">=</span><span class="n">kv_trans</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">gen</span><span class="p">())</span></div>
+
+
+<span class="n">pyparam_to_dict</span><span class="o">.</span><span class="n">kv_trans</span> <span class="o">=</span> <span class="n">_pyparam_kv_trans</span>
+
+
+<div class="viewcode-block" id="ModuleNotFoundIgnore"><a class="viewcode-back" href="../../module_docs/py2http/util.html#py2http.util.ModuleNotFoundIgnore">[docs]</a><span class="k">class</span> <span class="nc">ModuleNotFoundIgnore</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Context manager to ignore ModuleNotFoundErrors.</span>
+
+<span class="sd">    When all goes well, code is executed normally:</span>
+<span class="sd">    &gt;&gt;&gt; with ModuleNotFoundIgnore():</span>
+<span class="sd">    ...     import os.path  # test when the module exists</span>
+<span class="sd">    ...     # The following code is reached and executed</span>
+<span class="sd">    ...     print(&#39;hi there!&#39;)</span>
+<span class="sd">    ...     print(str(os.path.join)[:14] + &#39;...&#39;)  # code is reached</span>
+<span class="sd">    hi there!</span>
+<span class="sd">    &lt;function join...</span>
+
+<span class="sd">    But if you try to import a module that doesn&#39;t exist on your system,</span>
+<span class="sd">    the block will be skipped from that point onward, silently.</span>
+<span class="sd">    &gt;&gt;&gt; with ModuleNotFoundIgnore():</span>
+<span class="sd">    ...     import do.i.exist</span>
+<span class="sd">    ...     # The following code is NEVER reached or executed</span>
+<span class="sd">    ...     print(do.i.exist)</span>
+<span class="sd">    ...     t = 0 / 0</span>
+
+
+<span class="sd">    But if there&#39;s any other kind of error (other than ModuleNotFoundError that is,</span>
+<span class="sd">    the error will be raised normally.</span>
+<span class="sd">    &gt;&gt;&gt; with ModuleNotFoundIgnore():</span>
+<span class="sd">    ...     t = 0/0</span>
+<span class="sd">    Traceback (most recent call last):</span>
+<span class="sd">      ...</span>
+<span class="sd">    ZeroDivisionError: division by zero&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">exc_type</span> <span class="ow">is</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+
+        <span class="c1"># else:</span>
+        <span class="c1">#     return True</span>
+
+
+<div class="viewcode-block" id="TypeAsserter"><a class="viewcode-back" href="../../module_docs/py2http/util.html#py2http.util.TypeAsserter">[docs]</a><span class="k">class</span> <span class="nc">TypeAsserter</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Makes a callable that asserts that a value `v` has the expected type(s) that it&#39;s kind `k` should be</span>
+
+<span class="sd">    &gt;&gt;&gt; assert_type = TypeAsserter({&#39;foo&#39;: str, &#39;bar&#39;: (Callable, type(None))})</span>
+<span class="sd">    &gt;&gt;&gt; assert_type(&#39;bar&#39;, lambda x: x)</span>
+<span class="sd">    &gt;&gt;&gt; assert_type(&#39;bar&#39;, None)</span>
+<span class="sd">    &gt;&gt;&gt; assert_type(&#39;foo&#39;, &#39;i am a string&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; assert_type(&#39;foo&#39;, list(&#39;i am not a string&#39;))</span>
+<span class="sd">    Traceback (most recent call last):</span>
+<span class="sd">      ...</span>
+<span class="sd">    AssertionError: Invalid foo type, must be a &lt;class &#39;str&#39;&gt;, but was a &lt;class &#39;list&#39;&gt;</span>
+
+<span class="sd">    If a kind wasn&#39;t specified, the default is to ignore</span>
+
+<span class="sd">    &gt;&gt;&gt; assert_type(&#39;not_a_kind&#39;, &#39;blah&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; assert_type = TypeAsserter({&#39;foo&#39;: str, &#39;bar&#39;: (Callable, type(None))})  # nothing happens</span>
+
+<span class="sd">    But you can choose to warn or raise an exception instead</span>
+
+<span class="sd">    &gt;&gt;&gt; assert_type = TypeAsserter({&#39;foo&#39;: str, &#39;bar&#39;: list}, if_kind_missing=&#39;raise&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; assert_type(&#39;not_a_kind&#39;, &#39;blah&#39;)</span>
+<span class="sd">    Traceback (most recent call last):</span>
+<span class="sd">        ...</span>
+<span class="sd">    ValueError: Unrecognized kind: not_a_kind. The ones I recognize: [&#39;foo&#39;, &#39;bar&#39;]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">types_for_kind</span><span class="p">,</span> <span class="n">if_kind_missing</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">types_for_kind</span> <span class="o">=</span> <span class="n">types_for_kind</span>
+        <span class="k">assert</span> <span class="n">if_kind_missing</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="s1">&#39;raise&#39;</span><span class="p">,</span> <span class="s1">&#39;warn&#39;</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">if_kind_missing</span> <span class="o">=</span> <span class="n">if_kind_missing</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="n">types</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">types_for_kind</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">types</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="n">v</span><span class="p">,</span> <span class="n">types</span>
+            <span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;Invalid </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1"> type, must be a </span><span class="si">{</span><span class="n">types</span><span class="si">}</span><span class="s1">, but was a </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">if_kind_missing</span> <span class="o">==</span> <span class="s1">&#39;ignore&#39;</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">if_kind_missing</span> <span class="o">==</span> <span class="s1">&#39;raise&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Unrecognized kind: </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">. The ones I recognize: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">types_for_kind</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">if_kind_missing</span> <span class="o">==</span> <span class="s1">&#39;warn&#39;</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
+
+            <span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Unrecognized kind: </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">. The ones I recognize: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">types_for_kind</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="path_to_obj"><a class="viewcode-back" href="../../module_docs/py2http/util.html#py2http.util.path_to_obj">[docs]</a><span class="k">def</span> <span class="nf">path_to_obj</span><span class="p">(</span><span class="n">root_obj</span><span class="p">,</span> <span class="n">attr_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get an object from a root object and &quot;attribute path&quot; specification.</span>
+
+<span class="sd">    &gt;&gt;&gt; class A:</span>
+<span class="sd">    ...     def foo(self, x): ...</span>
+<span class="sd">    ...     foo.x = 3</span>
+<span class="sd">    ...     class B:</span>
+<span class="sd">    ...         def bar(self, x): ...</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; obj = path_to_obj(A, (&#39;foo&#39;,))</span>
+<span class="sd">    &gt;&gt;&gt; assert callable(obj) and obj.__name__ == &#39;foo&#39;</span>
+<span class="sd">    &gt;&gt;&gt; path_to_obj(A, (&#39;foo&#39;, &#39;x&#39;))</span>
+<span class="sd">    3</span>
+<span class="sd">    &gt;&gt;&gt; obj = path_to_obj(A, (&#39;B&#39;, &#39;bar&#39;))</span>
+<span class="sd">    &gt;&gt;&gt; assert callable(obj) and obj.__qualname__ == &#39;A.B.bar&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">obj</span> <span class="o">=</span> <span class="n">root_obj</span>
+    <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attr_path</span><span class="p">:</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">obj</span></div>
+
+
+<span class="c1"># TODO: I&#39;d like to find a better way to do this. Using globals() here.</span>
+<span class="c1">#   See https://stackoverflow.com/questions/62416006/getting-the-attribute-path-of-a-python-object</span>
+<div class="viewcode-block" id="obj_to_path"><a class="viewcode-back" href="../../module_docs/py2http/util.html#py2http.util.obj_to_path">[docs]</a><span class="k">def</span> <span class="nf">obj_to_path</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Quasi-inverse of obj_to_path: Get a root_obj and attr_path from an object.</span>
+<span class="sd">    Obviously, would only be able to work with some types (only by-ref types?).</span>
+
+<span class="sd">    &gt;&gt;&gt; class A:</span>
+<span class="sd">    ...     def foo(self, x): ...</span>
+<span class="sd">    ...     foo.x = 3</span>
+<span class="sd">    ...     class B:</span>
+<span class="sd">    ...         def bar(self, x): ...</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; for t in [(A, (&#39;foo&#39;,)), (A, (&#39;B&#39;,)), (A, (&#39;B&#39;, &#39;bar&#39;))]: # doctest: +SKIP</span>
+<span class="sd">    ...     print(obj_to_path(path_to_obj(*t)))</span>
+<span class="sd">    ...     print(t)</span>
+<span class="sd">    ...     print()</span>
+<span class="sd">    (&lt;class &#39;util.A&#39;&gt;, (&#39;foo&#39;,))</span>
+<span class="sd">    (&lt;class &#39;util.A&#39;&gt;, (&#39;foo&#39;,))</span>
+<span class="sd">    &lt;BLANKLINE&gt;</span>
+<span class="sd">    &lt;class &#39;util.A.B&#39;&gt;</span>
+<span class="sd">    (&lt;class &#39;util.A&#39;&gt;, (&#39;B&#39;,))</span>
+<span class="sd">    &lt;BLANKLINE&gt;</span>
+<span class="sd">    (&lt;class &#39;util.A&#39;&gt;, (&#39;B&#39;, &#39;bar&#39;))</span>
+<span class="sd">    (&lt;class &#39;util.A&#39;&gt;, (&#39;B&#39;, &#39;bar&#39;))</span>
+<span class="sd">    &lt;BLANKLINE&gt;</span>
+
+<span class="sd">    # &gt;&gt;&gt; for t in [(A, (&#39;foo&#39;,)), (A, (&#39;B&#39;,)), (A, (&#39;B&#39;, &#39;bar&#39;))]:</span>
+<span class="sd">    # ...     assert obj_to_path(path_to_obj(*t)) == t</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;__globals__&#39;</span><span class="p">):</span>
+        <span class="n">root_name</span><span class="p">,</span> <span class="o">*</span><span class="n">attr_path</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__qualname__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__globals__</span><span class="p">[</span><span class="n">root_name</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">attr_path</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">obj</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">py2http</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http.html">py2http</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/bottle_plugins.html">py2http.bottle_plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/config.html">py2http.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/decorators.html">py2http.decorators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/default_configs.html">py2http.default_configs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/diagnosis.html">py2http.diagnosis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/custom_input_mappers.html">py2http.examples.custom_input_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/example_service.html">py2http.examples.example_service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/example_service_bottle.html">py2http.examples.example_service_bottle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/example_service_flask.html">py2http.examples.example_service_flask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/middleware.html">py2http.middleware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/openapi_utils.html">py2http.openapi_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/route_utils.html">py2http.route_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/schema_tools.html">py2http.schema_tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/service.html">py2http.service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/example_service_test.html">py2http.tests.example_service_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/objects_for_testing.html">py2http.tests.objects_for_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/simple_run_process_test.html">py2http.tests.simple_run_process_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/test_decorators.html">py2http.tests.test_decorators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/test_p2h2p.html">py2http.tests.test_p2h2p</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/utils_for_testing.html">py2http.tests.utils_for_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/types.html">py2http.types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/util.html">py2http.util</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;
+2020
+Otosense.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
