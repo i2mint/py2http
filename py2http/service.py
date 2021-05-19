@@ -134,11 +134,7 @@ def mk_route(func, **configs):
             req.get_json = lambda *x: req.json
         inputs = input_mapper(req, request_schema)
         input_args, input_kwargs = get_input_args_and_kwargs(inputs)
-        try:
-            raw_result = func(*input_args, **input_kwargs)
-        except TypeError as error:
-            raise InputError(str(error))
-
+        raw_result = func(*input_args, **input_kwargs)
         return output_mapper(raw_result, input_kwargs)
 
     @handle_error
@@ -147,13 +143,9 @@ def mk_route(func, **configs):
         if isawaitable(inputs):  # Pattern: pass-on async property
             inputs = await inputs
         input_args, input_kwargs = get_input_args_and_kwargs(inputs)
-        try:
-            raw_result = func(*input_args, **input_kwargs)
-        except TypeError as error:
-            raise InputError(str(error))
+        raw_result = func(*input_args, **input_kwargs)
         if isawaitable(raw_result):  # Pattern: pass-on async property
             raw_result = await raw_result
-
         final_result = output_mapper(raw_result, input_kwargs)
         if isawaitable(final_result):
             final_result = await final_result
