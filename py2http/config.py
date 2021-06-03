@@ -57,9 +57,7 @@ def mk_config(key, func, configs, defaults, **options):
     result = get_result(configs, func, funcname, key, options)
 
     if result:
-        expected_type = options.get(
-            'type', None
-        )  # align names expected_type <-> type
+        expected_type = options.get('type', None)  # align names expected_type <-> type
         if not expected_type:
             assert key in defaults, f'Missing default value for key "{key}"'
             default_value = defaults.get(key)

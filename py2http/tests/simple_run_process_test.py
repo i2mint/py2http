@@ -61,10 +61,7 @@ if __name__ == '__main__':
     def test_run_http_service():
         def is_server_up():
             try:
-                return (
-                    requests.get(url='http://localhost:3030/ping').status_code
-                    == 200
-                )
+                return requests.get(url='http://localhost:3030/ping').status_code == 200
             except requests.exceptions.ConnectionError:
                 return False
 
@@ -93,10 +90,7 @@ if __name__ == '__main__':
 
     def test_my_print():
         process = run_process(
-            func=my_print,
-            func_args=('hello world',),
-            force_kill=False,
-            verbose=True,
+            func=my_print, func_args=('hello world',), force_kill=False, verbose=True,
         )
 
         with process:

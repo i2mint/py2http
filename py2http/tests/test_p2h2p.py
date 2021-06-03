@@ -35,18 +35,14 @@ def client_funcs_from_openapi(openapi_spec, **h2p_configs):
 
 
 def get_client_funcs(funcs, p2h_configs=None, h2p_configs=None):
-    routes, openapi_spec = mk_routes_and_openapi_specs(
-        funcs, **(p2h_configs or {})
-    )
+    routes, openapi_spec = mk_routes_and_openapi_specs(funcs, **(p2h_configs or {}))
     return list(client_funcs_from_openapi(openapi_spec, **(h2p_configs or {})))
 
 
 def p2h2p_app(funcs, p2h_configs=None, h2p_configs=None):
     app = mk_http_service(funcs, **(p2h_configs or {}))
     # w_funcs = list(_w_funcs(funcs, app.openapi_spec, **(h2p_configs or {})))
-    c_funcs = list(
-        client_funcs_from_openapi(app.openapi_spec, **(h2p_configs or {}))
-    )
+    c_funcs = list(client_funcs_from_openapi(app.openapi_spec, **(h2p_configs or {})))
     app.funcs = funcs
     app.c_funcs = c_funcs
     return app
@@ -110,9 +106,7 @@ def example_test(base_url=dflt_base_url):
     add_result = requests.post(f'{base_url}/add', json={'a': 10, 'b': 5})
     assert str(add_result.json()) == '15'
 
-    multiply_result = requests.post(
-        f'{base_url}/multiply', json={'multiplier': 6}
-    )
+    multiply_result = requests.post(f'{base_url}/multiply', json={'multiplier': 6})
     assert str(multiply_result.json()) == '30'
 
     no_args_result = requests.post(f'{base_url}/no_args', json={})

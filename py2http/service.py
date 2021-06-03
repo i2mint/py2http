@@ -93,9 +93,7 @@ def mk_route(func, **configs):
             func, exclude_keys=exclude_request_keys
         )
     response_schema = getattr(
-        output_mapper,
-        'response_schema',
-        mk_output_schema_from_func(output_mapper),
+        output_mapper, 'response_schema', mk_output_schema_from_func(output_mapper),
     )
     if not response_schema:
         response_schema = getattr(
@@ -114,9 +112,7 @@ def mk_route(func, **configs):
                         else logging.DEBUG
                     )
                     exc_info = level == logging.DEBUG
-                    logger.log(
-                        level, traceback.format_exc(), exc_info=exc_info
-                    )
+                    logger.log(level, traceback.format_exc(), exc_info=exc_info)
                 else:
                     print(traceback.format_exc())
                 return error_handler(error)
@@ -284,34 +280,23 @@ def mk_http_service(funcs, **configs):
                 'cors_allowed_origins', None, configs, default_configs
             )
             app.install(CorsPlugin(cors_allowed_origins))
-        publish_openapi = mk_config(
-            'publish_openapi', None, configs, default_configs
-        )
-        openapi_insecure = mk_config(
-            'openapi_insecure', None, configs, default_configs
-        )
+        publish_openapi = mk_config('publish_openapi', None, configs, default_configs)
+        openapi_insecure = mk_config('openapi_insecure', None, configs, default_configs)
         if plugins:
             for plugin in plugins:
                 app.install(plugin)
         for route in routes:
             route_http_method = route.http_method.upper()
             http_methods = (
-                route.http_method
-                if not enable_cors
-                else [OPTIONS, route_http_method]
+                route.http_method if not enable_cors else [OPTIONS, route_http_method]
             )
             # print(f'Mounting route: {route.path} {route.http_method.upper()}')
             app.route(route.path, http_methods, route, route.method_name)
-        app.route(
-            path='/ping', callback=handle_ping_sync, name='ping', skip=plugins
-        )
+        app.route(path='/ping', callback=handle_ping_sync, name='ping', skip=plugins)
         if publish_openapi:
             skip = plugins if openapi_insecure else None
             app.route(
-                path='/openapi',
-                callback=get_openapi_sync,
-                name='openapi',
-                skip=skip,
+                path='/openapi', callback=get_openapi_sync, name='openapi', skip=skip,
             )
         app.openapi_spec = openapi_spec
         app.dflt_port = mk_config('port', None, configs, default_configs)
@@ -343,9 +328,7 @@ def mk_http_service(funcs, **configs):
 
 def mk_routes_and_openapi_specs(funcs, **configs):
     routes = []
-    openapi_config = mk_config(
-        'openapi', None, configs, default_configs, type=dict
-    )
+    openapi_config = mk_config('openapi', None, configs, default_configs, type=dict)
     openapi_spec = mk_openapi_template(openapi_config)
     header_inputs = mk_config('header_inputs', None, configs, default_configs)
     if header_inputs:

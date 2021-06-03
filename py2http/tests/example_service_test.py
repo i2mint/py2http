@@ -11,9 +11,7 @@ def example_test(base_url=dflt_base_url):
     add_result = requests.post(f'{base_url}/add', json={'a': 10, 'b': 5})
     assert str(add_result.json()) == '15'
 
-    multiply_result = requests.post(
-        f'{base_url}/multiply', json={'multiplier': 6}
-    )
+    multiply_result = requests.post(f'{base_url}/multiply', json={'multiplier': 6})
     assert str(multiply_result.json()) == '30'
 
     no_args_result = requests.post(f'{base_url}/no_args', json={})

@@ -379,9 +379,7 @@ class ParamsSpecifier:
     def from_func(cls, func, _dflt_default=None):
         params = list(signature(func).parameters.values())
         _annotations = {
-            x.name: x.annotation
-            for x in params
-            if x.annotation is not Parameter.empty
+            x.name: x.annotation for x in params if x.annotation is not Parameter.empty
         }
         _name_and_dflts = dict()
         for x in params:
@@ -390,15 +388,11 @@ class ParamsSpecifier:
                 dflt = _dflt_default
             _name_and_dflts.update({x.name: dflt})
         _name_and_dflts = {
-            x.name: x.default
-            if x.default is not Parameter.empty
-            else _dflt_default
+            x.name: x.default if x.default is not Parameter.empty else _dflt_default
             for x in params
         }
         return cls(
-            _annotations=_annotations,
-            _dflt_default=_dflt_default,
-            **_name_and_dflts,
+            _annotations=_annotations, _dflt_default=_dflt_default, **_name_and_dflts,
         )
 
     def _extract_params(self):
@@ -545,9 +539,7 @@ class Decora(Decorator):
             # injected_deco_params = set()
             for attr_name, attr_obj in cls.__dict__.items():
                 setattr(cls, attr_name, attr_obj)
-                if isinstance(attr_obj, type) and issubclass(
-                    attr_obj, ParamsSpecifier
-                ):
+                if isinstance(attr_obj, type) and issubclass(attr_obj, ParamsSpecifier):
                     attr_obj = attr_obj()
                 if isinstance(attr_obj, ParamsSpecifier):
                     params.extend(attr_obj.to_parameter_obj_list())
@@ -625,8 +617,7 @@ def replace_with_params(target=None, /, *, source=None, inplace=False):
                         target
                     )  # make a copy of the function so we don't
                 target.__signature__ = Signature(
-                    new_params,
-                    return_annotation=signature(target).return_annotation,
+                    new_params, return_annotation=signature(target).return_annotation,
                 )
                 return target
             else:
@@ -891,9 +882,7 @@ def mk_flat(cls, method, *, func_name='flat_func'):
         ):
             cls_params = kwargs
         else:
-            cls_params = {
-                k: kwargs[k] for k in kwargs if k in sig_cls.parameters
-            }
+            cls_params = {k: kwargs[k] for k in kwargs if k in sig_cls.parameters}
         if (
             len(
                 [
@@ -906,9 +895,7 @@ def mk_flat(cls, method, *, func_name='flat_func'):
         ):
             method_params = kwargs
         else:
-            method_params = {
-                k: kwargs[k] for k in kwargs if k in sig_method.parameters
-            }
+            method_params = {k: kwargs[k] for k in kwargs if k in sig_method.parameters}
         instance = cls(**cls_params)  # TODO: implement caching option
         return getattr(instance, method.__name__)(**method_params)
 
@@ -1039,8 +1026,7 @@ class ProposalJsonRespEncoder(JSONEncoder):
     # Note: Subclass and replace _pre_process_obj to get different preprocessing
     # Note: To get control from init, definte init to set _pre_process_obj
     _pre_process_obj = partial(
-        _json_reponse_preproc,
-        serializer_for_type=_mk_default_serializer_for_type(),
+        _json_reponse_preproc, serializer_for_type=_mk_default_serializer_for_type(),
     )
 
     def default(self, o):
@@ -1056,9 +1042,7 @@ def send_json_resp(func):
             mapped_output = func(output, input_kwargs)
             if isawaitable(mapped_output):
                 mapped_output = await mapped_output
-            return web.json_response(
-                mapped_output, dumps=JsonRespEncoder().encode
-            )
+            return web.json_response(mapped_output, dumps=JsonRespEncoder().encode)
 
     else:
 
@@ -1091,9 +1075,7 @@ def mk_input_mapper(input_map):
 
 def _get_req_inputs(req, get_body_func):
     kwargs = getattr(req, 'defaults', {})
-    if getattr(
-        req, 'has_body', getattr(req, 'data', getattr(req, 'json', None))
-    ):
+    if getattr(req, 'has_body', getattr(req, 'data', getattr(req, 'json', None))):
         body = get_body_func()
         if isinstance(body, str):
             body = dict({}, text=body)

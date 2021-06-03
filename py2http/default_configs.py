@@ -45,9 +45,7 @@ def _raise_http_client_error(error, message, reason=None):
 
 def aiohttp_error_handler(error: Exception):
     message = str(error)
-    if isinstance(
-        error, (AuthorizationError, InputError, DuplicateRecordError)
-    ):
+    if isinstance(error, (AuthorizationError, InputError, DuplicateRecordError)):
         _raise_http_client_error(
             web.HTTPBadRequest, message, reason=type(error).__name__
         )
@@ -62,9 +60,7 @@ def aiohttp_error_handler(error: Exception):
 
 def bottle_error_handler(error: Exception):
     message = str(error)
-    if isinstance(
-        error, (AuthorizationError, InputError, DuplicateRecordError)
-    ):
+    if isinstance(error, (AuthorizationError, InputError, DuplicateRecordError)):
         response.status = f'400 {type(error).__name__}'
         # response.reason = type(error).__name__
     elif isinstance(error, ForbiddenError):

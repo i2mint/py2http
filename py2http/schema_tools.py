@@ -64,9 +64,7 @@ def mk_sub_list_schema_from_iterable(iterable_type):
 # changes: simplified from sig.parameters[key] to looping over items of parameters
 # changes: added include_func_params and handling
 # changes: added docs and doctests
-def mk_input_schema_from_func(
-    func, exclude_keys=None, include_func_params=False
-):
+def mk_input_schema_from_func(func, exclude_keys=None, include_func_params=False):
     """Make the openAPI input schema for a function.
 
     :param func: A callable
@@ -150,9 +148,7 @@ def mk_input_schema_from_func(
             elif getattr(arg_type, '_name', None) == 'Iterable':
                 p['items'] = mk_sub_list_schema_from_iterable(arg_type)
                 arg_type = list
-            elif arg_type not in JSON_TYPES and not COMPLEX_TYPE_MAPPING.get(
-                arg_type
-            ):
+            elif arg_type not in JSON_TYPES and not COMPLEX_TYPE_MAPPING.get(arg_type):
                 arg_type = default_type
         p['type'] = arg_type
 
@@ -174,15 +170,11 @@ def mk_output_schema_from_func(func):
         return {}
     if isinstance(output_type, _TypedDictMeta):
         result['type'] = dict
-        result['properties'] = mk_sub_dict_schema_from_typed_dict(output_type)[
-            0
-        ]
+        result['properties'] = mk_sub_dict_schema_from_typed_dict(output_type)[0]
     elif getattr(output_type, '_name', None) == 'Iterable':
         result['type'] = list
         result['items'] = mk_sub_list_schema_from_iterable(output_type)
-    elif output_type not in JSON_TYPES and not COMPLEX_TYPE_MAPPING.get(
-        output_type
-    ):
+    elif output_type not in JSON_TYPES and not COMPLEX_TYPE_MAPPING.get(output_type):
         return {}
     else:
         result['type'] = output_type
@@ -192,9 +184,7 @@ def mk_output_schema_from_func(func):
 def validate_input(raw_input: Any, schema: dict):
     def _validate_dict(input_value: dict, schema: dict, root_path: str):
         for param_name, spec in schema.items():
-            param_path = (
-                f'{root_path}.{param_name}' if root_path else param_name
-            )
+            param_path = f'{root_path}.{param_name}' if root_path else param_name
             if not isinstance(spec, dict):
                 raise TypeError(
                     'Bad schema for input validation. Must contain dictionaries only.'
@@ -207,9 +197,7 @@ def validate_input(raw_input: Any, schema: dict):
 
     def _validate_input(param, spec, param_path):
         invalid_input_msg = (
-            f'Invalid parameter "{param_path}"'
-            if param_path
-            else 'Invalid input'
+            f'Invalid parameter "{param_path}"' if param_path else 'Invalid input'
         )
         param_type = spec.get('type', Any)
         if param_type != Any and not isinstance(param, param_type):

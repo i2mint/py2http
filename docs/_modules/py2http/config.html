@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>py2http.config &#8212; py2http 0.1.31 documentation</title>
+    <title>py2http.config &#8212; py2http 0.1.32 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
@@ -92,9 +92,7 @@
     <span class="n">result</span> <span class="o">=</span> <span class="n">get_result</span><span class="p">(</span><span class="n">configs</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">funcname</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
-        <span class="n">expected_type</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-            <span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="kc">None</span>
-        <span class="p">)</span>  <span class="c1"># align names expected_type &lt;-&gt; type</span>
+        <span class="n">expected_type</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># align names expected_type &lt;-&gt; type</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">expected_type</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">defaults</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;Missing default value for key &quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1">&quot;&#39;</span>
             <span class="n">default_value</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>

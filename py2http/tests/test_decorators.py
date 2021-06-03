@@ -38,10 +38,7 @@ def test_transparent_decora():
 
     assert _test_sameness(Deco)
 
-    assert (
-        str(signature(Deco))
-        == '(func=None, *, z: float = None, b=3, c: int = 2)'
-    )
+    assert str(signature(Deco)) == '(func=None, *, z: float = None, b=3, c: int = 2)'
 
     # Here's another way to inject your decorator factory's params
     class whatevs(ParamsSpecifier):
@@ -54,10 +51,7 @@ def test_transparent_decora():
 
     assert _test_sameness(Deco)
 
-    assert (
-        str(signature(Deco))
-        == '(func=None, *, z: float = None, b=3, c: int = 2)'
-    )
+    assert str(signature(Deco)) == '(func=None, *, z: float = None, b=3, c: int = 2)'
 
 
 def test_simple_decora():

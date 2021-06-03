@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>py2http.service &#8212; py2http 0.1.31 documentation</title>
+    <title>py2http.service &#8212; py2http 0.1.32 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
@@ -128,9 +128,7 @@
             <span class="n">func</span><span class="p">,</span> <span class="n">exclude_keys</span><span class="o">=</span><span class="n">exclude_request_keys</span>
         <span class="p">)</span>
     <span class="n">response_schema</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
-        <span class="n">output_mapper</span><span class="p">,</span>
-        <span class="s1">&#39;response_schema&#39;</span><span class="p">,</span>
-        <span class="n">mk_output_schema_from_func</span><span class="p">(</span><span class="n">output_mapper</span><span class="p">),</span>
+        <span class="n">output_mapper</span><span class="p">,</span> <span class="s1">&#39;response_schema&#39;</span><span class="p">,</span> <span class="n">mk_output_schema_from_func</span><span class="p">(</span><span class="n">output_mapper</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">response_schema</span><span class="p">:</span>
         <span class="n">response_schema</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
@@ -149,9 +147,7 @@
                         <span class="k">else</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span>
                     <span class="p">)</span>
                     <span class="n">exc_info</span> <span class="o">=</span> <span class="n">level</span> <span class="o">==</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
-                        <span class="n">level</span><span class="p">,</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">(),</span> <span class="n">exc_info</span><span class="o">=</span><span class="n">exc_info</span>
-                    <span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">(),</span> <span class="n">exc_info</span><span class="o">=</span><span class="n">exc_info</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="nb">print</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
                 <span class="k">return</span> <span class="n">error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
@@ -319,34 +315,23 @@
                 <span class="s1">&#39;cors_allowed_origins&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">configs</span><span class="p">,</span> <span class="n">default_configs</span>
             <span class="p">)</span>
             <span class="n">app</span><span class="o">.</span><span class="n">install</span><span class="p">(</span><span class="n">CorsPlugin</span><span class="p">(</span><span class="n">cors_allowed_origins</span><span class="p">))</span>
-        <span class="n">publish_openapi</span> <span class="o">=</span> <span class="n">mk_config</span><span class="p">(</span>
-            <span class="s1">&#39;publish_openapi&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">configs</span><span class="p">,</span> <span class="n">default_configs</span>
-        <span class="p">)</span>
-        <span class="n">openapi_insecure</span> <span class="o">=</span> <span class="n">mk_config</span><span class="p">(</span>
-            <span class="s1">&#39;openapi_insecure&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">configs</span><span class="p">,</span> <span class="n">default_configs</span>
-        <span class="p">)</span>
+        <span class="n">publish_openapi</span> <span class="o">=</span> <span class="n">mk_config</span><span class="p">(</span><span class="s1">&#39;publish_openapi&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">configs</span><span class="p">,</span> <span class="n">default_configs</span><span class="p">)</span>
+        <span class="n">openapi_insecure</span> <span class="o">=</span> <span class="n">mk_config</span><span class="p">(</span><span class="s1">&#39;openapi_insecure&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">configs</span><span class="p">,</span> <span class="n">default_configs</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">plugins</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">plugins</span><span class="p">:</span>
                 <span class="n">app</span><span class="o">.</span><span class="n">install</span><span class="p">(</span><span class="n">plugin</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">route</span> <span class="ow">in</span> <span class="n">routes</span><span class="p">:</span>
             <span class="n">route_http_method</span> <span class="o">=</span> <span class="n">route</span><span class="o">.</span><span class="n">http_method</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
             <span class="n">http_methods</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">route</span><span class="o">.</span><span class="n">http_method</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">enable_cors</span>
-                <span class="k">else</span> <span class="p">[</span><span class="n">OPTIONS</span><span class="p">,</span> <span class="n">route_http_method</span><span class="p">]</span>
+                <span class="n">route</span><span class="o">.</span><span class="n">http_method</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">enable_cors</span> <span class="k">else</span> <span class="p">[</span><span class="n">OPTIONS</span><span class="p">,</span> <span class="n">route_http_method</span><span class="p">]</span>
             <span class="p">)</span>
             <span class="c1"># print(f&#39;Mounting route: {route.path} {route.http_method.upper()}&#39;)</span>
             <span class="n">app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="n">route</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">http_methods</span><span class="p">,</span> <span class="n">route</span><span class="p">,</span> <span class="n">route</span><span class="o">.</span><span class="n">method_name</span><span class="p">)</span>
-        <span class="n">app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span>
-            <span class="n">path</span><span class="o">=</span><span class="s1">&#39;/ping&#39;</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">handle_ping_sync</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;ping&#39;</span><span class="p">,</span> <span class="n">skip</span><span class="o">=</span><span class="n">plugins</span>
-        <span class="p">)</span>
+        <span class="n">app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;/ping&#39;</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">handle_ping_sync</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;ping&#39;</span><span class="p">,</span> <span class="n">skip</span><span class="o">=</span><span class="n">plugins</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">publish_openapi</span><span class="p">:</span>
             <span class="n">skip</span> <span class="o">=</span> <span class="n">plugins</span> <span class="k">if</span> <span class="n">openapi_insecure</span> <span class="k">else</span> <span class="kc">None</span>
             <span class="n">app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span>
-                <span class="n">path</span><span class="o">=</span><span class="s1">&#39;/openapi&#39;</span><span class="p">,</span>
-                <span class="n">callback</span><span class="o">=</span><span class="n">get_openapi_sync</span><span class="p">,</span>
-                <span class="n">name</span><span class="o">=</span><span class="s1">&#39;openapi&#39;</span><span class="p">,</span>
-                <span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">,</span>
+                <span class="n">path</span><span class="o">=</span><span class="s1">&#39;/openapi&#39;</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">get_openapi_sync</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;openapi&#39;</span><span class="p">,</span> <span class="n">skip</span><span class="o">=</span><span class="n">skip</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="n">app</span><span class="o">.</span><span class="n">openapi_spec</span> <span class="o">=</span> <span class="n">openapi_spec</span>
         <span class="n">app</span><span class="o">.</span><span class="n">dflt_port</span> <span class="o">=</span> <span class="n">mk_config</span><span class="p">(</span><span class="s1">&#39;port&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">configs</span><span class="p">,</span> <span class="n">default_configs</span><span class="p">)</span>
@@ -378,9 +363,7 @@
 
 <span class="k">def</span> <span class="nf">mk_routes_and_openapi_specs</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span> <span class="o">**</span><span class="n">configs</span><span class="p">):</span>
     <span class="n">routes</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">openapi_config</span> <span class="o">=</span> <span class="n">mk_config</span><span class="p">(</span>
-        <span class="s1">&#39;openapi&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">configs</span><span class="p">,</span> <span class="n">default_configs</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">dict</span>
-    <span class="p">)</span>
+    <span class="n">openapi_config</span> <span class="o">=</span> <span class="n">mk_config</span><span class="p">(</span><span class="s1">&#39;openapi&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">configs</span><span class="p">,</span> <span class="n">default_configs</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
     <span class="n">openapi_spec</span> <span class="o">=</span> <span class="n">mk_openapi_template</span><span class="p">(</span><span class="n">openapi_config</span><span class="p">)</span>
     <span class="n">header_inputs</span> <span class="o">=</span> <span class="n">mk_config</span><span class="p">(</span><span class="s1">&#39;header_inputs&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">configs</span><span class="p">,</span> <span class="n">default_configs</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">header_inputs</span><span class="p">:</span>

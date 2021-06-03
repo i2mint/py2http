@@ -44,9 +44,7 @@ class lazyprop:
 
     def __init__(self, func):
         self.__doc__ = getattr(func, '__doc__')
-        self.__isabstractmethod__ = getattr(
-            func, '__isabstractmethod__', False
-        )
+        self.__isabstractmethod__ = getattr(func, '__isabstractmethod__', False)
         self.func = func
 
     def __get__(self, instance, cls):
@@ -75,11 +73,7 @@ func_info_spec = Spec(
         'name': '__name__',
         'qualname': '__qualname__',
         'module': '__module__',
-        'return_annotation': (
-            signature,
-            'return_annotation',
-            none_if_not_empty,
-        ),
+        'return_annotation': (signature, 'return_annotation', none_if_not_empty,),
         'params': (signature, 'parameters'),
     }
 )
@@ -229,9 +223,7 @@ def run_process(
 
             is_ready_func.__name__ = f'wait_for_seconds({is_ready_in_seconds})'
             is_ready = is_ready_func
-        start_process_output = (
-            start_process()
-        )  # needs launch a parallel process!
+        start_process_output = start_process()  # needs launch a parallel process!
         while time() - start_time < timeout:
             tic = time()
             is_ready_output = is_ready()
@@ -252,14 +244,10 @@ def run_process(
     process_name = process_name or getattr(func, '__qualname__', '\b')
 
     try:
-        process = Process(
-            target=func, args=func_args, kwargs=kwargs, name=process_name
-        )
+        process = Process(target=func, args=func_args, kwargs=kwargs, name=process_name)
 
         if is_ready:  # if the 'is_ready' time or predicate is defined
-            launch_and_wait_till_ready(
-                launch_process, is_ready, timeout=timeout
-            )
+            launch_and_wait_till_ready(launch_process, is_ready, timeout=timeout)
         else:
             launch_process()
 
@@ -373,9 +361,7 @@ class _pyparam_kv_trans:
             return k, v
 
 
-def pyparam_to_dict(
-    param, kv_trans: Callable = _pyparam_kv_trans.skip_empties
-):
+def pyparam_to_dict(param, kv_trans: Callable = _pyparam_kv_trans.skip_empties):
     """Get dict from a Parameter object
 
     :param param: A inspect.Parameter instance

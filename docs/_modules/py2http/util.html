@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>py2http.util &#8212; py2http 0.1.31 documentation</title>
+    <title>py2http.util &#8212; py2http 0.1.32 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
@@ -79,9 +79,7 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s1">&#39;__doc__&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">__isabstractmethod__</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
-            <span class="n">func</span><span class="p">,</span> <span class="s1">&#39;__isabstractmethod__&#39;</span><span class="p">,</span> <span class="kc">False</span>
-        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__isabstractmethod__</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s1">&#39;__isabstractmethod__&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
 
     <span class="k">def</span> <span class="fm">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
@@ -110,11 +108,7 @@
         <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;__name__&#39;</span><span class="p">,</span>
         <span class="s1">&#39;qualname&#39;</span><span class="p">:</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">,</span>
         <span class="s1">&#39;module&#39;</span><span class="p">:</span> <span class="s1">&#39;__module__&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;return_annotation&#39;</span><span class="p">:</span> <span class="p">(</span>
-            <span class="n">signature</span><span class="p">,</span>
-            <span class="s1">&#39;return_annotation&#39;</span><span class="p">,</span>
-            <span class="n">none_if_not_empty</span><span class="p">,</span>
-        <span class="p">),</span>
+        <span class="s1">&#39;return_annotation&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">signature</span><span class="p">,</span> <span class="s1">&#39;return_annotation&#39;</span><span class="p">,</span> <span class="n">none_if_not_empty</span><span class="p">,),</span>
         <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">signature</span><span class="p">,</span> <span class="s1">&#39;parameters&#39;</span><span class="p">),</span>
     <span class="p">}</span>
 <span class="p">)</span>
@@ -264,9 +258,7 @@
 
             <span class="n">is_ready_func</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;wait_for_seconds(</span><span class="si">{</span><span class="n">is_ready_in_seconds</span><span class="si">}</span><span class="s1">)&#39;</span>
             <span class="n">is_ready</span> <span class="o">=</span> <span class="n">is_ready_func</span>
-        <span class="n">start_process_output</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">start_process</span><span class="p">()</span>
-        <span class="p">)</span>  <span class="c1"># needs launch a parallel process!</span>
+        <span class="n">start_process_output</span> <span class="o">=</span> <span class="n">start_process</span><span class="p">()</span>  <span class="c1"># needs launch a parallel process!</span>
         <span class="k">while</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&lt;</span> <span class="n">timeout</span><span class="p">:</span>
             <span class="n">tic</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
             <span class="n">is_ready_output</span> <span class="o">=</span> <span class="n">is_ready</span><span class="p">()</span>
@@ -287,14 +279,10 @@
     <span class="n">process_name</span> <span class="o">=</span> <span class="n">process_name</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\b</span><span class="s1">&#39;</span><span class="p">)</span>
 
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">process</span> <span class="o">=</span> <span class="n">Process</span><span class="p">(</span>
-            <span class="n">target</span><span class="o">=</span><span class="n">func</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="n">func_args</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">process_name</span>
-        <span class="p">)</span>
+        <span class="n">process</span> <span class="o">=</span> <span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">func</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="n">func_args</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">process_name</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">is_ready</span><span class="p">:</span>  <span class="c1"># if the &#39;is_ready&#39; time or predicate is defined</span>
-            <span class="n">launch_and_wait_till_ready</span><span class="p">(</span>
-                <span class="n">launch_process</span><span class="p">,</span> <span class="n">is_ready</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span>
-            <span class="p">)</span>
+            <span class="n">launch_and_wait_till_ready</span><span class="p">(</span><span class="n">launch_process</span><span class="p">,</span> <span class="n">is_ready</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">launch_process</span><span class="p">()</span>
 
@@ -408,9 +396,7 @@
             <span class="k">return</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span>
 
 
-<div class="viewcode-block" id="pyparam_to_dict"><a class="viewcode-back" href="../../module_docs/py2http/util.html#py2http.util.pyparam_to_dict">[docs]</a><span class="k">def</span> <span class="nf">pyparam_to_dict</span><span class="p">(</span>
-    <span class="n">param</span><span class="p">,</span> <span class="n">kv_trans</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">_pyparam_kv_trans</span><span class="o">.</span><span class="n">skip_empties</span>
-<span class="p">):</span>
+<div class="viewcode-block" id="pyparam_to_dict"><a class="viewcode-back" href="../../module_docs/py2http/util.html#py2http.util.pyparam_to_dict">[docs]</a><span class="k">def</span> <span class="nf">pyparam_to_dict</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">kv_trans</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">_pyparam_kv_trans</span><span class="o">.</span><span class="n">skip_empties</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Get dict from a Parameter object</span>
 
 <span class="sd">    :param param: A inspect.Parameter instance</span>

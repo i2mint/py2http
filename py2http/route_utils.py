@@ -4,15 +4,12 @@ from typing import Iterable
 
 
 def create_handler(input_class, methodname):
-    constructor_arg_names = [
-        argname for argname in inspect.signature(input_class)
-    ][1:]
+    constructor_arg_names = [argname for argname in inspect.signature(input_class)][1:]
     class_method = input_class.getattr(methodname)
 
     def handler(*input_args, **input_kwargs):
         constructor_kwargs = {
-            input_kwargs.pop(argname, None)
-            for argname in constructor_arg_names
+            input_kwargs.pop(argname, None) for argname in constructor_arg_names
         }
         instance = input_class(**constructor_kwargs)
         return instance.getattr(methodname)(*input_args, **input_kwargs)
