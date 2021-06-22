@@ -868,6 +868,7 @@ def mk_flat(cls, method, *, func_name='flat_func'):
     sig_flat = sig_cls + sig_method
     sig_flat = sig_flat.remove_names(['self'])
     sig_flat = sig_flat.replace(return_annotation=sig_method.return_annotation)
+
     def flat_func(**kwargs):
         if (
             len(
