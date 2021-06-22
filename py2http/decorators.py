@@ -877,7 +877,7 @@ def mk_flat(cls, method, *, func_name='flat_func'):
     sig_flat = sig_cls + sig_method
     sig_flat = sig_flat.remove_names(['self'])
     sig_flat = sig_flat.replace(return_annotation=sig_method.return_annotation)
-
+    print(f'sig_flat: {sig_flat}')
     def flat_func(**kwargs):
         if (
             len(
@@ -918,6 +918,24 @@ def mk_flat(cls, method, *, func_name='flat_func'):
     flat_func.__doc__ = method.__doc__
 
     return flat_func
+
+
+def flatten_methods(methods: dict, decorator=None, validate_name_unicity=True):
+    if not decorator:
+        decorator = lambda x: x
+    functions = []
+    for cls, cls_method_names in methods.items():
+        functions.extend(
+            [
+                decorator(mk_flat(cls, getattr(cls, x), func_name=x))
+                for x in cls_method_names
+            ]
+        )
+    if validate_name_unicity:
+        nb_function_names = len({x.__name__: x for x in functions})
+        if nb_function_names != len(functions):
+            raise ValueError(f'Some function names are duplicated in {methods}')
+    return functions
 
 
 def add_attrs(**attrs):
