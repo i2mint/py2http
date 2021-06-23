@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>py2http.openapi_utils &#8212; py2http 0.1.33 documentation</title>
+    <title>py2http.openapi_utils &#8212; py2http 0.1.34 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
@@ -34,6 +34,8 @@
             
   <h1>Source code for py2http.openapi_utils</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">py2http.default_configs</span> <span class="kn">import</span> <span class="n">DFLT_CONTENT_TYPE</span>
 <span class="kn">from</span> <span class="nn">py2http.util</span> <span class="kn">import</span> <span class="n">conditional_logger</span><span class="p">,</span> <span class="n">CreateProcess</span><span class="p">,</span> <span class="n">lazyprop</span>
 
 <span class="n">oatype_for_pytype</span> <span class="o">=</span> <span class="p">{</span>
@@ -160,9 +162,9 @@
 <span class="k">def</span> <span class="nf">mk_openapi_path</span><span class="p">(</span>
     <span class="n">pathname</span><span class="o">=</span><span class="s1">&#39;/&#39;</span><span class="p">,</span>
     <span class="n">method</span><span class="o">=</span><span class="s1">&#39;post&#39;</span><span class="p">,</span>
-    <span class="n">request_content_type</span><span class="o">=</span><span class="s1">&#39;application/json&#39;</span><span class="p">,</span>
+    <span class="n">request_content_type</span><span class="o">=</span><span class="n">DFLT_CONTENT_TYPE</span><span class="p">,</span>
     <span class="n">request_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">response_content_type</span><span class="o">=</span><span class="s1">&#39;application/json&#39;</span><span class="p">,</span>
+    <span class="n">response_content_type</span><span class="o">=</span><span class="n">DFLT_CONTENT_TYPE</span><span class="p">,</span>
     <span class="n">response_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">path_fields</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
@@ -188,7 +190,7 @@
         <span class="s1">&#39;200&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">response_content_type</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;schema&#39;</span><span class="p">:</span> <span class="p">{}}}}</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="n">response_schema</span><span class="p">:</span>
-        <span class="n">new_path_spec</span><span class="p">[</span><span class="s1">&#39;responses&#39;</span><span class="p">][</span><span class="s1">&#39;200&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">][</span><span class="n">request_content_type</span><span class="p">][</span>
+        <span class="n">new_path_spec</span><span class="p">[</span><span class="s1">&#39;responses&#39;</span><span class="p">][</span><span class="s1">&#39;200&#39;</span><span class="p">][</span><span class="s1">&#39;content&#39;</span><span class="p">][</span><span class="n">response_content_type</span><span class="p">][</span>
             <span class="s1">&#39;schema&#39;</span>
         <span class="p">]</span> <span class="o">=</span> <span class="n">mk_arg_schema</span><span class="p">(</span><span class="n">response_schema</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">new_path</span>
@@ -245,9 +247,9 @@
     <span class="n">exclude_keys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">pathname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">method</span><span class="o">=</span><span class="s1">&#39;post&#39;</span><span class="p">,</span>
-    <span class="n">request_content_type</span><span class="o">=</span><span class="s1">&#39;application/json&#39;</span><span class="p">,</span>
+    <span class="n">request_content_type</span><span class="o">=</span><span class="n">DFLT_CONTENT_TYPE</span><span class="p">,</span>
     <span class="c1">#                     request_dict=None,</span>
-    <span class="n">response_content_type</span><span class="o">=</span><span class="s1">&#39;application/json&#39;</span><span class="p">,</span>
+    <span class="n">response_content_type</span><span class="o">=</span><span class="n">DFLT_CONTENT_TYPE</span><span class="p">,</span>
     <span class="n">response_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">path_fields</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>

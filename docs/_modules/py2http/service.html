@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>py2http.service &#8212; py2http 0.1.33 documentation</title>
+    <title>py2http.service &#8212; py2http 0.1.34 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
@@ -51,7 +51,7 @@
 
 <span class="kn">from</span> <span class="nn">py2http.bottle_plugins</span> <span class="kn">import</span> <span class="n">CorsPlugin</span><span class="p">,</span> <span class="n">OPTIONS</span>
 <span class="kn">from</span> <span class="nn">py2http.config</span> <span class="kn">import</span> <span class="n">mk_config</span><span class="p">,</span> <span class="n">FLASK</span><span class="p">,</span> <span class="n">AIOHTTP</span><span class="p">,</span> <span class="n">BOTTLE</span>
-<span class="kn">from</span> <span class="nn">py2http.default_configs</span> <span class="kn">import</span> <span class="n">default_configs</span>
+<span class="kn">from</span> <span class="nn">py2http.default_configs</span> <span class="kn">import</span> <span class="n">default_configs</span><span class="p">,</span> <span class="n">DFLT_CONTENT_TYPE</span>
 <span class="kn">from</span> <span class="nn">py2http.openapi_utils</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">add_paths_to_spec</span><span class="p">,</span>
     <span class="n">mk_openapi_path</span><span class="p">,</span>
@@ -130,6 +130,7 @@
     <span class="n">response_schema</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
         <span class="n">output_mapper</span><span class="p">,</span> <span class="s1">&#39;response_schema&#39;</span><span class="p">,</span> <span class="n">mk_output_schema_from_func</span><span class="p">(</span><span class="n">output_mapper</span><span class="p">),</span>
     <span class="p">)</span>
+    <span class="n">response_content_type</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">output_mapper</span><span class="p">,</span> <span class="s1">&#39;content_type&#39;</span><span class="p">,</span> <span class="n">DFLT_CONTENT_TYPE</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">response_schema</span><span class="p">:</span>
         <span class="n">response_schema</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
             <span class="n">func</span><span class="p">,</span> <span class="s1">&#39;response_schema&#39;</span><span class="p">,</span> <span class="n">mk_output_schema_from_func</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
@@ -227,6 +228,7 @@
         <span class="n">http_method</span><span class="p">,</span>
         <span class="n">request_schema</span><span class="o">=</span><span class="n">request_schema</span><span class="p">,</span>
         <span class="n">response_schema</span><span class="o">=</span><span class="n">response_schema</span><span class="p">,</span>
+        <span class="n">response_content_type</span><span class="o">=</span><span class="n">response_content_type</span><span class="p">,</span>
         <span class="n">path_fields</span><span class="o">=</span><span class="n">path_fields</span><span class="p">,</span>
     <span class="p">)</span>
 

@@ -1091,8 +1091,10 @@ def send_html_resp(func):
 def send_binary_resp(func):
     # TODO async support
     BINARY_CONTENT_TYPE = 'application/octet-stream'
+
     def output_mapper(output, input_kwargs):
         from bottle import response
+
         mapped_output = func(output, input_kwargs)
         response.content_type = BINARY_CONTENT_TYPE
         return mapped_output
@@ -1106,6 +1108,7 @@ def binary_output(func):
     output_mapper = send_binary_resp(base_output_mapper)
     func.output_mapper = output_mapper
     return func
+
 
 # TODO: stub
 def mk_input_mapper(input_map):

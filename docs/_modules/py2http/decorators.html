@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>py2http.decorators &#8212; py2http 0.1.33 documentation</title>
+    <title>py2http.decorators &#8212; py2http 0.1.34 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
@@ -1039,6 +1039,10 @@
     <span class="k">return</span> <span class="n">input_mapper</span>
 
 
+<span class="k">def</span> <span class="nf">base_output_mapper</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">output</span>
+
+
 <span class="c1"># TODO: Definitely want to move this to a place that is specialized for defining serialization needs</span>
 <span class="c1">#   First, it&#39;s not really a decorator.</span>
 <span class="c1">#   Secondly, the user should be able to easily define the serialization logic for their needs</span>
@@ -1103,19 +1107,42 @@
             <span class="n">mapped_output</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">dumps</span><span class="p">(</span><span class="n">mapped_output</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">JsonRespEncoder</span><span class="p">)</span>
 
-    <span class="n">output_mapper</span><span class="o">.</span><span class="n">content_type</span> <span class="o">=</span> <span class="s1">&#39;json&#39;</span>
+    <span class="n">output_mapper</span><span class="o">.</span><span class="n">content_type</span> <span class="o">=</span> <span class="s1">&#39;application/json&#39;</span>
     <span class="k">return</span> <span class="n">output_mapper</span>
 
 
 <span class="k">def</span> <span class="nf">send_html_resp</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">output_mapper</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">):</span>
-        <span class="n">mapped_output</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">isawaitable</span><span class="p">(</span><span class="n">mapped_output</span><span class="p">):</span>
-            <span class="n">mapped_output</span> <span class="o">=</span> <span class="k">await</span> <span class="n">mapped_output</span>
-        <span class="k">return</span> <span class="n">web</span><span class="o">.</span><span class="n">Response</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">mapped_output</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">&#39;text/html&#39;</span><span class="p">)</span>
+    <span class="c1"># TODO bottle support</span>
+    <span class="c1"># async def output_mapper(output, input_kwargs):</span>
+    <span class="c1">#     mapped_output = func(output, input_kwargs)</span>
+    <span class="c1">#     if isawaitable(mapped_output):</span>
+    <span class="c1">#         mapped_output = await mapped_output</span>
+    <span class="c1">#     return Response(text=mapped_output, content_type=&#39;text/html&#39;)</span>
 
-    <span class="n">output_mapper</span><span class="o">.</span><span class="n">content_type</span> <span class="o">=</span> <span class="s1">&#39;html&#39;</span>
+    <span class="n">func</span><span class="o">.</span><span class="n">content_type</span> <span class="o">=</span> <span class="s1">&#39;text/html&#39;</span>
+    <span class="k">return</span> <span class="n">func</span>
+
+
+<span class="k">def</span> <span class="nf">send_binary_resp</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="c1"># TODO async support</span>
+    <span class="n">BINARY_CONTENT_TYPE</span> <span class="o">=</span> <span class="s1">&#39;application/octet-stream&#39;</span>
+
+    <span class="k">def</span> <span class="nf">output_mapper</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">bottle</span> <span class="kn">import</span> <span class="n">response</span>
+
+        <span class="n">mapped_output</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">)</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">content_type</span> <span class="o">=</span> <span class="n">BINARY_CONTENT_TYPE</span>
+        <span class="k">return</span> <span class="n">mapped_output</span>
+
+    <span class="n">output_mapper</span><span class="o">.</span><span class="n">content_type</span> <span class="o">=</span> <span class="n">BINARY_CONTENT_TYPE</span>
+    <span class="n">output_mapper</span><span class="o">.</span><span class="n">response_schema</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;binary&#39;</span><span class="p">}</span>
     <span class="k">return</span> <span class="n">output_mapper</span>
+
+
+<span class="k">def</span> <span class="nf">binary_output</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="n">output_mapper</span> <span class="o">=</span> <span class="n">send_binary_resp</span><span class="p">(</span><span class="n">base_output_mapper</span><span class="p">)</span>
+    <span class="n">func</span><span class="o">.</span><span class="n">output_mapper</span> <span class="o">=</span> <span class="n">output_mapper</span>
+    <span class="k">return</span> <span class="n">func</span>
 
 
 <span class="c1"># TODO: stub</span>
