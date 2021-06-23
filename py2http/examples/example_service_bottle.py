@@ -1,5 +1,6 @@
 from py2http import run_http_service
 from py2http.config import BOTTLE
+from py2http.decorators import binary_output
 from py2http.default_configs import bottle_output_mapper
 
 
@@ -24,10 +25,15 @@ def input_mapper(req, schema):
     return req.json
 
 
+@binary_output
+def binary_string():
+    return b'Here is a binary response'
+
+
 multiplier_instance = MultiplierClass(5)
 
 
-example_functions = [add, no_args, multiplier_instance.multiply]
+example_functions = [add, no_args, multiplier_instance.multiply, binary_string]
 
 
 if __name__ == '__main__':

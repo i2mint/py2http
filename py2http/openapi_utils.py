@@ -1,4 +1,6 @@
 from typing import Any
+
+from py2http.default_configs import DFLT_CONTENT_TYPE
 from py2http.util import conditional_logger, CreateProcess, lazyprop
 
 oatype_for_pytype = {
@@ -125,9 +127,9 @@ def set_auth(openapi_spec, auth_type='jwt', *, login_details=None):
 def mk_openapi_path(
     pathname='/',
     method='post',
-    request_content_type='application/json',
+    request_content_type=DFLT_CONTENT_TYPE,
     request_schema=None,
-    response_content_type='application/json',
+    response_content_type=DFLT_CONTENT_TYPE,
     response_schema=None,
     path_fields=None,
 ):
@@ -153,7 +155,7 @@ def mk_openapi_path(
         '200': {'content': {response_content_type: {'schema': {}}}}
     }
     if response_schema:
-        new_path_spec['responses']['200']['content'][request_content_type][
+        new_path_spec['responses']['200']['content'][response_content_type][
             'schema'
         ] = mk_arg_schema(response_schema)
     return new_path
@@ -210,9 +212,9 @@ def func_to_openapi_spec(
     exclude_keys=None,
     pathname=None,
     method='post',
-    request_content_type='application/json',
+    request_content_type=DFLT_CONTENT_TYPE,
     #                     request_dict=None,
-    response_content_type='application/json',
+    response_content_type=DFLT_CONTENT_TYPE,
     response_schema=None,
     path_fields=None,
 ):

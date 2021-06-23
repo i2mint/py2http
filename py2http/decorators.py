@@ -1003,6 +1003,10 @@ def handle_raw_req(func):
     return input_mapper
 
 
+def base_output_mapper(output, input_kwargs):
+    return output
+
+
 # TODO: Definitely want to move this to a place that is specialized for defining serialization needs
 #   First, it's not really a decorator.
 #   Secondly, the user should be able to easily define the serialization logic for their needs
@@ -1067,20 +1071,40 @@ def send_json_resp(func):
             mapped_output = func(output, input_kwargs)
             return dumps(mapped_output, cls=JsonRespEncoder)
 
-    output_mapper.content_type = 'json'
+    output_mapper.content_type = 'application/json'
     return output_mapper
 
 
 def send_html_resp(func):
-    async def output_mapper(output, input_kwargs):
-        mapped_output = func(output, input_kwargs)
-        if isawaitable(mapped_output):
-            mapped_output = await mapped_output
-        return web.Response(text=mapped_output, content_type='text/html')
+    # TODO bottle support
+    # async def output_mapper(output, input_kwargs):
+    #     mapped_output = func(output, input_kwargs)
+    #     if isawaitable(mapped_output):
+    #         mapped_output = await mapped_output
+    #     return Response(text=mapped_output, content_type='text/html')
 
-    output_mapper.content_type = 'html'
+    func.content_type = 'text/html'
+    return func
+
+
+def send_binary_resp(func):
+    # TODO async support
+    BINARY_CONTENT_TYPE = 'application/octet-stream'
+    def output_mapper(output, input_kwargs):
+        from bottle import response
+        mapped_output = func(output, input_kwargs)
+        response.content_type = BINARY_CONTENT_TYPE
+        return mapped_output
+
+    output_mapper.content_type = BINARY_CONTENT_TYPE
+    output_mapper.response_schema = {'type': 'binary'}
     return output_mapper
 
+
+def binary_output(func):
+    output_mapper = send_binary_resp(base_output_mapper)
+    func.output_mapper = output_mapper
+    return func
 
 # TODO: stub
 def mk_input_mapper(input_map):

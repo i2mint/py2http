@@ -16,7 +16,7 @@ from i2.errors import InputError, DataError, AuthorizationError
 
 from py2http.bottle_plugins import CorsPlugin, OPTIONS
 from py2http.config import mk_config, FLASK, AIOHTTP, BOTTLE
-from py2http.default_configs import default_configs
+from py2http.default_configs import default_configs, DFLT_CONTENT_TYPE
 from py2http.openapi_utils import (
     add_paths_to_spec,
     mk_openapi_path,
@@ -95,6 +95,7 @@ def mk_route(func, **configs):
     response_schema = getattr(
         output_mapper, 'response_schema', mk_output_schema_from_func(output_mapper),
     )
+    response_content_type = getattr(output_mapper, 'content_type', DFLT_CONTENT_TYPE)
     if not response_schema:
         response_schema = getattr(
             func, 'response_schema', mk_output_schema_from_func(func)
@@ -192,6 +193,7 @@ def mk_route(func, **configs):
         http_method,
         request_schema=request_schema,
         response_schema=response_schema,
+        response_content_type=response_content_type,
         path_fields=path_fields,
     )
 

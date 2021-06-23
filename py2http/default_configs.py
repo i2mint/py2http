@@ -14,6 +14,7 @@ from i2.errors import (
 
 from py2http.decorators import handle_json_req, send_json_resp, JsonRespEncoder
 from py2http.config import AIOHTTP, BOTTLE, FLASK
+DFLT_CONTENT_TYPE = 'application/json'
 
 
 @handle_json_req
