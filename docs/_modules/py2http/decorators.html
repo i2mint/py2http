@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>py2http.decorators &#8212; py2http 0.1.32 documentation</title>
+    <title>py2http.decorators &#8212; py2http 0.1.33 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
@@ -940,6 +940,24 @@
     <span class="n">flat_func</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="vm">__doc__</span>
 
     <span class="k">return</span> <span class="n">flat_func</span></div>
+
+
+<span class="k">def</span> <span class="nf">flatten_methods</span><span class="p">(</span><span class="n">methods</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">decorator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">validate_name_unicity</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">decorator</span><span class="p">:</span>
+        <span class="n">decorator</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span>
+    <span class="n">functions</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="bp">cls</span><span class="p">,</span> <span class="n">cls_method_names</span> <span class="ow">in</span> <span class="n">methods</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">functions</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">decorator</span><span class="p">(</span><span class="n">mk_flat</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span> <span class="n">func_name</span><span class="o">=</span><span class="n">x</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">cls_method_names</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">validate_name_unicity</span><span class="p">:</span>
+        <span class="n">nb_function_names</span> <span class="o">=</span> <span class="nb">len</span><span class="p">({</span><span class="n">x</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">functions</span><span class="p">})</span>
+        <span class="k">if</span> <span class="n">nb_function_names</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">functions</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Some function names are duplicated in </span><span class="si">{</span><span class="n">methods</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">functions</span>
 
 
 <div class="viewcode-block" id="add_attrs"><a class="viewcode-back" href="../../module_docs/py2http/decorators.html#py2http.decorators.add_attrs">[docs]</a><span class="k">def</span> <span class="nf">add_attrs</span><span class="p">(</span><span class="o">**</span><span class="n">attrs</span><span class="p">):</span>
