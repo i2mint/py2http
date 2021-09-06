@@ -1,7 +1,11 @@
-`the_one_where_we_have_python_objects_and_we_want_to_make_an_http_service_out_of_them`
+[Documentation here](https://i2mint.github.io/py2http/)
+
 
 # py2http
 Dispatching Python functions as http services.
+
+You have some python objects and want to get an "equivalent" http service from them...
+
 
 ## Usage
 
