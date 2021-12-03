@@ -132,6 +132,7 @@ def mk_openapi_path(
     response_content_type=DFLT_CONTENT_TYPE,
     response_schema=None,
     path_fields=None,
+    empty_body=False,
 ):
     # TODO: correctly handle input args in URL (params and query)
     # TODO: allow args in header (specific to path, not just for whole service)
@@ -145,12 +146,15 @@ def mk_openapi_path(
     new_path = {pathname: {method: dict(path_fields)}}
     new_path_spec = new_path[pathname][method]
     if request_schema:
-        new_path_spec['requestBody'] = {
-            'required': True,
-            'content': {
-                request_content_type: {'schema': mk_arg_schema(request_schema)}
-            },
-        }
+        if empty_body:
+
+        else:
+            new_path_spec['requestBody'] = {
+                'required': True,
+                'content': {
+                    request_content_type: {'schema': mk_arg_schema(request_schema)}
+                },
+            }
     new_path_spec['responses'] = {
         '200': {'content': {response_content_type: {'schema': {}}}}
     }

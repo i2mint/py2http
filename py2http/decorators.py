@@ -985,6 +985,15 @@ def handle_json_req(func):
     return input_mapper
 
 
+def handle_query_req(func):
+    def input_mapper(req, request_schema):
+        inputs = _get_req_inputs(req)
+        return validate_and_invoke_mapper(func, inputs, request_schema)
+
+    input_mapper.content_type = ''
+    return input_mapper
+
+
 def handle_multipart_req(func):
     # TODO: make this work with Bottle
     def input_mapper(req, request_schema):
@@ -1118,15 +1127,18 @@ def mk_input_mapper(input_map):
     return decorator
 
 
-def _get_req_inputs(req, get_body_func):
+def _get_req_inputs(req, get_body_func=None):
     kwargs = getattr(req, 'defaults', {})
-    if getattr(req, 'has_body', getattr(req, 'data', getattr(req, 'json', None))):
+    if get_body_func and getattr(req, 'has_body', getattr(req, 'data', getattr(req, 'json', None))):
         body = get_body_func()
         if isinstance(body, str):
             body = dict({}, text=body)
         kwargs = body
     if getattr(req, 'query', None):
-        kwargs = dict(kwargs, **req.query)
+        if getattr(req.query, 'decode'):
+            kwargs = dict(kwargs, **req.query.decode())
+        else:
+            kwargs = dict(kwargs, **req.query)
     if getattr(req, 'token', None):
         kwargs = dict(kwargs, **req.token)
     return kwargs
