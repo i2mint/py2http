@@ -152,14 +152,7 @@ def mk_openapi_path(
             },
         }
     new_path_spec['responses'] = {
-        '200': {
-            'description': '',
-            'content': {
-                response_content_type: {
-                    'schema': {}
-                }
-            }
-        }
+        '200': {'description': '', 'content': {response_content_type: {'schema': {}}}}
     }
     if response_schema:
         new_path_spec['responses']['200']['content'][response_content_type][

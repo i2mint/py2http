@@ -201,7 +201,7 @@ def mk_route(func, **configs):
 
 
 def extra_path_info(func):
-    return {'description': func.__doc__ or ""}
+    return {'description': func.__doc__ or ''}
 
 
 def run_http_service(funcs, **configs):
