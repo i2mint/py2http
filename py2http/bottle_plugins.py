@@ -20,7 +20,7 @@ class JWTPlugin:
             token = auth_header[7:]
             try:
                 decoded = jwt.decode(
-                    token, self._secret, options={'verify_signature': False}
+                    token, self._secret, options={'verify_signature': self._verify}
                 )
                 for k, v in self._mapper.items():
                     if k in decoded:
