@@ -30,7 +30,7 @@ class JWTPlugin:
                     token,
                     self._secret,
                     options={'verify_signature': self._verify},
-                    algorithms=[self._algorithm]
+                    algorithms=[self._algorithm],
                 )
                 for k, v in self._mapper.items():
                     if k in decoded:
