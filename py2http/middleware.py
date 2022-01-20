@@ -2,7 +2,7 @@ import json
 from warnings import warn
 
 
-def mk_jwt_middleware(secret, verify=True):
+def mk_jwt_middleware(secret, verify=True, algorithm: str = 'RS256'):
     from aiohttp import web
     import jwt
 
@@ -13,7 +13,7 @@ def mk_jwt_middleware(secret, verify=True):
         auth_header = req.headers.get('Authorization', '')
         token = auth_header[7:]
         try:
-            decoded = jwt.decode(token, secret, verify=verify)
+            decoded = jwt.decode(token, secret, options={'verify': verify}, algorithms=[algorithm])
             req.token = decoded
             return await handler(req)
         except jwt.DecodeError as error:
