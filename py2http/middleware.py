@@ -13,7 +13,9 @@ def mk_jwt_middleware(secret, verify=True):
         auth_header = req.headers.get('Authorization', '')
         token = auth_header[7:]
         try:
-            decoded = jwt.decode(token, secret, options={'verify': verify}, algorithms=['HS256', 'RS256'])
+            decoded = jwt.decode(
+                token, secret, options={'verify': verify}, algorithms=['HS256', 'RS256']
+            )
             req.token = decoded
             return await handler(req)
         except jwt.DecodeError as error:
