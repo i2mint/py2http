@@ -1,3 +1,4 @@
+"""Utils"""
 from typing import Optional, Callable, Union, Iterable, Any
 from inspect import Parameter, signature
 from multiprocessing.context import Process
@@ -7,7 +8,53 @@ from functools import wraps, partial
 from warnings import warn, simplefilter
 from contextlib import contextmanager
 
+from i2 import call_forgivingly
+
 from glom import Spec  # NOTE: Third-party
+
+
+def gather_arguments_into_single_input_dict(func):
+    """Wraps a function so that it sources all its inputs from a single argument,
+    an ``input_dict``.
+
+    Say for example, that you want to write a function like this:
+
+    >>> def the_func_as_i_want_it(a, b: int, c=1):
+    ...     return a + b * c
+
+    But the system (`py2http`) is obliging you to write it like this:
+
+    >>> def the_function_as_it_needs_to_be(input_dict):
+    ...     # boilerplate, arg! And not even with nice validation etc.
+    ...     a = input_dict["a"]
+    ...     b = input_dict["b"]
+    ...     c = input_dict["c"]
+    ...     return a + b * c
+
+    Instead of doing that ugly boilerplate, do this:
+
+    >>> @gather_arguments_into_single_input_dict
+    ... def the_func_as_i_want_it(a, b: int, c=1):
+    ...     return a + b * c
+    >>>
+    >>> the_func_as_i_want_it({'a': 1, 'b': 2, 'c': 3})  # == 1 + 2 * 3 == 7
+    7
+    >>> from inspect import signature
+    >>> str(signature(the_func_as_i_want_it))
+    '(input_dict: dict)'
+
+    """
+
+    def _func(input_dict: dict):
+        # TODO: can use call_somewhat_forgivingly to be more constrained
+        # (not allow anything outside signature,
+        # giving meaningful error messages if violated)
+        return call_forgivingly(func, **input_dict)
+
+    _func_signature = signature(_func)
+    __func = wraps(func)(_func)
+    _func.__signature__ = _func_signature
+    return _func
 
 
 class lazyprop:
@@ -43,8 +90,8 @@ class lazyprop:
     """
 
     def __init__(self, func):
-        self.__doc__ = getattr(func, '__doc__')
-        self.__isabstractmethod__ = getattr(func, '__isabstractmethod__', False)
+        self.__doc__ = getattr(func, "__doc__")
+        self.__isabstractmethod__ = getattr(func, "__isabstractmethod__", False)
         self.func = func
 
     def __get__(self, instance, cls):
@@ -56,7 +103,7 @@ class lazyprop:
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '<%s func=%s>' % (cn, self.func)
+        return "<%s func=%s>" % (cn, self.func)
 
 
 def if_not_empty(obj, if_empty_val=None):
@@ -70,11 +117,15 @@ none_if_not_empty = partial(if_not_empty, if_not_empty=None)
 
 func_info_spec = Spec(
     {
-        'name': '__name__',
-        'qualname': '__qualname__',
-        'module': '__module__',
-        'return_annotation': (signature, 'return_annotation', none_if_not_empty,),
-        'params': (signature, 'parameters'),
+        "name": "__name__",
+        "qualname": "__qualname__",
+        "module": "__module__",
+        "return_annotation": (
+            signature,
+            "return_annotation",
+            none_if_not_empty,
+        ),
+        "params": (signature, "parameters"),
     }
 )
 
@@ -95,8 +146,7 @@ def conditional_logger(verbose=False, log_func=print):
 
 
 class CreateProcess:
-    """A context manager to launch a parallel process and close it on exit.
-    """
+    """A context manager to launch a parallel process and close it on exit."""
 
     def __init__(
         self,
@@ -131,7 +181,7 @@ class CreateProcess:
         ... print process terminated
         """
         self.proc_func = proc_func
-        self.process_name = process_name or getattr(proc_func, '__name__', '')
+        self.process_name = process_name or getattr(proc_func, "__name__", "")
         self.wait_before_entering = float(wait_before_entering)
         self.verbose = verbose
         self.args = args
@@ -150,25 +200,25 @@ class CreateProcess:
             kwargs=self.kwargs,
             name=self.process_name,
         )
-        self.clog(f'Starting process: {self.process_name}...')
+        self.clog(f"Starting process: {self.process_name}...")
         try:
             self.process.start()
             if self.process_is_running():
-                self.clog(f'... {self.process_name} process started.')
+                self.clog(f"... {self.process_name} process started.")
                 sleep(self.wait_before_entering)
                 return self
             else:
-                raise RuntimeError('Process is not running')
+                raise RuntimeError("Process is not running")
         except Exception:
             raise RuntimeError(
-                f'Something went wrong when trying to launch process {self.process_name}'
+                f"Something went wrong when trying to launch process {self.process_name}"
             )
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.process is not None and self.process.is_alive():
-            self.clog(f'Terminating process: {self.process_name}...')
+            self.clog(f"Terminating process: {self.process_name}...")
             self.process.terminate()
-        self.clog(f'... {self.process_name} process terminated')
+        self.clog(f"... {self.process_name} process terminated")
         if exc_type is not None:
             self.exception_info = dict(
                 exc_type=exc_type, exc_val=exc_val, exc_tb=exc_tb
@@ -188,13 +238,13 @@ def run_process(
 ):
     def launch_process():
         try:
-            print('starting process!...')
-            clog(f'Starting {process_name} process...')
+            print("starting process!...")
+            clog(f"Starting {process_name} process...")
             process.start()
-            clog(f'... {process_name} process started.')
+            clog(f"... {process_name} process started.")
         except Exception:
             raise RuntimeError(
-                f'Something went wrong when trying to launch process {process_name}'
+                f"Something went wrong when trying to launch process {process_name}"
             )
 
     def launch_and_wait_till_ready(
@@ -221,7 +271,7 @@ def run_process(
                 f"""Returns True if, and only if, {is_ready_in_seconds} elapsed"""
                 return time() - start_time >= is_ready_in_seconds
 
-            is_ready_func.__name__ = f'wait_for_seconds({is_ready_in_seconds})'
+            is_ready_func.__name__ = f"wait_for_seconds({is_ready_in_seconds})"
             is_ready = is_ready_func
         start_process_output = start_process()  # needs launch a parallel process!
         while time() - start_time < timeout:
@@ -236,12 +286,12 @@ def run_process(
         raise TimeoutError(
             f"Launching {getattr(start_process, '__qualname__', None)} "
             f"and checking for readiness with {getattr(is_ready, '__qualname__', None)} "
-            f'timedout (timeout={timeout}s)'
+            f"timedout (timeout={timeout}s)"
         )
 
     kwargs = func_kwargs or {}
     clog = conditional_logger(verbose)
-    process_name = process_name or getattr(func, '__qualname__', '\b')
+    process_name = process_name or getattr(func, "__qualname__", "\b")
 
     try:
         process = Process(target=func, args=func_args, kwargs=kwargs, name=process_name)
@@ -255,9 +305,9 @@ def run_process(
     finally:
         if process is not None and process.is_alive():
             if force_kill:
-                clog(f'Terminating process: {process_name}...')
+                clog(f"Terminating process: {process_name}...")
                 process.terminate()
-                clog(f'... {process_name} process terminated')
+                clog(f"... {process_name} process terminated")
             else:
                 process.join()
 
@@ -267,14 +317,14 @@ def deprecate(func=None, *, msg=None):
     if func is None:
         return partial(deprecate, msg=msg)
     else:
-        assert callable(func), f'func should be callable. Was {func}'
-        msg = msg or f'{func.__qualname__} is being deprecated.'
+        assert callable(func), f"func should be callable. Was {func}"
+        msg = msg or f"{func.__qualname__} is being deprecated."
 
         @wraps(func)
         def deprecated_func(*args, **kwargs):
-            simplefilter('always', DeprecationWarning)  # turn off filter
+            simplefilter("always", DeprecationWarning)  # turn off filter
             warn(msg, category=DeprecationWarning, stacklevel=2)
-            simplefilter('default', DeprecationWarning)  # reset filter
+            simplefilter("default", DeprecationWarning)  # reset filter
             return func(*args, **kwargs)
 
         return deprecated_func
@@ -327,9 +377,9 @@ def obj_to_items_gen(
     if kv_trans is not None:
         assert callable(kv_trans)
         assert list(signature(kv_trans).parameters) == [
-            'k',
-            'v',
-        ], f'kv_trans must have signature (k, v)'
+            "k",
+            "v",
+        ], f"kv_trans must have signature (k, v)"
         _gen = gen
 
         def gen():
@@ -355,7 +405,7 @@ class _pyparam_kv_trans:
     def with_str_kind(k, v):
         if v is Parameter.empty:
             return None
-        elif k == 'kind':
+        elif k == "kind":
             return k, str(v)
         else:
             return k, v
@@ -399,7 +449,7 @@ def pyparam_to_dict(param, kv_trans: Callable = _pyparam_kv_trans.skip_empties):
     """
     gen = obj_to_items_gen(
         param,
-        attrs=('name', 'kind', 'default', 'annotation'),
+        attrs=("name", "kind", "default", "annotation"),
         on_missing_attr=None,
         kv_trans=kv_trans,
     )
@@ -477,9 +527,9 @@ class TypeAsserter:
 
     """
 
-    def __init__(self, types_for_kind, if_kind_missing='ignore'):
+    def __init__(self, types_for_kind, if_kind_missing="ignore"):
         self.types_for_kind = types_for_kind
-        assert if_kind_missing in {'ignore', 'raise', 'warn'}
+        assert if_kind_missing in {"ignore", "raise", "warn"}
         self.if_kind_missing = if_kind_missing
 
     def __call__(self, k, v):
@@ -487,18 +537,18 @@ class TypeAsserter:
         if types is not None:
             assert isinstance(
                 v, types
-            ), f'Invalid {k} type, must be a {types}, but was a {type(v)}'
-        elif self.if_kind_missing == 'ignore':
+            ), f"Invalid {k} type, must be a {types}, but was a {type(v)}"
+        elif self.if_kind_missing == "ignore":
             pass
-        elif self.if_kind_missing == 'raise':
+        elif self.if_kind_missing == "raise":
             raise ValueError(
-                f'Unrecognized kind: {k}. The ones I recognize: {list(self.types_for_kind.keys())}'
+                f"Unrecognized kind: {k}. The ones I recognize: {list(self.types_for_kind.keys())}"
             )
-        elif self.if_kind_missing == 'warn':
+        elif self.if_kind_missing == "warn":
             from warnings import warn
 
             warn(
-                f'Unrecognized kind: {k}. The ones I recognize: {list(self.types_for_kind.keys())}'
+                f"Unrecognized kind: {k}. The ones I recognize: {list(self.types_for_kind.keys())}"
             )
 
 
@@ -553,8 +603,8 @@ def obj_to_path(obj):
     # >>> for t in [(A, ('foo',)), (A, ('B',)), (A, ('B', 'bar'))]:
     # ...     assert obj_to_path(path_to_obj(*t)) == t
     """
-    if hasattr(obj, '__qualname__') and hasattr(obj, '__globals__'):
-        root_name, *attr_path = obj.__qualname__.split('.')
+    if hasattr(obj, "__qualname__") and hasattr(obj, "__globals__"):
+        root_name, *attr_path = obj.__qualname__.split(".")
         return obj.__globals__[root_name], tuple(attr_path)
     else:
         return obj
