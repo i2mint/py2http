@@ -22,6 +22,7 @@ def openapi_type_mapping(obj_type):
 
 
 BINARY = 'binary'
+DFLT_SERVER_URL = 'http://localhost:3030'
 
 
 class OpenApiExtractor:
@@ -59,7 +60,7 @@ def mk_openapi_template(config=None):
             'title': config.get('title', 'default'),
             'version': config.get('version', '0.1'),
         },
-        'servers': [{'url': config.get('base_url', 'http://localhost:3030/')}],
+        'servers': [{'url': config.get('base_url', DFLT_SERVER_URL)}],
         'paths': {},
     }
     auth_config = config.get('auth', None)

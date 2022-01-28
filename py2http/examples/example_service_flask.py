@@ -1,4 +1,4 @@
-from py2http import run_http_service
+from py2http import run_app
 from py2http.config import FLASK
 from py2http.default_configs import flask_output_mapper
 
@@ -26,7 +26,7 @@ example_functions = [add, no_args, multiplier_instance.multiply]
 
 
 if __name__ == '__main__':
-    run_http_service(
+    run_app(
         example_functions,
         framework=FLASK,
         http_method='GET',

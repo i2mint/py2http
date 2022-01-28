@@ -23,11 +23,11 @@ if __name__ == '__main__':
     from py2http.tests.utils_for_testing import run_server
     from py2http.examples.example_service import (
         example_functions,
-        run_http_service,
+        run_app,
     )
 
     def run_example_service():
-        return run_http_service(example_functions)
+        return run_app(example_functions)
 
     with run_server(run_example_service, wait_before_entering=0.5):
         example_test()

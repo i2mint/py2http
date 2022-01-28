@@ -1,8 +1,8 @@
 import requests
 from py2http.service import (
-    mk_http_service,
+    mk_app,
     mk_routes_and_openapi_specs,
-    run_http_service,
+    run_app,
 )
 from http2py.py2request import mk_request_func_from_openapi_spec
 from py2http.util import ModuleNotFoundIgnore
@@ -40,7 +40,7 @@ def get_client_funcs(funcs, p2h_configs=None, h2p_configs=None):
 
 
 def p2h2p_app(funcs, p2h_configs=None, h2p_configs=None):
-    app = mk_http_service(funcs, **(p2h_configs or {}))
+    app = mk_app(funcs, **(p2h_configs or {}))
     # w_funcs = list(_w_funcs(funcs, app.openapi_spec, **(h2p_configs or {})))
     c_funcs = list(client_funcs_from_openapi(app.openapi_spec, **(h2p_configs or {})))
     app.funcs = funcs
@@ -50,7 +50,7 @@ def p2h2p_app(funcs, p2h_configs=None, h2p_configs=None):
 
 #
 # def run_service(funcs, configs=None):
-#     return run_http_service(funcs, **(configs or {}))
+#     return run_app(funcs, **(configs or {}))
 
 
 # equivalence tests ############################################
@@ -80,7 +80,7 @@ def p2h2p_test(
         funcs, p2h_configs=p2h_configs, h2p_configs=h2p_configs
     )
     with run_process(
-        func=run_http_service,
+        func=run_app,
         func_args=(funcs,),
         func_kwargs=dict({}, configs=p2h_configs),
         is_ready=wait_before_entering,

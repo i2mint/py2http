@@ -11,7 +11,7 @@ You have some python objects and want to get an "equivalent" http service from t
 
 Run a basic HTTP service from a list of functions.
 ```
-from py2http.service import run_http_service
+from py2http.service import run_app
 
 # Define or import functions
 def add(a, b):
@@ -33,7 +33,7 @@ divider_from_ten = Divider(10)
 func_list = [add, multiply, divider_from_ten.divide]
 
 # Create an HTTP server
-run_http_service(func_list)
+run_app(func_list)
 ```
 The HTTP server will listen on port 3030 by default.
 ```
@@ -48,14 +48,14 @@ requests.post(url, json=add_args).json()
 
 ## Configuration
 
-`run_http_service` and other entry points accept many configuration values to customize the handling of HTTP requests and responses. Configuration documentation is listed in the file `config.yaml`.
+`run_app` accept many configuration values to customize the handling of HTTP requests and responses. Configuration documentation is listed in the file `config.yaml`.
 
 ## Method transformation
 
 Expose class methods by flattening the init -> method call process.
 
 ```
-from py2http import run_http_service
+from py2http import run_app
 from py2http.decorators import mk_flat
 
 class Adder:
@@ -69,7 +69,7 @@ add = mk_flat(Adder, Adder.add, func_name='add')
 
 func_list = [add]
 
-run_http_service(func_list)
+run_app(func_list)
 ```
 
 ## Input mapping
@@ -175,21 +175,20 @@ TODO
 
 Py2http generates an OpenAPI specification for the server before running. You can use this document with any OpenAPI-compatible client tools. To extract the specification, you can generate a server application object before running it.
 ```
-from aiohttp import web
 import json
-from py2http import mk_http_service, run_aiohttp_service
+from py2http import mk_app, run_app
 
 def add(a, b):
     return a + b
 
 func_list = [add]
 
-app = mk_http_service(func_list)
+app = mk_app(func_list)
 openapi_spec = app.openapi_spec
 
 with open('~/openapi.json', 'w') as fp:
     json.dump(openapi_spec, fp)
 
-web.run_app(app, port=3030)
+run_app(app, port=3030)
 ```
 

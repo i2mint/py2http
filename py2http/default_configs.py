@@ -19,20 +19,20 @@ DFLT_CONTENT_TYPE = 'application/json'
 
 
 @handle_json_req
-def default_input_mapper(inputs):
+def default_input_mapper(**inputs):
     return inputs
 
 
 @send_json_resp
-def default_output_mapper(output, inputs):
+def default_output_mapper(output, **inputs):
     return output
 
 
-def flask_output_mapper(output, inputs):
+def flask_output_mapper(output, **inputs):
     return output
 
 
-def bottle_output_mapper(output, inputs):
+def bottle_output_mapper(output, **inputs):
     response.content_type = 'application/json'
     return json.dumps(output, cls=JsonRespEncoder)
 
@@ -99,6 +99,8 @@ default_configs = {
     'error_handler': default_error_handler,
     'header_inputs': {},
     'middleware': [],
+    'protocol': 'http',
+    'host': 'localhost',
     'port': 3030,
     'http_method': 'post',
     'openapi': {},

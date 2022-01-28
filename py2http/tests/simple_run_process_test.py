@@ -1,4 +1,4 @@
-from py2http.tests.test_p2h2p import get_client_funcs, run_http_service
+from py2http.tests.test_p2h2p import get_client_funcs, run_app
 from py2http.util import run_process
 from time import sleep
 
@@ -58,7 +58,7 @@ def my_print(*args):
 if __name__ == '__main__':
     # print_source(*funcs)
 
-    def test_run_http_service():
+    def test_run_app():
         def is_server_up():
             try:
                 return requests.get(url='http://localhost:3030/ping').status_code == 200
@@ -66,7 +66,7 @@ if __name__ == '__main__':
                 return False
 
         process = run_process(
-            func=run_http_service,
+            func=run_app,
             func_args=(funcs,),
             func_kwargs=dict({}, output_mapper=output_mapper),
             is_ready=is_server_up,
@@ -98,4 +98,4 @@ if __name__ == '__main__':
             print('test')
 
     # test_my_print()
-    test_run_http_service()
+    test_run_app()

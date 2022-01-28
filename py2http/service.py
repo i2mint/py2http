@@ -5,11 +5,11 @@ from copy import deepcopy
 from functools import partial
 from inspect import isawaitable
 import json
-from typing import Callable
+from typing import Any, Callable, Dict, Iterable, Optional, TypedDict, Union
 from types import FunctionType
 import logging
 import os
-from bottle import Bottle
+from bottle import Bottle, run as run_bottle
 import traceback
 
 from i2.errors import InputError, DataError, AuthorizationError
@@ -56,7 +56,7 @@ def func_copy(func) -> Callable:
 
 def mk_route(func, **configs):
     """
-    Generate an route object and an OpenAPI path specification for a function
+    Generate a route object and an OpenAPI path specification for a function
 
     :param func: The function
 
@@ -95,11 +95,11 @@ def mk_route(func, **configs):
     response_schema = getattr(
         output_mapper, 'response_schema', mk_output_schema_from_func(output_mapper),
     )
-    response_content_type = getattr(output_mapper, 'content_type', DFLT_CONTENT_TYPE)
     if not response_schema:
         response_schema = getattr(
             func, 'response_schema', mk_output_schema_from_func(func)
         )
+    response_content_type = getattr(output_mapper, 'content_type', DFLT_CONTENT_TYPE)
 
     def handle_error(func):
         def handle_request(req):
@@ -129,21 +129,23 @@ def mk_route(func, **configs):
     def sync_handle_request(req):
         if framework == BOTTLE:
             req.get_json = lambda *x: req.json
-        inputs = input_mapper(req, request_schema)
+        inputs = input_mapper(req)
         input_args, input_kwargs = get_input_args_and_kwargs(inputs)
         raw_result = func(*input_args, **input_kwargs)
-        return output_mapper(raw_result, input_kwargs)
+        print('COUCOU', input_mapper, inputs)
+        print('COUCOU', output_mapper, raw_result)
+        return output_mapper(raw_result, **inputs)
 
     @handle_error
     async def aiohttp_handle_request(req):
-        inputs = input_mapper(req, request_schema)
+        inputs = input_mapper(req)
         if isawaitable(inputs):  # Pattern: pass-on async property
             inputs = await inputs
         input_args, input_kwargs = get_input_args_and_kwargs(inputs)
         raw_result = func(*input_args, **input_kwargs)
         if isawaitable(raw_result):  # Pattern: pass-on async property
             raw_result = await raw_result
-        final_result = output_mapper(raw_result, input_kwargs)
+        final_result = output_mapper(raw_result, **inputs)
         if isawaitable(final_result):
             final_result = await final_result
         if not isinstance(final_result, web.Response):
@@ -187,7 +189,8 @@ def mk_route(func, **configs):
 
     route = mk_framework_route(http_method, path, method_name)
 
-    path_fields = dict({'x-method_name': method_name}, **extra_path_info(func))
+    extra_path_info = {'description': func.__doc__ or ''}
+    path_fields = dict({'x-method_name': method_name}, **extra_path_info)
     openapi_path = mk_openapi_path(
         path,
         http_method,
@@ -198,134 +201,6 @@ def mk_route(func, **configs):
     )
 
     return route, openapi_path
-
-
-def extra_path_info(func):
-    return {'description': func.__doc__ or ''}
-
-
-def run_http_service(funcs, **configs):
-    """
-    Launches an HTTP server, with a list of functions as route handlers.
-
-    See config.yaml for configuration documentation.
-    """
-    app = mk_http_service(funcs, **configs)
-    port = configs.get('port', app.dflt_port)
-    framework = _get_framework(configs, default_configs)
-    if framework == FLASK:
-        return run_flask_service(app, port)
-    if framework == BOTTLE:
-        return run_bottle_service(app, port)
-    return run_aiohttp_service(app, port)
-
-
-def run_flask_service(app, port):
-    app.run(port=port, debug=True)
-
-
-def run_bottle_service(app, port):
-    app.run(port=port, debug=True)
-
-
-def run_aiohttp_service(app, port):
-    web.run_app(app, port=port)
-
-
-def mk_http_service(funcs, **configs):
-    """
-    Generates an HTTP service object
-    """
-
-    def handle_ping_sync():
-        return {'ping': 'pong'}
-
-    def handle_ping_async(req):
-        # the req param is required for this function to work as an aiohttp route
-        # even though it's not used, so don't remove it
-        return web.json_response({'ping': 'pong'})
-
-    def get_openapi_sync():
-        return openapi_spec
-
-    def get_openapi_async(req):
-        return web.json_response(openapi_spec)
-
-    def mk_flask_service():
-        from flask import Flask
-
-        app_name = mk_config('app_name', None, configs, default_configs)
-        app = Flask(app_name)
-        middleware = mk_config('middleware', None, configs, default_configs)
-        # publish_openapi = mk_config('publish_openapi', None, configs, default_configs)
-        if middleware:
-            app = middleware(app)
-        for route in routes:
-            app.add_url_rule(
-                route.path,
-                route.method_name,
-                route,
-                methods=[route.http_method.upper()],
-            )
-        app.add_url_rule('/ping', 'ping', handle_ping_sync)
-        app.add_url_rule('/openapi', 'openapi', get_openapi_sync)
-        app.openapi_spec = openapi_spec
-        app.dflt_port = mk_config('port', None, configs, default_configs)
-        return app
-
-    def mk_bottle_service():
-        app = Bottle(catchall=False)
-        enable_cors = mk_config('enable_cors', None, configs, default_configs)
-        plugins = mk_config('plugins', None, configs, default_configs)
-        if enable_cors:
-            cors_allowed_origins = mk_config(
-                'cors_allowed_origins', None, configs, default_configs
-            )
-            app.install(CorsPlugin(cors_allowed_origins))
-        publish_openapi = mk_config('publish_openapi', None, configs, default_configs)
-        openapi_insecure = mk_config('openapi_insecure', None, configs, default_configs)
-        if plugins:
-            for plugin in plugins:
-                app.install(plugin)
-        for route in routes:
-            route_http_method = route.http_method.upper()
-            http_methods = (
-                route.http_method if not enable_cors else [OPTIONS, route_http_method]
-            )
-            # print(f'Mounting route: {route.path} {route.http_method.upper()}')
-            app.route(route.path, http_methods, route, route.method_name)
-        app.route(path='/ping', callback=handle_ping_sync, name='ping', skip=plugins)
-        if publish_openapi:
-            skip = plugins if openapi_insecure else None
-            app.route(
-                path='/openapi', callback=get_openapi_sync, name='openapi', skip=skip,
-            )
-        app.openapi_spec = openapi_spec
-        app.dflt_port = mk_config('port', None, configs, default_configs)
-        return app
-
-    def mk_aiohttp_service():
-        middleware = mk_config('middleware', None, configs, default_configs)
-        app = web.Application(middlewares=middleware)
-        app.add_routes(
-            [
-                web.get('/ping', handle_ping_async, name='ping'),
-                web.get('/openapi', get_openapi_async, name='openapi'),
-                *routes,
-            ]
-        )
-        # adding a few more attributes
-        app.openapi_spec = openapi_spec
-        app.dflt_port = mk_config('port', None, configs, default_configs)
-        return app
-
-    routes, openapi_spec = mk_routes_and_openapi_specs(funcs, **configs)
-    framework = _get_framework(configs, default_configs)
-    if framework == FLASK:
-        return mk_flask_service()
-    if framework == BOTTLE:
-        return mk_bottle_service()
-    return mk_aiohttp_service()
 
 
 def mk_routes_and_openapi_specs(funcs, **configs):
@@ -346,89 +221,261 @@ def mk_routes_and_openapi_specs(funcs, **configs):
     return routes, openapi_spec
 
 
-def run_many_services(apps, run_now=False, **configs):
-    framework = _get_framework(configs, default_configs)
-    if framework == BOTTLE:
-        return run_many_bottle_services(apps, run_now=run_now, **configs)
-    return run_many_aiohttp_services(apps, run_now=run_now, **configs)
+Handlers = Iterable[
+    Union[
+        Callable, 
+        TypedDict(
+            'HandlerWithMappers',
+            endpoint=Callable,
+            input_mapper=Optional[Callable],
+            output_mapper=Optional[Callable],
+        )
+    ]
+]
+HandlerSpec = Union[Handlers, Dict[str, Handlers]]
 
 
-def run_many_bottle_services(apps, run_now=False, **configs):
-    from bottle import Bottle, run
+def mk_flask_app(funcs, **configs):
+    from flask import Flask
 
-    parent_app = Bottle(catchall=False)
-    for route, subapp in apps.items():
-        parent_app.mount(route, subapp)
-    if run_now:
-        port = mk_config('port', None, configs, default_configs)
-        run(parent_app, port=port)
-    else:
-        return parent_app
-
-
-def run_many_aiohttp_services(apps, run_now=False, **configs):
-    parent_app = web.Application()
-    for route, subapp in apps.items():
-        parent_app.add_subapp(route, subapp)
-    if run_now:
-        port = mk_config('port', None, configs, default_configs)
-        web.run_app(parent_app, port=port)
-    else:
-        return parent_app
-
-
-##########################################################################################
-###### Old pieces of code, kept around until we're sure we don't want them any more #######
+    routes, openapi_spec = mk_routes_and_openapi_specs(funcs, **configs)
+    app_name = mk_config('app_name', None, configs, default_configs)
+    app = Flask(app_name)
+    middleware = mk_config('middleware', None, configs, default_configs)
+    # publish_openapi = mk_config('publish_openapi', None, configs, default_configs)
+    if middleware:
+        app = middleware(app)
+    for route in routes:
+        app.add_url_rule(
+            route.path,
+            route.method_name,
+            route,
+            methods=[route.http_method.upper()],
+        )
+    app.add_url_rule('/ping', 'ping', lambda: {'ping': 'pong'})
+    app.add_url_rule('/openapi', 'openapi', lambda: openapi_spec)
+    app.openapi_spec = openapi_spec
+    return app
 
 
-def mk_config_nt(keys, *args, **kwargs):
-    """Return a namedtuple of objects created by mk_config for several keys (and same configs).
+def mk_bottle_app(funcs, **configs):
+    from bottle import Bottle
 
-    Advantages:
+    routes, openapi_spec = mk_routes_and_openapi_specs(funcs, **configs)
+    app = Bottle(catchall=False)
+    enable_cors = mk_config('enable_cors', None, configs, default_configs)
+    plugins = mk_config('plugins', None, configs, default_configs)
+    if enable_cors:
+        cors_allowed_origins = mk_config(
+            'cors_allowed_origins', None, configs, default_configs
+        )
+        app.install(CorsPlugin(cors_allowed_origins))
+    publish_openapi = mk_config('publish_openapi', None, configs, default_configs)
+    openapi_insecure = mk_config('openapi_insecure', None, configs, default_configs)
+    if plugins:
+        for plugin in plugins:
+            app.install(plugin)
+    for route in routes:
+        route_http_method = route.http_method.upper()
+        http_methods = (
+            route.http_method if not enable_cors else [OPTIONS, route_http_method]
+        )
+        # print(f'Mounting route: {route.path} {route.http_method.upper()}')
+        app.route(route.path, http_methods, route, route.method_name)
+    app.route(path='/ping', callback=lambda: {'ping': 'pong'}, name='ping', skip=plugins)
+    if publish_openapi:
+        skip = plugins if openapi_insecure else None
+        app.route(
+            path='/openapi', callback=lambda: openapi_spec, name='openapi', skip=skip,
+        )
+    app.openapi_spec = openapi_spec
+    return app
 
-    Can use ths way:
 
-    ```
-    args, validator, postproc = mk_config_nt(['args', 'validator', 'postproc'], **configs)
-    ```
+def mk_aiohttp_app(funcs, **configs):
+    routes, openapi_spec = mk_routes_and_openapi_specs(funcs, **configs)
+    middleware = mk_config('middleware', None, configs, default_configs)
+    app = web.Application(middlewares=middleware)
+    app.add_routes(
+        [
+            web.get('/ping', lambda: web.json_response({'ping': 'pong'}), name='ping'),
+            web.get('/openapi', lambda: web.json_response(openapi_spec), name='openapi'),
+            *routes,
+        ]
+    )
+    # adding a few more attributes
+    app.openapi_spec = openapi_spec
+    return app
 
-    Or this way (useful when we're dealing with many items):
 
-    ```
-    c = mk_config_nt(['args', 'validator', 'postproc'], **configs)
-    c.args
-    c.validator
-    c.postproc
-    ```
-
-    Namedtuple attribute access is as fast as a dict (if not faster in 3.8).
-    One disadvantage, over a custom object is that it's contents are immutable
-    (if we use the `c.attr` form -- the unpacking form is fine since we're dealing
-    with copies).
-
+def mk_app(handler_spec: HandlerSpec, **configs):
     """
-    ConfigNT = namedtuple('ConfigNT', field_names=keys)
-    return ConfigNT(**{k: mk_config(k, *args, **kwargs) for k in keys})
+    Generates an application which exposes web services created from the given python 
+    functions to remotely run them.
+    You can generate a multi-service application defining a route per API or sub 
+    application.
 
-    # input_mapper = mk_config('input_mapper', func, configs, default_configs)
-    # output_mapper = mk_config('output_mapper', func, configs, default_configs)
-    # header_inputs = mk_config('header_inputs', func, configs, default_configs, type=dict)
+    First define a bunch of functions (or handlers) you want to expose as a web service.
+    >>> def foo():
+    ...     return 0
+    ... 
+    >>> def bar():
+    ...     return True
+    ... 
 
-    # 1: Replacement proposal
-    # input_mapper, output_mapper, header_inputs = mk_config_nt(
-    #     ['input_mapper', 'output_mapper', 'header_inputs'],
-    #     func, configs, default_configs)
-    # input_mapper, output_mapper, header_inputs = mk_configs(
-    #     ['input_mapper', 'output_mapper', 'header_inputs'],
-    #     func, configs, default_configs
-    # )
-    # 1: To replace this   # TODO: Test and choose
-    # input_mapper = mk_config('input_mapper', func, configs, default_configs)
-    # output_mapper = mk_config('output_mapper', func, configs, default_configs)
-    # header_inputs = mk_config('header_inputs', func, configs, default_configs)
+    Let's make a single-service application. A single API will be generated with an 
+    endpoint per handler, plus an auto-generated enpoints to ping the API.
+    >>> handlers = [foo, bar]
+    >>> app = mk_app(handlers)
+    >>> app.get_url('bar')
+    '/bar'
+    >>> app.get_url('foo')
+    '/foo'
+    >>> app.get_url('ping')
+    '/ping'
+
+    You can also automatically generate an endpoint to expose the openapi specification
+    of your API by activating the flag "publish_openapi". Publishing the openapi 
+    specification will allow a client application to use the specification object to 
+    build an interface to actually consume the API by wrapping the http layer.
+    >>> app = mk_app(handlers, publish_openapi=True)
+    >>> app.openapi_spec # doctest: +NORMALIZE_WHITESPACE
+    {'openapi': '3.0.2', 'info': {'title': 'default', 'version': '0.1'}, 'servers':
+    [{'url': 'http://localhost:3030'}], 'paths': {'/foo': {'post': {'x-method_name':
+    'foo', 'description': '', 'requestBody': {'required': True, 'content':
+    {'application/json': {'schema': {'type': 'object', 'properties': {}}}}},
+    'responses': {'200': {'description': '', 'content': {'application/json':
+    {'schema': {}}}}}}}, '/bar': {'post': {'x-method_name': 'bar', 'description': '',
+    'requestBody': {'required': True, 'content': {'application/json': {'schema':
+    {'type': 'object', 'properties': {}}}}}, 'responses': {'200': {'description': '',
+    'content': {'application/json': {'schema': {}}}}}}}}}
+    >>> app.get_url('openapi')
+    '/openapi'
+    
+    Let's use http2py to consume the openapi specification
+    >>> from http2py import HttpClient
+    >>> api = HttpClient(openapi_spec=app.openapi_spec)
+    >>> assert(hasattr(api, 'foo'))
+    >>> assert(hasattr(api, 'bar'))
+
+    Now, let's make a multi-service application. You only have to define a route per 
+    API with a list of handlers for each API.
+    >>> handler_spec = {
+    ...     'foo_api': [foo],
+    ...     'bar_api': [bar],
+    ... }
+    >>> app = mk_app(handler_spec, publish_openapi=True)
+    >>> app.get_url('/foo_api')
+    '/foo_api'
+    >>> app.get_url('/bar_api')
+    '/bar_api'
+
+    :param handler_spec: The handler specification. Can be a list of python to expose, 
+    or a dict with a list of functions to expose per route in case of a multi-service 
+    application.
+    :type handler_spec: HandlerSpec
+    :param **configs: The configuration for the application. See config.yaml for 
+    configuration documentation.
+    :type **configs: dict
+    """
+
+    def mk_single_api_app():
+        def add_mappers_to_config():
+            handlers_with_mappers = [x for x in handler_spec if isinstance(x, dict)]
+            input_mappers = {}
+            output_mappers = {}
+            for handler in handlers_with_mappers:
+                endpoint = handler['endpoint']
+                input_mapper = handler.get('input_mapper')
+                if input_mapper:
+                    input_mappers[endpoint.__name__] = input_mapper
+                output_mapper = handler.get('output_mapper')
+                if output_mapper:
+                    output_mappers[endpoint.__name__] = output_mapper
+            if input_mappers:
+                app_configs['input_mapper'] = input_mappers
+            if output_mappers:
+                app_configs['output_mapper'] = output_mappers
+
+        app_configs = dict(configs)
+        handlers = [x['endpoint'] if isinstance(x, dict) else x for x in handler_spec]
+        add_mappers_to_config()
+        if framework == FLASK:
+            return mk_flask_app(handlers, **app_configs)
+        if framework == BOTTLE:
+            return mk_bottle_app(handlers, **app_configs)
+        return mk_aiohttp_app(handlers, **app_configs)
+
+    def mk_multi_api_app():
+        def get_web_framework_objects():
+            if framework == BOTTLE:
+                app = Bottle(catchall=False)
+                return app, app.mount
+            elif framework == AIOHTTP:
+                app = web.Application()
+                return app, app.add_subapp
+            return None
+
+        parent_app, add_subapp_meth = get_web_framework_objects()
+        for route, handlers in handler_spec.items():
+            subapp_configs = dict(configs)
+            if 'openapi' not in subapp_configs:
+                subapp_configs['openapi'] = {}
+            if 'base_url' not in subapp_configs['openapi']:
+                get_config = partial(mk_config, func=None, configs=configs, defaults=default_configs)
+                protocol = get_config('protocol')
+                host = get_config('host')
+                port = get_config('port')
+                subapp_configs['openapi']['base_url'] = f'{protocol}://{host}:{port}'
+            subapp_configs['openapi']['base_url'] = subapp_configs['openapi']['base_url'] + route
+            subapp = mk_app(handlers, **subapp_configs)
+            add_subapp_meth(route, subapp)
+        return parent_app
+
+    framework = _get_framework(configs, default_configs)
+    if isinstance(handler_spec, dict):
+        return mk_multi_api_app()
+    return mk_single_api_app()
+
+
+def run_app(app_obj: Union[HandlerSpec, Any], **configs):
+    """
+    Run an application which exposes web services created from the given python 
+    functions to remotely run them.
+    You can generate a multi-service application defining a route per api or sub 
+    application.
+    You can also generate the application first, then run it using this function.
+
+    :param app_obj: The handler specification or application object. Can be a list of 
+    python to expose, or a dict with a list of functions to expose per route in case 
+    of a multi-service. Can also be a pre-generated application object to run. 
+    :type handler_spec: Union[HandlerSpec, Any]
+    :param **configs: The configuration for the application. See config.yaml for 
+    configuration documentation.
+    :type **configs: dict
+    """
+
+    def get_run_func():
+        framework = _get_framework(configs, default_configs)
+        if framework == BOTTLE:
+            return run_bottle
+        elif framework == AIOHTTP:
+            return web.run_app
+        return None
+
+    if isinstance(app_obj, Iterable):
+        app = mk_app(app_obj, **configs)
+        run_app(app, **configs)
+    else:
+        run_func = get_run_func()
+        host = mk_config('host', None, configs, default_configs)
+        port = mk_config('port', None, configs, default_configs)
+        run_func(app_obj, host=host, port=port)
 
 
 def _get_framework(configs, default_configs):
     framework = mk_config('framework', None, configs, default_configs)
+    if framework not in (FLASK, BOTTLE, AIOHTTP):
+        raise ValueError(f'The Web Framework "{framework}" is not supported by py2http')
     os.environ['PY2HTTP_FRAMEWORK'] = framework
     return framework

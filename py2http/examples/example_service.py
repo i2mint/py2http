@@ -1,4 +1,4 @@
-from py2http import run_http_service
+from py2http import run_app
 
 
 def add(a, b: int = 0):
@@ -24,4 +24,4 @@ example_functions = [add, no_args, multiplier_instance.multiply]
 
 
 if __name__ == '__main__':
-    run_http_service(example_functions)
+    run_app(example_functions)

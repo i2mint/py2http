@@ -19,7 +19,7 @@ from i2.signatures import set_signature_of_func, ch_signature_to_all_pk, Sig
 from i2.deco import ch_func_to_all_pk
 from i2.errors import ModuleNotFoundIgnore
 
-from py2http.schema_tools import validate_input
+from py2http.schema_tools import mk_input_schema_from_func, validate_input
 from py2http.types import (
     WriteOpResult,
     ParameterKind,
@@ -968,43 +968,50 @@ def route(route_name):
     return add_attrs(route=route_name)
 
 
-def validate_and_invoke_mapper(func, inputs, request_schema):
+def validate_and_invoke_mapper(func, inputs):
+    request_schema = getattr(func, 'request_schema', None)
     if request_schema:
         validate_input(inputs, request_schema)
-    return func(inputs)
+    return func(**inputs)
 
 
 def handle_json_req(func):
-    def input_mapper(req, request_schema):
+    @wraps(func)
+    def input_mapper(req):
         inputs = _get_req_inputs(
             req, getattr(req, 'get_json', getattr(req, 'json', None))
         )
-        return validate_and_invoke_mapper(func, inputs, request_schema)
+        return validate_and_invoke_mapper(func, inputs)
 
-    input_mapper.content_type = 'json'
+    func.request_schema = mk_input_schema_from_func(func)
+    func.content_type = 'json'
     return input_mapper
 
 
 def handle_multipart_req(func):
     # TODO: make this work with Bottle
-    def input_mapper(req, request_schema):
+    @wraps(func)
+    def input_mapper(req):
         inputs = _get_req_inputs(req, req.post)
-        return validate_and_invoke_mapper(func, inputs, request_schema)
+        return validate_and_invoke_mapper(func, inputs)
 
-    input_mapper.content_type = 'multipart'
+    func.request_schema = mk_input_schema_from_func(func)
+    func.content_type = 'multipart'
     return input_mapper
 
 
 def handle_raw_req(func):
-    def input_mapper(req, request_schema):
+    @wraps(func)
+    def input_mapper(req):
         inputs = _get_req_inputs(req, req.text)
-        return validate_and_invoke_mapper(func, inputs, request_schema)
+        return validate_and_invoke_mapper(func, inputs)
 
-    input_mapper.content_type = 'raw'
+    func.request_schema = mk_input_schema_from_func(func)
+    func.content_type = 'raw'
     return input_mapper
 
 
-def base_output_mapper(output, input_kwargs):
+def base_output_mapper(output, **inputs):
     return output
 
 
@@ -1060,16 +1067,16 @@ def send_json_resp(func):
     framework = os.getenv('PY2HTTP_FRAMEWORK', BOTTLE)
     if framework == AIOHTTP:
 
-        async def output_mapper(output, input_kwargs):
-            mapped_output = func(output, input_kwargs)
+        async def output_mapper(output, **input_kwargs):
+            mapped_output = func(output, **input_kwargs)
             if isawaitable(mapped_output):
                 mapped_output = await mapped_output
             return web.json_response(mapped_output, dumps=JsonRespEncoder().encode)
 
     else:
 
-        def output_mapper(output, input_kwargs):
-            mapped_output = func(output, input_kwargs)
+        def output_mapper(output, **input_kwargs):
+            mapped_output = func(output, **input_kwargs)
             return dumps(mapped_output, cls=JsonRespEncoder)
 
     output_mapper.content_type = 'application/json'
@@ -1078,7 +1085,7 @@ def send_json_resp(func):
 
 def send_html_resp(func):
     # TODO bottle support
-    # async def output_mapper(output, input_kwargs):
+    # async def output_mapper(output, **input_kwargs):
     #     mapped_output = func(output, input_kwargs)
     #     if isawaitable(mapped_output):
     #         mapped_output = await mapped_output
@@ -1092,7 +1099,7 @@ def send_binary_resp(func):
     # TODO async support
     BINARY_CONTENT_TYPE = 'application/octet-stream'
 
-    def output_mapper(output, input_kwargs):
+    def output_mapper(output, **input_kwargs):
         from bottle import response
 
         mapped_output = func(output, input_kwargs)

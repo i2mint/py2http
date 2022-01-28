@@ -1,4 +1,4 @@
-from py2http import run_http_service
+from py2http import run_app
 from py2http.config import BOTTLE
 from py2http.decorators import binary_output
 from py2http.default_configs import bottle_output_mapper
@@ -37,7 +37,7 @@ example_functions = [add, no_args, multiplier_instance.multiply, binary_string]
 
 
 if __name__ == '__main__':
-    run_http_service(
+    run_app(
         example_functions,
         framework=BOTTLE,
         http_method='POST',
