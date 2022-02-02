@@ -15,8 +15,7 @@ from typing import Awaitable, get_origin
 from collections.abc import Awaitable as _Awaitable
 import os
 
-from i2.signatures import set_signature_of_func, ch_signature_to_all_pk, Sig
-from i2.deco import ch_func_to_all_pk
+from i2.signatures import set_signature_of_func, ch_signature_to_all_pk, Sig, ch_func_to_all_pk
 from i2.errors import ModuleNotFoundIgnore
 
 from py2http.schema_tools import mk_input_schema_from_func, validate_input
@@ -569,7 +568,7 @@ class Decora(Decorator):
             cls.__new__ = __new__
 
 
-from i2.deco import copy_func, params_of
+from i2.signatures import copy_func, params_of
 
 
 def replace_with_params(target=None, /, *, source=None, inplace=False):
