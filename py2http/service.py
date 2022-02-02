@@ -132,8 +132,6 @@ def mk_route(func, **configs):
         inputs = input_mapper(req)
         input_args, input_kwargs = get_input_args_and_kwargs(inputs)
         raw_result = func(*input_args, **input_kwargs)
-        print('COUCOU', input_mapper, inputs)
-        print('COUCOU', output_mapper, raw_result)
         return output_mapper(raw_result, **inputs)
 
     @handle_error

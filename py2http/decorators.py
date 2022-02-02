@@ -15,8 +15,12 @@ from typing import Awaitable, get_origin
 from collections.abc import Awaitable as _Awaitable
 import os
 
-from i2.signatures import set_signature_of_func, ch_signature_to_all_pk, Sig
-from i2.signatures import ch_func_to_all_pk
+from i2.signatures import (
+    set_signature_of_func,
+    ch_signature_to_all_pk,
+    Sig,
+    ch_func_to_all_pk,
+)
 from i2.errors import ModuleNotFoundIgnore
 
 from py2http.schema_tools import mk_input_schema_from_func, validate_input
@@ -85,7 +89,7 @@ class Literal:
 #   to declare such a param, instead of the current state which will consider all non-Literals
 #   as a DecoParam.
 class Decorator:
-    """ A "transparent" decorator meant to be used to subclass into specialized decorators.
+    """A "transparent" decorator meant to be used to subclass into specialized decorators.
 
     The signature of the wrapped function is carried to the __call__ of the decorated instance.
 
@@ -239,7 +243,7 @@ class DecoParam:
 from typing import Optional
 import re
 
-token_p = re.compile(r'\w+')
+token_p = re.compile(r"\w+")
 
 
 # TODO: Research how to keep the params in the order they were declared.
@@ -331,7 +335,7 @@ class ParamsSpecifier:
     def __init__(
         self,
         _annotations: Optional[dict] = None,
-        _names: str = '',
+        _names: str = "",
         _dflt_default=None,
         _kind=Parameter.KEYWORD_ONLY,
         **name_and_dflts,
@@ -345,35 +349,35 @@ class ParamsSpecifier:
         self._dflt_default = _dflt_default
         self._kind = _kind
 
-        if hasattr(self, '__annotations__'):
+        if hasattr(self, "__annotations__"):
             self.__annotations__.update(_annotations)
         else:
             self.__annotations__ = _annotations
 
         reserved = {
-            '_annotations',
-            '_names',
-            '_dflt_default',
-            'from_func',
-            '_extract_params',
-            '_to_signature',
-            '_kind',
-            'to_parameter_obj_list',
+            "_annotations",
+            "_names",
+            "_dflt_default",
+            "from_func",
+            "_extract_params",
+            "_to_signature",
+            "_kind",
+            "to_parameter_obj_list",
         }
         _name_and_dflts = {
             k: v
             for k, v in self.__class__.__dict__.items()
-            if not k.startswith('__') and k not in reserved
+            if not k.startswith("__") and k not in reserved
         }
         _name_and_dflts.update(name_and_dflts or {})
         self._name_and_dflts = _name_and_dflts
 
-        annots = set(getattr(self, '__annotations__', {}))
-        annots |= set(getattr(self.__class__, '__annotations__', {}))
+        annots = set(getattr(self, "__annotations__", {}))
+        annots |= set(getattr(self.__class__, "__annotations__", {}))
 
         _reserved = reserved.intersection(set(_name_and_dflts) | set(annots))
         if _reserved:
-            raise ValueError(f'Sorry, {_reserved} are reserved names')
+            raise ValueError(f"Sorry, {_reserved} are reserved names")
 
     @classmethod
     def from_func(cls, func, _dflt_default=None):
@@ -392,12 +396,14 @@ class ParamsSpecifier:
             for x in params
         }
         return cls(
-            _annotations=_annotations, _dflt_default=_dflt_default, **_name_and_dflts,
+            _annotations=_annotations,
+            _dflt_default=_dflt_default,
+            **_name_and_dflts,
         )
 
     def _extract_params(self):
         _name_and_dflts = self._name_and_dflts
-        annots = getattr(self, '__annotations__', {})
+        annots = getattr(self, "__annotations__", {})
         for name in set(annots) - set(_name_and_dflts):  # annots_not_in_attrs
             yield dict(
                 name=name,
@@ -421,11 +427,11 @@ class ParamsSpecifier:
         return list(self._extract_params())
 
     def __repr__(self):
-        return f'{self()}'
+        return f"{self()}"
 
 
 class Decora(Decorator):
-    """ A version of Decorator where you can define your subclasses by defininig attributes
+    """A version of Decorator where you can define your subclasses by defininig attributes
     of the subclass (instead of writing a manual __new__ method).
 
     Here's a typical use, as a decorator factory...
@@ -532,7 +538,7 @@ class Decora(Decorator):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         if (
-            '__new__' not in cls.__dict__
+            "__new__" not in cls.__dict__
         ):  # if __new__ hasn't been defined in the subclass...
             params = []
             # cls_annots = getattr(cls, '__annotations__', {})
@@ -547,8 +553,8 @@ class Decora(Decorator):
             for p in params:
                 setattr(cls, p.name, p.default)
             params = [
-                Parameter('self', PK),
-                Parameter('func', PK, default=None),
+                Parameter("self", PK),
+                Parameter("func", PK, default=None),
             ] + params
             cls._injected_deco_params = [p.name for p in params]
 
@@ -557,8 +563,8 @@ class Decora(Decorator):
                     cls._injected_deco_params
                 ):
                     raise TypeError(
-                        'TypeError: __new__() got unexpected keyword arguments: '
-                        f'{kwargs.keys() - cls._injected_deco_params}'
+                        "TypeError: __new__() got unexpected keyword arguments: "
+                        f"{kwargs.keys() - cls._injected_deco_params}"
                     )
                 if func is None:
                     return partial(cls, **kwargs)
@@ -569,7 +575,7 @@ class Decora(Decorator):
             cls.__new__ = __new__
 
 
-from i2.deco import copy_func, params_of
+from i2.signatures import copy_func, params_of
 
 
 def replace_with_params(target=None, /, *, source=None, inplace=False):
@@ -617,7 +623,8 @@ def replace_with_params(target=None, /, *, source=None, inplace=False):
                         target
                     )  # make a copy of the function so we don't
                 target.__signature__ = Signature(
-                    new_params, return_annotation=signature(target).return_annotation,
+                    new_params,
+                    return_annotation=signature(target).return_annotation,
                 )
                 return target
             else:
@@ -685,7 +692,7 @@ def methodizer(func=None, *, instance_params=()):
             kwargs.update(kwargs_from_self)
             return func(**kwargs)
 
-        set_signature_of_func(method, ['self'] + list(method_argnames))
+        set_signature_of_func(method, ["self"] + list(method_argnames))
 
         method.__name__ = func.__name__
 
@@ -697,14 +704,14 @@ from warnings import warn
 
 def _handle_exisisting_method_name(cls, method, if_method_exists):
     if hasattr(cls, method.__name__):
-        msg = f'{cls} already has a method named {method.__name__}'
-        if if_method_exists == 'raise':
+        msg = f"{cls} already has a method named {method.__name__}"
+        if if_method_exists == "raise":
             raise ValueError(msg)
-        elif if_method_exists == 'warn':
-            warn(msg + ' ... Will overwrite anyway.')
-        elif if_method_exists != 'ignore':
+        elif if_method_exists == "warn":
+            warn(msg + " ... Will overwrite anyway.")
+        elif if_method_exists != "ignore":
             raise ValueError(
-                f'if_method_exists value not recognized: {if_method_exists}'
+                f"if_method_exists value not recognized: {if_method_exists}"
             )
 
 
@@ -712,7 +719,7 @@ def _handle_exisisting_method_name(cls, method, if_method_exists):
 #   - signatures have different orders every time (need to use ordered containers)
 #   - Values not computed correctly
 def inject_methodized_funcs(
-    cls=None, *, funcs=(), instance_params=None, if_method_exists='raise'
+    cls=None, *, funcs=(), instance_params=None, if_method_exists="raise"
 ):
     """
 
@@ -753,7 +760,7 @@ def inject_methodized_funcs(
     # C.g(y, x)
     # C.h(kwargs, c, x)
     """
-    raise NotImplementedError('Not working yet: Come back to it!')
+    raise NotImplementedError("Not working yet: Come back to it!")
     if cls is None:
         return partial(
             inject_methodized_funcs,
@@ -778,7 +785,7 @@ def flatten_callables(*callables, func_name=None):
     """
     Flatten a pipeline of calls into one function.
     """
-    raise NotImplementedError('Meant to be a generalization of mk_flat')
+    raise NotImplementedError("Meant to be a generalization of mk_flat")
     for call in callables:
         pass
 
@@ -796,7 +803,7 @@ def flatten_callables(*callables, func_name=None):
     # return flat_func
 
 
-def mk_flat(cls, method, *, func_name='flat_func'):
+def mk_flat(cls, method, *, func_name="flat_func"):
     """
     Flatten a simple cls->instance->method call pipeline into one function.
 
@@ -866,7 +873,7 @@ def mk_flat(cls, method, *, func_name='flat_func'):
     sig_cls = Sig(cls)
     sig_method = Sig(method)
     sig_flat = sig_cls + sig_method
-    sig_flat = sig_flat.remove_names(['self'])
+    sig_flat = sig_flat.remove_names(["self"])
     sig_flat = sig_flat.replace(return_annotation=sig_method.return_annotation)
 
     def flat_func(**kwargs):
@@ -921,7 +928,7 @@ def flatten_methods(methods: dict, decorator=None, validate_name_unicity=True):
     if validate_name_unicity:
         nb_function_names = len({x.__name__: x for x in functions})
         if nb_function_names != len(functions):
-            raise ValueError(f'Some function names are duplicated in {methods}')
+            raise ValueError(f"Some function names are duplicated in {methods}")
     return functions
 
 
@@ -958,10 +965,10 @@ def add_attrs(**attrs):
     return add_attrs_to_func
 
 
-http_get = add_attrs(http_method='get')
-http_post = add_attrs(http_method='post')
-http_put = add_attrs(http_method='put')
-http_delete = add_attrs(http_method='delete')
+http_get = add_attrs(http_method="get")
+http_post = add_attrs(http_method="post")
+http_put = add_attrs(http_method="put")
+http_delete = add_attrs(http_method="delete")
 
 
 def route(route_name):
@@ -969,7 +976,7 @@ def route(route_name):
 
 
 def validate_and_invoke_mapper(func, inputs):
-    request_schema = getattr(func, 'request_schema', None)
+    request_schema = getattr(func, "request_schema", None)
     if request_schema:
         validate_input(inputs, request_schema)
     return func(**inputs)
@@ -979,12 +986,12 @@ def handle_json_req(func):
     @wraps(func)
     def input_mapper(req):
         inputs = _get_req_inputs(
-            req, getattr(req, 'get_json', getattr(req, 'json', None))
+            req, getattr(req, "get_json", getattr(req, "json", None))
         )
         return validate_and_invoke_mapper(func, inputs)
 
     func.request_schema = mk_input_schema_from_func(func)
-    func.content_type = 'json'
+    func.content_type = "json"
     return input_mapper
 
 
@@ -996,7 +1003,7 @@ def handle_multipart_req(func):
         return validate_and_invoke_mapper(func, inputs)
 
     func.request_schema = mk_input_schema_from_func(func)
-    func.content_type = 'multipart'
+    func.content_type = "multipart"
     return input_mapper
 
 
@@ -1007,7 +1014,7 @@ def handle_raw_req(func):
         return validate_and_invoke_mapper(func, inputs)
 
     func.request_schema = mk_input_schema_from_func(func)
-    func.content_type = 'raw'
+    func.content_type = "raw"
     return input_mapper
 
 
@@ -1055,7 +1062,8 @@ class ProposalJsonRespEncoder(JSONEncoder):
     # Note: Subclass and replace _pre_process_obj to get different preprocessing
     # Note: To get control from init, definte init to set _pre_process_obj
     _pre_process_obj = partial(
-        _json_reponse_preproc, serializer_for_type=_mk_default_serializer_for_type(),
+        _json_reponse_preproc,
+        serializer_for_type=_mk_default_serializer_for_type(),
     )
 
     def default(self, o):
@@ -1064,7 +1072,7 @@ class ProposalJsonRespEncoder(JSONEncoder):
 
 
 def send_json_resp(func):
-    framework = os.getenv('PY2HTTP_FRAMEWORK', BOTTLE)
+    framework = os.getenv("PY2HTTP_FRAMEWORK", BOTTLE)
     if framework == AIOHTTP:
 
         async def output_mapper(output, **input_kwargs):
@@ -1079,7 +1087,7 @@ def send_json_resp(func):
             mapped_output = func(output, **input_kwargs)
             return dumps(mapped_output, cls=JsonRespEncoder)
 
-    output_mapper.content_type = 'application/json'
+    output_mapper.content_type = "application/json"
     return output_mapper
 
 
@@ -1091,13 +1099,13 @@ def send_html_resp(func):
     #         mapped_output = await mapped_output
     #     return Response(text=mapped_output, content_type='text/html')
 
-    func.content_type = 'text/html'
+    func.content_type = "text/html"
     return func
 
 
 def send_binary_resp(func):
     # TODO async support
-    BINARY_CONTENT_TYPE = 'application/octet-stream'
+    BINARY_CONTENT_TYPE = "application/octet-stream"
 
     def output_mapper(output, **input_kwargs):
         from bottle import response
@@ -1107,7 +1115,7 @@ def send_binary_resp(func):
         return mapped_output
 
     output_mapper.content_type = BINARY_CONTENT_TYPE
-    output_mapper.response_schema = {'type': 'binary'}
+    output_mapper.response_schema = {"type": "binary"}
     return output_mapper
 
 
@@ -1126,14 +1134,14 @@ def mk_input_mapper(input_map):
 
 
 def _get_req_inputs(req, get_body_func):
-    kwargs = getattr(req, 'defaults', {})
-    if getattr(req, 'has_body', getattr(req, 'data', getattr(req, 'json', None))):
+    kwargs = getattr(req, "defaults", {})
+    if getattr(req, "has_body", getattr(req, "data", getattr(req, "json", None))):
         body = get_body_func()
         if isinstance(body, str):
             body = dict({}, text=body)
         kwargs = body
-    if getattr(req, 'query', None):
+    if getattr(req, "query", None):
         kwargs = dict(kwargs, **req.query)
-    if getattr(req, 'token', None):
+    if getattr(req, "token", None):
         kwargs = dict(kwargs, **req.token)
     return kwargs
