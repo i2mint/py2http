@@ -221,13 +221,13 @@ def mk_routes_and_openapi_specs(funcs, **configs):
 
 Handlers = Iterable[
     Union[
-        Callable, 
+        Callable,
         TypedDict(
             'HandlerWithMappers',
             endpoint=Callable,
             input_mapper=Optional[Callable],
             output_mapper=Optional[Callable],
-        )
+        ),
     ]
 ]
 HandlerSpec = Union[Handlers, Dict[str, Handlers]]
@@ -245,10 +245,7 @@ def mk_flask_app(funcs, **configs):
         app = middleware(app)
     for route in routes:
         app.add_url_rule(
-            route.path,
-            route.method_name,
-            route,
-            methods=[route.http_method.upper()],
+            route.path, route.method_name, route, methods=[route.http_method.upper()],
         )
     app.add_url_rule('/ping', 'ping', lambda: {'ping': 'pong'})
     app.add_url_rule('/openapi', 'openapi', lambda: openapi_spec)
@@ -280,7 +277,9 @@ def mk_bottle_app(funcs, **configs):
         )
         # print(f'Mounting route: {route.path} {route.http_method.upper()}')
         app.route(route.path, http_methods, route, route.method_name)
-    app.route(path='/ping', callback=lambda: {'ping': 'pong'}, name='ping', skip=plugins)
+    app.route(
+        path='/ping', callback=lambda: {'ping': 'pong'}, name='ping', skip=plugins
+    )
     if publish_openapi:
         skip = plugins if openapi_insecure else None
         app.route(
@@ -297,7 +296,9 @@ def mk_aiohttp_app(funcs, **configs):
     app.add_routes(
         [
             web.get('/ping', lambda: web.json_response({'ping': 'pong'}), name='ping'),
-            web.get('/openapi', lambda: web.json_response(openapi_spec), name='openapi'),
+            web.get(
+                '/openapi', lambda: web.json_response(openapi_spec), name='openapi'
+            ),
             *routes,
         ]
     )
@@ -420,12 +421,16 @@ def mk_app(handler_spec: HandlerSpec, **configs):
             if 'openapi' not in subapp_configs:
                 subapp_configs['openapi'] = {}
             if 'base_url' not in subapp_configs['openapi']:
-                get_config = partial(mk_config, func=None, configs=configs, defaults=default_configs)
+                get_config = partial(
+                    mk_config, func=None, configs=configs, defaults=default_configs
+                )
                 protocol = get_config('protocol')
                 host = get_config('host')
                 port = get_config('port')
                 subapp_configs['openapi']['base_url'] = f'{protocol}://{host}:{port}'
-            subapp_configs['openapi']['base_url'] = subapp_configs['openapi']['base_url'] + route
+            subapp_configs['openapi']['base_url'] = (
+                subapp_configs['openapi']['base_url'] + route
+            )
             subapp = mk_app(handlers, **subapp_configs)
             add_subapp_meth(route, subapp)
         return parent_app

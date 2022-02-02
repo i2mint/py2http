@@ -14,7 +14,7 @@ from .service import (
     # run_many_bottle_services,
     # run_many_aiohttp_services,
     mk_app,
-    run_app
+    run_app,
 )
 from .decorators import (
     Decorator,

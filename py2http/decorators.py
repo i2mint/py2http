@@ -15,7 +15,12 @@ from typing import Awaitable, get_origin
 from collections.abc import Awaitable as _Awaitable
 import os
 
-from i2.signatures import set_signature_of_func, ch_signature_to_all_pk, Sig, ch_func_to_all_pk
+from i2.signatures import (
+    set_signature_of_func,
+    ch_signature_to_all_pk,
+    Sig,
+    ch_func_to_all_pk,
+)
 from i2.errors import ModuleNotFoundIgnore
 
 from py2http.schema_tools import mk_input_schema_from_func, validate_input
