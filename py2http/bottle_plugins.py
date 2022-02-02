@@ -8,15 +8,10 @@ OPTIONS = 'OPTIONS'
 
 class JWTPlugin:
     def __init__(
-        self,
-        secret: str,
-        verify: bool = True,
-        mapper: dict = None,
-        algorithm: str = 'RS256',
+        self, secret: str, verify: bool = True, mapper: dict = None,
     ):
         self._secret = secret
         self._verify = verify
-        self._algorithm = algorithm
         self._mapper = mapper if mapper else {}
 
     def __call__(self, handler):
@@ -30,7 +25,7 @@ class JWTPlugin:
                     token,
                     self._secret,
                     options={'verify_signature': self._verify},
-                    algorithms=[self._algorithm],
+                    algorithms=['HS256', 'RS256'],
                 )
                 for k, v in self._mapper.items():
                     if k in decoded:
