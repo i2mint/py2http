@@ -16,7 +16,11 @@ from i2.errors import InputError, DataError, AuthorizationError
 
 from py2http.bottle_plugins import CorsPlugin, OPTIONS
 from py2http.config import mk_config, FLASK, AIOHTTP, BOTTLE
-from py2http.default_configs import default_configs, DFLT_CONTENT_TYPE, default_input_mapper
+from py2http.default_configs import (
+    default_configs,
+    DFLT_CONTENT_TYPE,
+    default_input_mapper,
+)
 from py2http.openapi_utils import (
     add_paths_to_spec,
     mk_openapi_path,
@@ -230,11 +234,7 @@ Handlers = Iterable[
         ),
     ]
 ]
-SubAppSpec = TypedDict(
-    'SubAppSpec',
-    handlers=Handlers,
-    config=Dict[str, Any],
-)
+SubAppSpec = TypedDict('SubAppSpec', handlers=Handlers, config=Dict[str, Any],)
 AppSpec = Union[Handlers, Dict[str, Union[Handlers, SubAppSpec]]]
 
 

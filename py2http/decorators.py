@@ -1155,9 +1155,11 @@ def mk_handlers(methods: Iterable, decorator=None):
                     return cls
             meth = meth.__func__  # fallback to __qualname__ parsing
         if inspect.isfunction(meth):
-            cls = getattr(inspect.getmodule(meth),
-                        meth.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0],
-                        None)
+            cls = getattr(
+                inspect.getmodule(meth),
+                meth.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0],
+                None,
+            )
             if isinstance(cls, type):
                 sub_classes = cls.__subclasses__()
                 if len(sub_classes) == 1:
