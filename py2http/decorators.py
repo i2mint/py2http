@@ -5,6 +5,7 @@ from inspect import (
     isawaitable,
     iscoroutinefunction,
 )
+import inspect
 from typing import Iterable, Callable, Union, Mapping
 from functools import partial, wraps, update_wrapper
 from json import JSONDecodeError, JSONEncoder, dumps
@@ -975,6 +976,9 @@ def validate_and_invoke_mapper(func, inputs):
 
 
 def handle_json_req(func):
+    func.request_schema = mk_input_schema_from_func(func)
+    func.content_type = 'json'
+
     @wraps(func)
     def input_mapper(req):
         inputs = _get_req_inputs(
@@ -982,31 +986,31 @@ def handle_json_req(func):
         )
         return validate_and_invoke_mapper(func, inputs)
 
-    func.request_schema = mk_input_schema_from_func(func)
-    func.content_type = 'json'
     return input_mapper
 
 
 def handle_multipart_req(func):
+    func.request_schema = mk_input_schema_from_func(func)
+    func.content_type = 'multipart'
+
     # TODO: make this work with Bottle
     @wraps(func)
     def input_mapper(req):
         inputs = _get_req_inputs(req, req.post)
         return validate_and_invoke_mapper(func, inputs)
 
-    func.request_schema = mk_input_schema_from_func(func)
-    func.content_type = 'multipart'
     return input_mapper
 
 
 def handle_raw_req(func):
+    func.request_schema = mk_input_schema_from_func(func)
+    func.content_type = 'raw'
+
     @wraps(func)
     def input_mapper(req):
         inputs = _get_req_inputs(req, req.text)
         return validate_and_invoke_mapper(func, inputs)
 
-    func.request_schema = mk_input_schema_from_func(func)
-    func.content_type = 'raw'
     return input_mapper
 
 
@@ -1136,3 +1140,34 @@ def _get_req_inputs(req, get_body_func):
     if getattr(req, 'token', None):
         kwargs = dict(kwargs, **req.token)
     return kwargs
+
+
+def mk_handlers(methods: Iterable, decorator=None):
+    def get_class_that_defined_method(meth):
+        if inspect.ismethod(meth):
+            for cls in inspect.getmro(meth.__self__.__class__):
+                if meth.__name__ in cls.__dict__:
+                    return cls
+            meth = meth.__func__  # fallback to __qualname__ parsing
+        if inspect.isfunction(meth):
+            cls = getattr(inspect.getmodule(meth),
+                        meth.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0],
+                        None)
+            if isinstance(cls, type):
+                sub_classes = cls.__subclasses__()
+                if len(sub_classes) == 1:
+                    return sub_classes[0]
+                return cls
+        return None
+
+    if not decorator:
+        decorator = lambda x: x
+    handlers = []
+    for item in methods:
+        has_mappers = isinstance(item, dict)
+        method = item['endpoint'] if has_mappers else item
+        cls = get_class_that_defined_method(method)
+        endpoint = decorator(mk_flat(cls, method, func_name=method.__name__))
+        handler = dict(item, endpoint=endpoint) if has_mappers else endpoint
+        handlers.append(handler)
+    return handlers

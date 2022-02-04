@@ -16,7 +16,7 @@ from i2.errors import InputError, DataError, AuthorizationError
 
 from py2http.bottle_plugins import CorsPlugin, OPTIONS
 from py2http.config import mk_config, FLASK, AIOHTTP, BOTTLE
-from py2http.default_configs import default_configs, DFLT_CONTENT_TYPE
+from py2http.default_configs import default_configs, DFLT_CONTENT_TYPE, default_input_mapper
 from py2http.openapi_utils import (
     add_paths_to_spec,
     mk_openapi_path,
@@ -88,7 +88,7 @@ def mk_route(func, **configs):
 
     exclude_request_keys = header_inputs.keys()
     request_schema = getattr(input_mapper, 'request_schema', None)
-    if request_schema is None:
+    if request_schema is None or input_mapper.__name__ == default_input_mapper.__name__:
         request_schema = mk_input_schema_from_func(
             func, exclude_keys=exclude_request_keys
         )
@@ -230,7 +230,12 @@ Handlers = Iterable[
         )
     ]
 ]
-HandlerSpec = Union[Handlers, Dict[str, Handlers]]
+SubAppSpec = TypedDict(
+    'SubAppSpec',
+    handlers=Handlers,
+    config=Dict[str, Any],
+)
+AppSpec = Union[Handlers, Dict[str, Union[Handlers, SubAppSpec]]]
 
 
 def mk_flask_app(funcs, **configs):
@@ -306,7 +311,7 @@ def mk_aiohttp_app(funcs, **configs):
     return app
 
 
-def mk_app(handler_spec: HandlerSpec, **configs):
+def mk_app(app_spec: AppSpec, **configs):
     """
     Generates an application which exposes web services created from the given python 
     functions to remotely run them.
@@ -379,7 +384,7 @@ def mk_app(handler_spec: HandlerSpec, **configs):
 
     def mk_single_api_app():
         def add_mappers_to_config():
-            handlers_with_mappers = [x for x in handler_spec if isinstance(x, dict)]
+            handlers_with_mappers = [x for x in app_spec if isinstance(x, dict)]
             input_mappers = {}
             output_mappers = {}
             for handler in handlers_with_mappers:
@@ -396,7 +401,7 @@ def mk_app(handler_spec: HandlerSpec, **configs):
                 app_configs['output_mapper'] = output_mappers
 
         app_configs = dict(configs)
-        handlers = [x['endpoint'] if isinstance(x, dict) else x for x in handler_spec]
+        handlers = [x['endpoint'] if isinstance(x, dict) else x for x in app_spec]
         add_mappers_to_config()
         if framework == FLASK:
             return mk_flask_app(handlers, **app_configs)
@@ -415,8 +420,13 @@ def mk_app(handler_spec: HandlerSpec, **configs):
             return None
 
         parent_app, add_subapp_meth = get_web_framework_objects()
-        for route, handlers in handler_spec.items():
-            subapp_configs = dict(configs)
+        for route, route_spec in app_spec.items():
+            if isinstance(route_spec, dict):
+                handlers = route_spec['handlers']
+                subapp_configs = route_spec['config']
+            else:
+                handlers = route_spec
+                subapp_configs = deepcopy(configs)
             if 'openapi' not in subapp_configs:
                 subapp_configs['openapi'] = {}
             if 'base_url' not in subapp_configs['openapi']:
@@ -431,12 +441,12 @@ def mk_app(handler_spec: HandlerSpec, **configs):
         return parent_app
 
     framework = _get_framework(configs, default_configs)
-    if isinstance(handler_spec, dict):
+    if isinstance(app_spec, dict):
         return mk_multi_api_app()
     return mk_single_api_app()
 
 
-def run_app(app_obj: Union[HandlerSpec, Any], **configs):
+def run_app(app_obj: Union[AppSpec, Any], **configs):
     """
     Run an application which exposes web services created from the given python 
     functions to remotely run them.
