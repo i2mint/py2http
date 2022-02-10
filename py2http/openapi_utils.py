@@ -5,7 +5,7 @@ from py2http.util import conditional_logger, CreateProcess, lazyprop
 
 oatype_for_pytype = {
     str: 'string',
-    int: 'number',
+    int: 'integer',
     float: 'number',
     list: 'array',
     dict: 'object',
@@ -196,6 +196,8 @@ def mk_arg_schema(arg):
         sub_args = arg.get('items', None)
         if sub_args:
             output['items'] = mk_arg_schema(sub_args)
+    elif val_type == 'number':
+        output = {'type': val_type, 'format': 'float'}
     elif arg_type == BINARY:
         output = {'type': 'string', 'format': 'binary'}
     else:
