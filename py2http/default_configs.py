@@ -92,7 +92,7 @@ def default_error_handler(error: Exception):
 
 
 default_configs = {
-    'app_name': 'OtoSense',
+    'app_name': 'HTTP Service',
     'framework': BOTTLE,
     'input_mapper': default_input_mapper,
     'output_mapper': default_output_mapper,

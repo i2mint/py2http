@@ -192,3 +192,43 @@ with open('~/openapi.json', 'w') as fp:
 run_app(app, port=3030)
 ```
 
+## Configuration
+
+Functions that generate an HTTP service, such as `run_app`, accept a number of keyword arguments for configuration. The available configuration arguments are listed below with their defaults.
+
+* `framework=py2http.config.BOTTLE` The HTTP framework to use.
+* `input_mapper=py2http.default_configs.default_input_mapper` A function to map an HTTP request to a dict of input arguments.
+* `output_mapper=py2http.default_configs.default_output_mapper` A function to map the output of a function to an HTTP response.
+* `error_handler=py2http.default_configs.default_error_handler` A function to map an exception to an HTTP response.
+* `header_inputs={}` A dict of object properties in JSON schema format describing keys that should be excluded from request body definitions. These inputs are expected to be extracted from the request headers in the input mapper.
+* `protocol='http'` The protocol to include in the OpenAPI specification, either `'http'` or `'https'`
+* `host='localhost'` The hostname the server can be reached at, to include in the OpenAPI specification.
+* `port=3030` The TCP port to listen on.
+* `http_method='post'` The default HTTP method for exposing functions, if a function does not specify its method.
+* `openapi={}` A dict with several configuration options specific to the OpenAPI specification, described below.
+* `logger=None` An object that implements a `log` method.
+* `app_name='HTTP Service'` The name of the application (Flask only).
+* `middleware=[]` A list of middlewares to run (aiohttp only).
+* `plugins=[]` A list of plugins to install (bottle only).
+* `enable_cors=False` Whether to enable CORS features.
+* `cors_allowed_origins='*'` If CORS is enabled, the value to pass in the Access-Control-Allow-Origin header.
+* `publish_openapi=False` Whether to add a GET /openapi route to the app that returns the OpenAPI specification.
+* `openapi_insecure=False` Whether to skip middlewares and plugins for the /openapi route (disabling any authentication).
+* `publish_swagger=False` Whether to add a GET route to the app that returns a Swagger HTML interface. 
+* `swagger_url='/swagger'` The URL of the swagger route.
+* `swagger_title='Swagger'` The title to display on the Swagger HTML page.
+
+OpenAPI configuration:
+
+These values will be put in the OpenAPI specification document. All values are optional.
+
+* `title` The title of the application.
+* `version` The version number of the application.
+* `auth`: A dict specifying the authentication details to include in the document, to make it easier for clients to automate authentication.
+* `auth['auth_type']` Either 'jwt' or 'api_key'.
+* `auth['login_details']` A dict describing how a client can log in (for jwt authentication only).
+* `auth['login_details']['login_url']` The URL of the login route.
+* `auth['login_details']['refresh_url']`: The URL of the refresh route.
+* `auth['login_details']['login_inputs']`: A list of strings with the keys expected by the login endpoint.
+* `auth['login_details']['refresh_inputs']`: A list of strings with the keys expected by the refresh endpoint.
+* `auth['login_details']['outputs']`: A list of strings with the keys returned by the login/refresh endpoints.,
