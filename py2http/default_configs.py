@@ -110,4 +110,7 @@ default_configs = {
     'cors_allowed_origins': '*',
     'publish_openapi': False,
     'openapi_insecure': False,
+    'publish_swagger': False,
+    'swagger_url': '/swagger',
+    'swagger_title': 'Swagger'
 }
