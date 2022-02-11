@@ -112,5 +112,5 @@ default_configs = {
     'openapi_insecure': False,
     'publish_swagger': False,
     'swagger_url': '/swagger',
-    'swagger_title': 'Swagger'
+    'swagger_title': 'Swagger',
 }
