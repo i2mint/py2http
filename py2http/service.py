@@ -296,7 +296,12 @@ def mk_bottle_app(funcs, **configs):
     if publish_swagger:
         swagger_url = mk_config('swagger_url', None, configs, default_configs)
         swagger_title = mk_config('swagger_title', None, configs, default_configs)
-        api_doc(app, config_spec=json.dumps(openapi_spec), url_prefix=swagger_url, title=swagger_title)
+        api_doc(
+            app,
+            config_spec=json.dumps(openapi_spec),
+            url_prefix=swagger_url,
+            title=swagger_title,
+        )
     return app
 
 
