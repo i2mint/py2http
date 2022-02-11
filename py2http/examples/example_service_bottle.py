@@ -43,4 +43,5 @@ if __name__ == '__main__':
         http_method='POST',
         input_mapper=input_mapper,
         output_mapper=bottle_output_mapper,
+        publish_swagger=True
     )

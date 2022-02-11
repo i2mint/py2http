@@ -11,6 +11,7 @@ import logging
 import os
 from bottle import Bottle, run as run_bottle
 import traceback
+from swagger_ui import api_doc
 
 from i2.errors import InputError, DataError, AuthorizationError
 
@@ -267,6 +268,7 @@ def mk_bottle_app(funcs, **configs):
         app.install(CorsPlugin(cors_allowed_origins))
     publish_openapi = mk_config('publish_openapi', None, configs, default_configs)
     openapi_insecure = mk_config('openapi_insecure', None, configs, default_configs)
+    publish_swagger = mk_config('publish_swagger', None, configs, default_configs)
     if plugins:
         for plugin in plugins:
             app.install(plugin)
@@ -286,6 +288,10 @@ def mk_bottle_app(funcs, **configs):
             path='/openapi', callback=lambda: openapi_spec, name='openapi', skip=skip,
         )
     app.openapi_spec = openapi_spec
+    if publish_swagger:
+        swagger_url = mk_config('swagger_url', None, configs, default_configs)
+        swagger_title = mk_config('swagger_title', None, configs, default_configs)
+        api_doc(app, config_spec=json.dumps(openapi_spec), url_prefix=swagger_url, title=swagger_title)
     return app
 
 
