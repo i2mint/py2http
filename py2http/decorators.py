@@ -645,6 +645,8 @@ def params_replacer(
 
 
 # TODO: generalize instance_attrs to instance_params
+# TODO: Use i2.double_up_as_factory?
+# TODO: Consider i2.wrapper methodizer
 def methodizer(func=None, *, instance_params=()):
     """A decorator to get method versions of functions.
 
