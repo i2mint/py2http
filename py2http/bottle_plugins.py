@@ -1,20 +1,48 @@
+"""Plugins for adding middleware functionality to Bottle apps.
+"""
+
 from bottle import request, response, abort
+from functools import wraps
 import json
 import jwt
+from typing import Iterable
 from warnings import warn
 
 OPTIONS = 'OPTIONS'
 
 
 class JWTPlugin:
+    """A plugin for validating JWTs and extracting their payloads.
+
+    After optionally validating a JWT found in the request header, will assign a dict with the JWT claims
+    to request.token.
+    """
+
     def __init__(
-        self, secret: str, verify: bool = True, mapper: dict = None,
+        self,
+        secret: str = '',
+        verify: bool = True,
+        mapper: dict = None,
+        ignore_methods: Iterable[str] = None,
     ):
+        """Creates a new JWTPlugin instance.
+
+        :param secret: (Optional) The JWT public key (RS256) or synchronous secret (HS256) used to validate tokens.
+        :param verify: (Optional) If True, will verify JWT signatures against the provided secret,
+        and reject unverified requests.
+        :param mapper: (Optional) A dict that specifies how to map JWT claim value names in the output.
+        :param ignore_methods: (Optional) A list of method names for the plugin to ignore.
+        """
         self._secret = secret
         self._verify = verify
         self._mapper = mapper if mapper else {}
+        self._ignore_methods = ignore_methods if ignore_methods else []
 
     def __call__(self, handler):
+        if self._ignore_methods and handler.method_name in self._ignore_methods:
+            return handler
+
+        @wraps(handler)
         def wrapped_handler(*args, **kwargs):
             if request.method == OPTIONS:
                 return handler(*args, *kwargs)
