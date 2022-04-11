@@ -802,6 +802,7 @@ def flatten_callables(*callables, func_name=None):
     #
     # return flat_func
 
+
 # TODO: signature of flat function doesn't reflect actual call restrictions
 # TODO: Change default func_name to be dynamically, taking method as default
 def mk_flat(cls, method, *, func_name='flat_func'):
