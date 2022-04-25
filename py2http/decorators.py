@@ -21,7 +21,8 @@ from i2.signatures import (
     ch_signature_to_all_pk,
     Sig,
     ch_func_to_all_pk,
-    PK, KO
+    PK,
+    KO,
 )
 from i2.errors import ModuleNotFoundIgnore
 
@@ -880,11 +881,7 @@ def mk_flat(cls, method, *, func_name: str = 'flat_func', cls_cache_key: str = N
     sig_method = Sig(method)
     sig_flat = sig_cls + sig_method
     if cls_cache_key:
-        param = dict(
-            name=cls_cache_key,
-            kind=KO,
-            default=None
-        )
+        param = dict(name=cls_cache_key, kind=KO, default=None)
         sig_flat = sig_flat.add_params([param])
     sig_flat = sig_flat.remove_names(['self'])
     sig_flat = sig_flat.replace(return_annotation=sig_method.return_annotation)
@@ -916,7 +913,9 @@ def mk_flat(cls, method, *, func_name: str = 'flat_func', cls_cache_key: str = N
             method_params = kwargs
         else:
             method_params = {k: kwargs[k] for k in kwargs if k in sig_method.parameters}
-        cls_cache_id = next(iter(v for k, v in kwargs.items() if k == cls_cache_key), None)
+        cls_cache_id = next(
+            iter(v for k, v in kwargs.items() if k == cls_cache_key), None
+        )
         if cls_cache_id is not None:
             instance = _instantiate(cls, cache_id=cls_cache_id, **cls_params)
         else:
@@ -1193,7 +1192,9 @@ def mk_handlers(methods: Iterable, *, decorator=None, cls_cache_key=None):
         has_mappers = isinstance(item, dict)
         method = item['endpoint'] if has_mappers else item
         cls = get_class_that_defined_method(method)
-        endpoint = decorator(mk_flat(cls, method, func_name=method.__name__, cls_cache_key=cls_cache_key))
+        endpoint = decorator(
+            mk_flat(cls, method, func_name=method.__name__, cls_cache_key=cls_cache_key)
+        )
         handler = dict(item, endpoint=endpoint) if has_mappers else endpoint
         handlers.append(handler)
     return handlers
