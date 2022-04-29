@@ -17,8 +17,13 @@ class JWTPlugin:
     After optionally validating a JWT found in the request header, will assign a dict with the JWT claims
     to request.token.
     """
+
     def __init__(
-        self, secret: str = '', verify: bool = True, mapper: dict = None, ignore_methods: Iterable[str] = None
+        self,
+        secret: str = '',
+        verify: bool = True,
+        mapper: dict = None,
+        ignore_methods: Iterable[str] = None,
     ):
         """Creates a new JWTPlugin instance.
 

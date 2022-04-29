@@ -7,7 +7,7 @@ from inspect import (
 )
 import inspect
 from typing import Iterable, Callable, Union, Mapping
-from functools import partial, wraps, update_wrapper
+from functools import lru_cache, partial, wraps, update_wrapper
 from json import JSONDecodeError, JSONEncoder, dumps
 from aiohttp import web
 
@@ -21,6 +21,8 @@ from i2.signatures import (
     ch_signature_to_all_pk,
     Sig,
     ch_func_to_all_pk,
+    PK,
+    KO,
 )
 from i2.errors import ModuleNotFoundIgnore
 
@@ -30,11 +32,6 @@ from py2http.types import (
     ParameterKind,
     Params,
     HasParams,
-    PK,
-    VP,
-    VK,
-    PO,
-    KO,
     var_param_kinds,
 )
 from py2http.config import AIOHTTP, BOTTLE
@@ -645,6 +642,8 @@ def params_replacer(
 
 
 # TODO: generalize instance_attrs to instance_params
+# TODO: Use i2.double_up_as_factory?
+# TODO: Consider i2.wrapper methodizer
 def methodizer(func=None, *, instance_params=()):
     """A decorator to get method versions of functions.
 
@@ -801,7 +800,14 @@ def flatten_callables(*callables, func_name=None):
     # return flat_func
 
 
-def mk_flat(cls, method, *, func_name='flat_func'):
+@lru_cache()
+def _instantiate(cls, *, cache_id, **kwargs):
+    return cls(**kwargs)
+
+
+# TODO: signature of flat function doesn't reflect actual call restrictions
+# TODO: Change default func_name to be dynamically, taking method as default
+def mk_flat(cls, method, *, func_name: str = 'flat_func', cls_cache_key: str = None):
     """
     Flatten a simple cls->instance->method call pipeline into one function.
 
@@ -824,6 +830,9 @@ def mk_flat(cls, method, *, func_name='flat_func'):
     :param cls: A class
     :param method: A method of this class
     :param func_name: The name of the function (will be "flat_func" by default)
+    :param cls_cache_key: The name of the kwarg used to manage cache. If not None, the
+    same instance of cls will be used for all the flattened method called with the same
+    value for this kwarg.
     :return:
 
     >>> class MultiplierClass:
@@ -871,6 +880,9 @@ def mk_flat(cls, method, *, func_name='flat_func'):
     sig_cls = Sig(cls)
     sig_method = Sig(method)
     sig_flat = sig_cls + sig_method
+    if cls_cache_key:
+        param = dict(name=cls_cache_key, kind=KO, default=None)
+        sig_flat = sig_flat.add_params([param])
     sig_flat = sig_flat.remove_names(['self'])
     sig_flat = sig_flat.replace(return_annotation=sig_method.return_annotation)
 
@@ -901,7 +913,13 @@ def mk_flat(cls, method, *, func_name='flat_func'):
             method_params = kwargs
         else:
             method_params = {k: kwargs[k] for k in kwargs if k in sig_method.parameters}
-        instance = cls(**cls_params)  # TODO: implement caching option
+        cls_cache_id = next(
+            iter(v for k, v in kwargs.items() if k == cls_cache_key), None
+        )
+        if cls_cache_id is not None:
+            instance = _instantiate(cls, cache_id=cls_cache_id, **cls_params)
+        else:
+            instance = cls(**cls_params)
         return getattr(instance, method.__name__)(**method_params)
 
     flat_func.__dict__ = method.__dict__.copy()  # to copy attributes of method
@@ -1147,7 +1165,7 @@ def _get_req_inputs(req, get_body_func):
     return kwargs
 
 
-def mk_handlers(methods: Iterable, decorator=None):
+def mk_handlers(methods: Iterable, *, decorator=None, cls_cache_key=None):
     def get_class_that_defined_method(meth):
         if inspect.ismethod(meth):
             for cls in inspect.getmro(meth.__self__.__class__):
@@ -1174,7 +1192,9 @@ def mk_handlers(methods: Iterable, decorator=None):
         has_mappers = isinstance(item, dict)
         method = item['endpoint'] if has_mappers else item
         cls = get_class_that_defined_method(method)
-        endpoint = decorator(mk_flat(cls, method, func_name=method.__name__))
+        endpoint = decorator(
+            mk_flat(cls, method, func_name=method.__name__, cls_cache_key=cls_cache_key)
+        )
         handler = dict(item, endpoint=endpoint) if has_mappers else endpoint
         handlers.append(handler)
     return handlers

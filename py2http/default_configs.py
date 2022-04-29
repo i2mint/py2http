@@ -2,7 +2,6 @@ from aiohttp import web
 from bottle import response
 import json
 import os
-import traceback
 
 from i2.errors import (
     AuthorizationError,
