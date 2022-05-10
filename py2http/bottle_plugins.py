@@ -24,7 +24,7 @@ class JWTPlugin:
         verify: bool = True,
         mapper: dict = None,
         ignore_methods: Iterable[str] = None,
-        algorithms: Iterable[str] = None
+        algorithms: Iterable[str] = None,
     ):
         """Creates a new JWTPlugin instance.
 
