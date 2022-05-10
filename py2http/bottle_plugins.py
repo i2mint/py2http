@@ -24,6 +24,7 @@ class JWTPlugin:
         verify: bool = True,
         mapper: dict = None,
         ignore_methods: Iterable[str] = None,
+        algorithms: Iterable[str] = None
     ):
         """Creates a new JWTPlugin instance.
 
@@ -37,6 +38,7 @@ class JWTPlugin:
         self._verify = verify
         self._mapper = mapper if mapper else {}
         self._ignore_methods = ignore_methods if ignore_methods else []
+        self._algorithms = algorithms if algorithms else ['HS256']
 
     def __call__(self, handler):
         if self._ignore_methods and handler.method_name in self._ignore_methods:
@@ -53,7 +55,7 @@ class JWTPlugin:
                     token,
                     self._secret,
                     options={'verify_signature': self._verify},
-                    algorithms=['HS256', 'RS256'],
+                    algorithms=self._algorithms,
                 )
                 for k, v in self._mapper.items():
                     if k in decoded:
