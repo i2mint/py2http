@@ -802,6 +802,7 @@ def flatten_callables(*callables, func_name=None):
 
 @lru_cache()
 def _instantiate(cls, *, cache_id, **kwargs):
+    del cache_id  # to emphasize we don't use it and to shut pylint up
     return cls(**kwargs)
 
 
@@ -831,7 +832,7 @@ def mk_flat(cls, method, *, func_name: str = 'flat_func', cls_cache_key: str = N
     :param method: A method of this class
     :param func_name: The name of the function (will be "flat_func" by default)
     :param cls_cache_key: The name of the kwarg used to manage cache. If not None, the
-    same instance of cls will be used for all the flattened method called with the same
+    same instance of ``cls`` will be used for all the flattened method called with the same
     value for this kwarg.
     :return:
 
