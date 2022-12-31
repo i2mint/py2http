@@ -5,6 +5,7 @@
    module_docs/py2http
    module_docs/py2http/bottle_plugins
    module_docs/py2http/config
+   module_docs/py2http/constants
    module_docs/py2http/decorators
    module_docs/py2http/default_configs
    module_docs/py2http/diagnosis

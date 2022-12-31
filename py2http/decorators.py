@@ -1006,8 +1006,10 @@ def _handle_req(func, content_type):
     @wraps(func)
     def input_mapper(req):
         if content_type != req.content_type:
-            raise RuntimeError(f"The incoming request's content is of type \
-{req.content_type}, when {content_type} is expected.")
+            raise RuntimeError(
+                f"The incoming request's content is of type \
+{req.content_type}, when {content_type} is expected."
+            )
         inputs = _get_inputs_from_request(req)
         return _validate_and_invoke_mapper(func, inputs)
 
