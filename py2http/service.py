@@ -32,12 +32,13 @@ from py2http.schema_tools import (
     mk_output_schema_from_func,
 )
 from py2http.util import TypeAsserter
+from py2http.constants import JSON_CONTENT_TYPE
 
 
 def method_not_found(method_name):
     raise web.HTTPNotFound(
         text=json.dumps({'error': f'method {method_name} not found'}),
-        content_type='application/json',
+        content_type=JSON_CONTENT_TYPE,
     )
 
 
@@ -97,6 +98,7 @@ def mk_route(func, **configs):
         request_schema = mk_input_schema_from_func(
             func, exclude_keys=exclude_request_keys
         )
+    request_content_type = getattr(input_mapper, 'content_type', DFLT_CONTENT_TYPE)
     response_schema = getattr(
         output_mapper, 'response_schema', mk_output_schema_from_func(output_mapper),
     )
@@ -198,6 +200,7 @@ def mk_route(func, **configs):
         path,
         http_method,
         request_schema=request_schema,
+        request_content_type=request_content_type,
         response_schema=response_schema,
         response_content_type=response_content_type,
         path_fields=path_fields,

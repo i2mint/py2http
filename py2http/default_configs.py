@@ -13,6 +13,7 @@ from i2.errors import (
 
 from py2http.decorators import handle_json_req, send_json_resp, JsonRespEncoder
 from py2http.config import AIOHTTP, BOTTLE, FLASK
+from py2http.constants import JSON_CONTENT_TYPE
 
 DFLT_CONTENT_TYPE = 'application/json'
 
@@ -32,14 +33,14 @@ def flask_output_mapper(output, **inputs):
 
 
 def bottle_output_mapper(output, **inputs):
-    response.content_type = 'application/json'
+    response.content_type = JSON_CONTENT_TYPE
     return json.dumps(output, cls=JsonRespEncoder)
 
 
 def _raise_http_client_error(error, message, reason=None):
     raise error(
         text=json.dumps({'error': message}),
-        content_type='application/json',
+        content_type=JSON_CONTENT_TYPE,
         reason=reason,
     )
 

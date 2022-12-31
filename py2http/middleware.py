@@ -1,5 +1,6 @@
 import json
 from warnings import warn
+from py2http.constants import JSON_CONTENT_TYPE
 
 
 def mk_jwt_middleware(secret, verify=True):
@@ -26,7 +27,7 @@ def mk_jwt_middleware(secret, verify=True):
                             'error': f'Invalid authentication token "{token}", {str(error)}'
                         }
                     ),
-                    content_type='application/json',
+                    content_type=JSON_CONTENT_TYPE,
                 )
             warn(f'Invalid JWT: {token}')
             return await handler(req)
@@ -44,7 +45,7 @@ def mk_superadmin_middleware(secret):
             return await handler(req)
         return web.HTTPUnauthorized(
             text=json.dumps({'error': 'invalid API key'}),
-            content_type='application/json',
+            content_type=JSON_CONTENT_TYPE,
         )
 
     return middleware

@@ -7,6 +7,7 @@ import json
 import jwt
 from typing import Iterable
 from warnings import warn
+from py2http.constants import JSON_CONTENT_TYPE
 
 OPTIONS = 'OPTIONS'
 
@@ -65,7 +66,7 @@ class JWTPlugin:
             except jwt.DecodeError as error:
                 if self._verify:
                     response.status = 401
-                    response.content_type = 'application/json'
+                    response.content_type = JSON_CONTENT_TYPE
                     return json.dumps(
                         {
                             'error': f'Invalid authentication token "{token}", {str(error)}'
@@ -87,7 +88,7 @@ class ApiKeyAuthPlugin:
             if auth_header == self._api_key:
                 return handler(*args, **kwargs)
             response.status = 401
-            response.content_type = 'application/json'
+            response.content_type = JSON_CONTENT_TYPE
             return json.dumps({'error': 'invalid API key'})
 
         return wrapped_handler

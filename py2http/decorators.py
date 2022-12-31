@@ -8,7 +8,7 @@ from inspect import (
 import inspect
 from typing import Iterable, Callable, Union, Mapping
 from functools import lru_cache, partial, wraps, update_wrapper
-from json import JSONDecodeError, JSONEncoder, dumps
+from json import JSONEncoder, dumps
 from aiohttp import web
 
 # import collections
@@ -18,7 +18,6 @@ import os
 
 from i2.signatures import (
     set_signature_of_func,
-    ch_signature_to_all_pk,
     Sig,
     ch_func_to_all_pk,
     PK,
@@ -27,14 +26,14 @@ from i2.signatures import (
 from i2.errors import ModuleNotFoundIgnore
 
 from py2http.schema_tools import mk_input_schema_from_func, validate_input
-from py2http.types import (
-    WriteOpResult,
-    ParameterKind,
-    Params,
-    HasParams,
-    var_param_kinds,
-)
 from py2http.config import AIOHTTP, BOTTLE
+from py2http.constants import (
+    JSON_CONTENT_TYPE,
+    BINARY_CONTENT_TYPE,
+    FILE_CONTENT_TYPE,
+    RAW_CONTENT_TYPE,
+    HTML_CONTENT_TYPE,
+)
 
 
 def ensure_awaitable_return_annot(func):
@@ -992,50 +991,43 @@ def route(route_name):
     return add_attrs(route=route_name)
 
 
-def validate_and_invoke_mapper(func, inputs):
+def _validate_and_invoke_mapper(func, inputs):
     request_schema = getattr(func, 'request_schema', None)
     if request_schema:
         validate_input(inputs, request_schema)
     return func(**inputs)
 
 
-def handle_json_req(func):
+def _handle_req(func, content_type):
     func.request_schema = mk_input_schema_from_func(func)
-    func.content_type = 'json'
-
-    @wraps(func)
-    def input_mapper(req):
-        inputs = _get_req_inputs(
-            req, getattr(req, 'get_json', getattr(req, 'json', None))
-        )
-        return validate_and_invoke_mapper(func, inputs)
-
-    return input_mapper
-
-
-def handle_multipart_req(func):
-    func.request_schema = mk_input_schema_from_func(func)
-    func.content_type = 'multipart'
+    func.content_type = content_type
 
     # TODO: make this work with Bottle
     @wraps(func)
     def input_mapper(req):
-        inputs = _get_req_inputs(req, req.post)
-        return validate_and_invoke_mapper(func, inputs)
+        if content_type != req.content_type:
+            raise RuntimeError(f"The incoming request's content is of type \
+{req.content_type}, when {content_type} is expected.")
+        inputs = _get_inputs_from_request(req)
+        return _validate_and_invoke_mapper(func, inputs)
 
     return input_mapper
+
+
+def handle_json_req(func):
+    return _handle_req(func, JSON_CONTENT_TYPE)
+
+
+def handle_binary_req(func):
+    return _handle_req(func, BINARY_CONTENT_TYPE)
+
+
+def handle_file_req(func):
+    return _handle_req(func, FILE_CONTENT_TYPE)
 
 
 def handle_raw_req(func):
-    func.request_schema = mk_input_schema_from_func(func)
-    func.content_type = 'raw'
-
-    @wraps(func)
-    def input_mapper(req):
-        inputs = _get_req_inputs(req, req.text)
-        return validate_and_invoke_mapper(func, inputs)
-
-    return input_mapper
+    return _handle_req(func, RAW_CONTENT_TYPE)
 
 
 def base_output_mapper(output, **inputs):
@@ -1106,7 +1098,7 @@ def send_json_resp(func):
             mapped_output = func(output, **input_kwargs)
             return dumps(mapped_output, cls=JsonRespEncoder)
 
-    output_mapper.content_type = 'application/json'
+    output_mapper.content_type = JSON_CONTENT_TYPE
     return output_mapper
 
 
@@ -1118,18 +1110,16 @@ def send_html_resp(func):
     #         mapped_output = await mapped_output
     #     return Response(text=mapped_output, content_type='text/html')
 
-    func.content_type = 'text/html'
+    func.content_type = HTML_CONTENT_TYPE
     return func
 
 
 def send_binary_resp(func):
     # TODO async support
-    BINARY_CONTENT_TYPE = 'application/octet-stream'
-
     def output_mapper(output, **input_kwargs):
         from bottle import response
 
-        mapped_output = func(output, input_kwargs)
+        mapped_output = func(output, **input_kwargs)
         response.content_type = BINARY_CONTENT_TYPE
         return mapped_output
 
@@ -1152,18 +1142,39 @@ def mk_input_mapper(input_map):
     return decorator
 
 
-def _get_req_inputs(req, get_body_func):
-    kwargs = getattr(req, 'defaults', {})
-    if getattr(req, 'has_body', getattr(req, 'data', getattr(req, 'json', None))):
-        body = get_body_func()
-        if isinstance(body, str):
-            body = dict({}, text=body)
-        kwargs = body
-    if getattr(req, 'query', None):
-        kwargs = dict(kwargs, **req.query)
-    if getattr(req, 'token', None):
-        kwargs = dict(kwargs, **req.token)
-    return kwargs
+def _get_inputs_from_request(request):
+    defaults = getattr(request, 'defaults', {})
+    if request.method == 'POST':
+        if request.content_type == JSON_CONTENT_TYPE:
+            inputs = request.get_json() or {}
+        elif request.content_type == BINARY_CONTENT_TYPE:
+            inputs = request.body.getvalue()
+        elif request.content_type == FILE_CONTENT_TYPE:
+            inputs = request.post()
+        else:
+            inputs = request.text()
+        return dict(defaults, **inputs)
+    else:
+        raise NotImplementedError('Only POST is supported for now')
+
+    # def get_req_attr(attr):
+    #     return getattr(request, attr, {}) or {}  # "or {}" because the attr can exist with value None
+
+    # content_type = request.content_type
+    # if content_type == RAW_CONTENT_TYPE:
+    #     inputs = dict(text=request.text)
+    # else:
+    #     inputs = dict(
+    #         **get_req_attr('defaults'),
+    #         **get_req_attr('json'),
+    #     )
+    #     if content_type != JSON_CONTENT_TYPE:
+    #         param_key = 'files' if content_type == FILE_CONTENT_TYPE else 'forms'
+    #         inputs = dict(
+    #             inputs,
+    #             **get_req_attr(param_key),
+    #         )
+    return inputs
 
 
 def mk_handlers(methods: Iterable, *, decorator=None, cls_cache_key=None):
