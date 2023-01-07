@@ -6,11 +6,13 @@ from inspect import (
     iscoroutinefunction,
 )
 import inspect
+import json
+import pickle
 from typing import Iterable, Callable, Union, Mapping
 from functools import lru_cache, partial, wraps, update_wrapper
 from json import JSONEncoder, dumps
 from aiohttp import web
-
+from bottle import response
 # import collections
 from typing import Awaitable, get_origin
 from collections.abc import Awaitable as _Awaitable
@@ -30,7 +32,7 @@ from py2http.config import AIOHTTP, BOTTLE
 from py2http.constants import (
     JSON_CONTENT_TYPE,
     BINARY_CONTENT_TYPE,
-    FILE_CONTENT_TYPE,
+    FORM_CONTENT_TYPE,
     RAW_CONTENT_TYPE,
     HTML_CONTENT_TYPE,
 )
@@ -1005,12 +1007,10 @@ def _handle_req(func, content_type):
     # TODO: make this work with Bottle
     @wraps(func)
     def input_mapper(req):
-        if content_type != req.content_type:
-            raise RuntimeError(
-                f"The incoming request's content is of type \
-{req.content_type}, when {content_type} is expected."
-            )
-        inputs = _get_inputs_from_request(req)
+        if content_type not in req.content_type:
+            raise RuntimeError(f"The incoming request's content is of type \
+{req.content_type}, when {content_type} is expected.")
+        inputs = _get_inputs_from_request(req, content_type)
         return _validate_and_invoke_mapper(func, inputs)
 
     return input_mapper
@@ -1024,8 +1024,8 @@ def handle_binary_req(func):
     return _handle_req(func, BINARY_CONTENT_TYPE)
 
 
-def handle_file_req(func):
-    return _handle_req(func, FILE_CONTENT_TYPE)
+def handle_form_req(func):
+    return _handle_req(func, FORM_CONTENT_TYPE)
 
 
 def handle_raw_req(func):
@@ -1097,10 +1097,31 @@ def send_json_resp(func):
     else:
 
         def output_mapper(output, **input_kwargs):
+            response.content_type = JSON_CONTENT_TYPE
             mapped_output = func(output, **input_kwargs)
             return dumps(mapped_output, cls=JsonRespEncoder)
 
     output_mapper.content_type = JSON_CONTENT_TYPE
+    return output_mapper
+
+
+def send_binary_resp(func):
+    def output_mapper(output, **input_kwargs):
+        response.content_type = BINARY_CONTENT_TYPE
+        mapped_output = func(output, **input_kwargs)
+        return pickle.dumps(mapped_output)
+
+    output_mapper.content_type = BINARY_CONTENT_TYPE
+    output_mapper.response_schema = {'type': 'binary'}
+    return output_mapper
+
+
+def send_raw_resp(func):
+    def output_mapper(output, **input_kwargs):
+        response.content_type = RAW_CONTENT_TYPE
+        return func(output, **input_kwargs)
+
+    output_mapper.content_type = RAW_CONTENT_TYPE
     return output_mapper
 
 
@@ -1116,18 +1137,15 @@ def send_html_resp(func):
     return func
 
 
-def send_binary_resp(func):
-    # TODO async support
-    def output_mapper(output, **input_kwargs):
-        from bottle import response
+# def send_form_resp(func):
+#     # TODO async support
+#     def output_mapper(output, **input_kwargs):
+#         response.content_type = FORM_CONTENT_TYPE
+#         return func(output, **input_kwargs)
 
-        mapped_output = func(output, **input_kwargs)
-        response.content_type = BINARY_CONTENT_TYPE
-        return mapped_output
-
-    output_mapper.content_type = BINARY_CONTENT_TYPE
-    output_mapper.response_schema = {'type': 'binary'}
-    return output_mapper
+#     output_mapper.content_type = FORM_CONTENT_TYPE
+#     output_mapper.response_schema = {'type': 'binary'}
+#     return output_mapper
 
 
 def binary_output(func):
@@ -1144,39 +1162,27 @@ def mk_input_mapper(input_map):
     return decorator
 
 
-def _get_inputs_from_request(request):
+def _get_inputs_from_request(request, content_type):
     defaults = getattr(request, 'defaults', {})
     if request.method == 'POST':
-        if request.content_type == JSON_CONTENT_TYPE:
-            inputs = request.get_json() or {}
-        elif request.content_type == BINARY_CONTENT_TYPE:
-            inputs = request.body.getvalue()
-        elif request.content_type == FILE_CONTENT_TYPE:
-            inputs = request.post()
-        else:
-            inputs = request.text()
+        if content_type == JSON_CONTENT_TYPE:
+            inputs = request.json
+        elif content_type == RAW_CONTENT_TYPE:
+            data = request.body.read().decode('utf-8')
+            inputs = json.loads(data)
+        elif content_type == BINARY_CONTENT_TYPE:
+            data = request.body.read()
+            inputs = pickle.loads(data)
+        elif content_type == FORM_CONTENT_TYPE:
+            fields = json.loads(request.files.pop('__fields').file.read().decode('utf-8'))
+            binaries = {
+                k: v.file.read()
+                for k, v in request.files.items()
+            }
+            inputs = dict(fields, **binaries)
         return dict(defaults, **inputs)
     else:
         raise NotImplementedError('Only POST is supported for now')
-
-    # def get_req_attr(attr):
-    #     return getattr(request, attr, {}) or {}  # "or {}" because the attr can exist with value None
-
-    # content_type = request.content_type
-    # if content_type == RAW_CONTENT_TYPE:
-    #     inputs = dict(text=request.text)
-    # else:
-    #     inputs = dict(
-    #         **get_req_attr('defaults'),
-    #         **get_req_attr('json'),
-    #     )
-    #     if content_type != JSON_CONTENT_TYPE:
-    #         param_key = 'files' if content_type == FILE_CONTENT_TYPE else 'forms'
-    #         inputs = dict(
-    #             inputs,
-    #             **get_req_attr(param_key),
-    #         )
-    return inputs
 
 
 def mk_handlers(methods: Iterable, *, decorator=None, cls_cache_key=None):

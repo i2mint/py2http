@@ -15,7 +15,7 @@ from py2http.decorators import handle_json_req, send_json_resp, JsonRespEncoder
 from py2http.config import AIOHTTP, BOTTLE, FLASK
 from py2http.constants import JSON_CONTENT_TYPE
 
-DFLT_CONTENT_TYPE = 'application/json'
+DFLT_CONTENT_TYPE = JSON_CONTENT_TYPE
 
 
 @handle_json_req

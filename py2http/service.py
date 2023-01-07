@@ -134,8 +134,6 @@ def mk_route(func, **configs):
 
     @handle_error
     def sync_handle_request(req):
-        if framework == BOTTLE:
-            req.get_json = lambda *x: req.json
         inputs = input_mapper(req)
         input_args, input_kwargs = get_input_args_and_kwargs(inputs)
         raw_result = func(*input_args, **input_kwargs)
