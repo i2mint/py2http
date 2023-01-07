@@ -13,6 +13,7 @@ from functools import lru_cache, partial, wraps, update_wrapper
 from json import JSONEncoder, dumps
 from aiohttp import web
 from bottle import response
+
 # import collections
 from typing import Awaitable, get_origin
 from collections.abc import Awaitable as _Awaitable
@@ -1008,8 +1009,10 @@ def _handle_req(func, content_type):
     @wraps(func)
     def input_mapper(req):
         if content_type not in req.content_type:
-            raise RuntimeError(f"The incoming request's content is of type \
-{req.content_type}, when {content_type} is expected.")
+            raise RuntimeError(
+                f"The incoming request's content is of type \
+{req.content_type}, when {content_type} is expected."
+            )
         inputs = _get_inputs_from_request(req, content_type)
         return _validate_and_invoke_mapper(func, inputs)
 
@@ -1174,11 +1177,10 @@ def _get_inputs_from_request(request, content_type):
             data = request.body.read()
             inputs = pickle.loads(data)
         elif content_type == FORM_CONTENT_TYPE:
-            fields = json.loads(request.files.pop('__fields').file.read().decode('utf-8'))
-            binaries = {
-                k: v.file.read()
-                for k, v in request.files.items()
-            }
+            fields = json.loads(
+                request.files.pop('__fields').file.read().decode('utf-8')
+            )
+            binaries = {k: v.file.read() for k, v in request.files.items()}
             inputs = dict(fields, **binaries)
         return dict(defaults, **inputs)
     else:
