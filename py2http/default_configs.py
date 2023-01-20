@@ -99,7 +99,7 @@ default_configs = {
     'error_handler': default_error_handler,
     'header_inputs': {},
     'middleware': [],
-    'host': '0.0.0.0',
+    'host': 'localhost',
     'port': 3030,
     'server': 'gunicorn',
     'http_method': 'post',
