@@ -12,7 +12,6 @@ import os
 from bottle import Bottle, run as run_bottle
 import traceback
 from swagger_ui import api_doc
-import ssl
 
 from i2.errors import InputError, DataError, AuthorizationError
 
