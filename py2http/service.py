@@ -209,7 +209,9 @@ def mk_route(func, **configs):
 
 def mk_routes_and_openapi_specs(funcs, **configs):
     routes = []
-    get_config = partial(mk_config, func=None, configs=configs, defaults=default_configs)
+    get_config = partial(
+        mk_config, func=None, configs=configs, defaults=default_configs
+    )
     openapi_config = get_config('openapi', type=dict)
     if 'base_url' not in openapi_config:
         host = get_config('host')
@@ -494,13 +496,14 @@ def run_app(app_obj: Union[AppSpec, Any], **configs):
             return web.run_app
         raise NotImplementedError('')
 
-
     if isinstance(app_obj, Iterable):
         app = mk_app(app_obj, **configs)
         run_app(app, **configs)
     else:
         run_func = get_run_func()
-        get_config = partial(mk_config, func=None, configs=configs, defaults=default_configs)
+        get_config = partial(
+            mk_config, func=None, configs=configs, defaults=default_configs
+        )
         host = get_config('host')
         port = get_config('port')
         server = get_config('server')
@@ -523,6 +526,8 @@ def _get_framework(configs, default_configs):
     # NOTE Only support Bottle until we redesign py2http using a reusable tool for routing
     # if framework not in (FLASK, BOTTLE, AIOHTTP):
     if framework != BOTTLE:
-        raise NotImplementedError(f'The Web Framework "{framework}" is not supported by py2http')
+        raise NotImplementedError(
+            f'The Web Framework "{framework}" is not supported by py2http'
+        )
     os.environ['PY2HTTP_FRAMEWORK'] = framework
     return framework
