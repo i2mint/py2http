@@ -99,9 +99,9 @@ default_configs = {
     'error_handler': default_error_handler,
     'header_inputs': {},
     'middleware': [],
-    'protocol': 'http',
-    'host': 'localhost',
+    'host': '0.0.0.0',
     'port': 3030,
+    'server': 'gunicorn',
     'http_method': 'post',
     'openapi': {},
     'logger': None,
@@ -113,4 +113,6 @@ default_configs = {
     'publish_swagger': False,
     'swagger_url': '/swagger',
     'swagger_title': 'Swagger',
+    'ssl_certfile': None,
+    'ssl_keyfile': None,
 }

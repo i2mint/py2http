@@ -12,6 +12,7 @@ import os
 from bottle import Bottle, run as run_bottle
 import traceback
 from swagger_ui import api_doc
+import ssl
 
 from i2.errors import InputError, DataError, AuthorizationError
 
@@ -209,9 +210,15 @@ def mk_route(func, **configs):
 
 def mk_routes_and_openapi_specs(funcs, **configs):
     routes = []
-    openapi_config = mk_config('openapi', None, configs, default_configs, type=dict)
+    get_config = partial(mk_config, func=None, configs=configs, defaults=default_configs)
+    openapi_config = get_config('openapi', type=dict)
+    if 'base_url' not in openapi_config:
+        host = get_config('host')
+        port = get_config('port')
+        protocol = 'https' if port == 443 else 'http'
+        openapi_config['base_url'] = f'{protocol}://{host}:{port}'
     openapi_spec = mk_openapi_template(openapi_config)
-    header_inputs = mk_config('header_inputs', None, configs, default_configs)
+    header_inputs = get_config('header_inputs')
     if header_inputs:
         openapi_spec['x-header-inputs'] = header_inputs
     for func in funcs:
@@ -446,9 +453,9 @@ def mk_app(app_spec: AppSpec, **configs):
                 get_config = partial(
                     mk_config, func=None, configs=configs, defaults=default_configs
                 )
-                protocol = get_config('protocol')
                 host = get_config('host')
                 port = get_config('port')
+                protocol = 'https' if port == 443 else 'http'
                 subapp_configs['openapi']['base_url'] = f'{protocol}://{host}:{port}'
             subapp_configs['openapi']['base_url'] = (
                 subapp_configs['openapi']['base_url'] + route
@@ -486,21 +493,37 @@ def run_app(app_obj: Union[AppSpec, Any], **configs):
             return run_bottle
         elif framework == AIOHTTP:
             return web.run_app
-        return None
+        raise NotImplementedError('')
+
 
     if isinstance(app_obj, Iterable):
         app = mk_app(app_obj, **configs)
         run_app(app, **configs)
     else:
         run_func = get_run_func()
-        host = mk_config('host', None, configs, default_configs)
-        port = mk_config('port', None, configs, default_configs)
-        run_func(app_obj, host=host, port=port)
+        get_config = partial(mk_config, func=None, configs=configs, defaults=default_configs)
+        host = get_config('host')
+        port = get_config('port')
+        server = get_config('server')
+        ssl_certfile = get_config('ssl_certfile')
+        ssl_keyfile = get_config('ssl_keyfile')
+
+        # run_func(app_obj, host=host, port=port, ssl_context=ssl_context, server='gunicorn')
+        run_func(
+            app_obj,
+            host=host,
+            port=port,
+            server=server,
+            certfile=ssl_certfile,
+            keyfile=ssl_keyfile,
+        )
 
 
 def _get_framework(configs, default_configs):
     framework = mk_config('framework', None, configs, default_configs)
-    if framework not in (FLASK, BOTTLE, AIOHTTP):
-        raise ValueError(f'The Web Framework "{framework}" is not supported by py2http')
+    # NOTE Only support Bottle until we redesign py2http using a reusable tool for routing
+    # if framework not in (FLASK, BOTTLE, AIOHTTP):
+    if framework != BOTTLE:
+        raise NotImplementedError(f'The Web Framework "{framework}" is not supported by py2http')
     os.environ['PY2HTTP_FRAMEWORK'] = framework
     return framework

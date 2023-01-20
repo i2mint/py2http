@@ -201,7 +201,6 @@ Functions that generate an HTTP service, such as `run_app`, accept a number of k
 * `output_mapper=py2http.default_configs.default_output_mapper` A function to map the output of a function to an HTTP response.
 * `error_handler=py2http.default_configs.default_error_handler` A function to map an exception to an HTTP response.
 * `header_inputs={}` A dict of object properties in JSON schema format describing keys that should be excluded from request body definitions. These inputs are expected to be extracted from the request headers in the input mapper.
-* `protocol='http'` The protocol to include in the OpenAPI specification, either `'http'` or `'https'`
 * `host='localhost'` The hostname the server can be reached at, to include in the OpenAPI specification.
 * `port=3030` The TCP port to listen on.
 * `http_method='post'` The default HTTP method for exposing functions, if a function does not specify its method.
@@ -217,6 +216,8 @@ Functions that generate an HTTP service, such as `run_app`, accept a number of k
 * `publish_swagger=False` Whether to add a GET route to the app that returns a Swagger HTML interface. 
 * `swagger_url='/swagger'` The URL of the swagger route.
 * `swagger_title='Swagger'` The title to display on the Swagger HTML page.
+* `ssl_certfile=None` The path to a valid SSL certificate.
+* `ssl_keyfile=None` The path to a valid SSL certificate's key.
 
 OpenAPI configuration:
 
