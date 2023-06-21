@@ -109,6 +109,8 @@ def mk_route(func, **configs):
 
     def handle_error(func):
         def handle_request(req):
+            if logger:
+                logger.debug(f'Handling {http_method.upper()} {path}')
             try:
                 return func(req)
             except (DataError, AuthorizationError, InputError) as error:
@@ -247,31 +249,6 @@ SubAppSpec = TypedDict('SubAppSpec', handlers=Handlers, config=Dict[str, Any],)
 AppSpec = Union[Handlers, Dict[str, Union[Handlers, SubAppSpec]]]
 
 
-def routes_logger(routes, logger):
-    """Generator for wrapping routes with a logger."""
-
-    def _route_logger(func, msg):
-        """Decorator for logging routes."""
-
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            logger.debug(msg)
-            try:
-                return func(*args, **kwargs)
-            except Exception as e:
-                logger.error(f'{msg} failed with error: {e}')
-                raise e
-
-        return wrapper
-
-    if logger:
-        for route in routes:
-            message = f'Handling {route.http_method.upper()} {route.path}'
-            yield _route_logger(route, message)
-    else:
-        yield from routes
-
-
 def mk_flask_app(funcs, **configs):
     from flask import Flask
 
@@ -282,7 +259,7 @@ def mk_flask_app(funcs, **configs):
     # publish_openapi = mk_config('publish_openapi', None, configs, default_configs)
     if middleware:
         app = middleware(app)
-    for route in routes_logger(routes, logger=configs.get('logger', None)):
+    for route in routes:
         app.add_url_rule(
             route.path, route.method_name, route, methods=[route.http_method.upper()],
         )
@@ -310,7 +287,7 @@ def mk_bottle_app(funcs, **configs):
     if plugins:
         for plugin in plugins:
             app.install(plugin)
-    for route in routes_logger(routes, logger=configs.get('logger', None)):
+    for route in routes:
         route_http_method = route.http_method.upper()
         http_methods = (
             route.http_method if not enable_cors else [OPTIONS, route_http_method]
