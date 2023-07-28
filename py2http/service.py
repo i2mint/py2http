@@ -558,6 +558,7 @@ def _get_func_to_dispatch_handler(handler):
         return endpoint
     if inspect.isclass(endpoint):
         cls = endpoint
+
         def func(_obj_id=None, _attr_name=None, **kwargs):
             if _obj_id is None:
                 if _attr_name is not None:
@@ -572,17 +573,22 @@ def _get_func_to_dispatch_handler(handler):
             if _attr_name is None:
                 raise InputError('_attr_name must be provided when _obj_id is not None')
             return _get_attr_value(obj, _attr_name, attr_names, **kwargs)
+
     else:
+
         def func(_attr_name=None, **kwargs):
             return _get_attr_value(endpoint, _attr_name, attr_names, **kwargs)
+
     func.__name__ = name
     return func
-        
+
 
 def _get_attr_value(obj, attr_name, valid_attr_names, **kwargs):
     valid_attr_names = [attr_name] if valid_attr_names == '*' else valid_attr_names
     if attr_name not in valid_attr_names or not hasattr(obj, attr_name):
-        raise InputError(f'No attribute found with name {attr_name} or it is not dispatched')
+        raise InputError(
+            f'No attribute found with name {attr_name} or it is not dispatched'
+        )
     attr = getattr(obj, attr_name)
     if callable(attr):
         return attr(**kwargs)
