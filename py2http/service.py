@@ -1,3 +1,5 @@
+import inspect
+from uuid import uuid4
 from aiohttp import web
 import asyncio
 from copy import deepcopy
@@ -11,7 +13,7 @@ import os
 from bottle import Bottle, run as run_bottle
 import traceback
 from swagger_ui import api_doc
-
+from i2 import name_of_obj
 from i2.errors import InputError, DataError, AuthorizationError
 
 from py2http.bottle_plugins import CorsPlugin, OPTIONS
@@ -32,6 +34,8 @@ from py2http.schema_tools import (
 )
 from py2http.util import TypeAsserter
 from py2http.constants import JSON_CONTENT_TYPE
+
+obj_store = {}
 
 
 def method_not_found(method_name):
@@ -412,18 +416,26 @@ def mk_app(app_spec: AppSpec, **configs):
             for handler in handlers_with_mappers:
                 endpoint = handler['endpoint']
                 input_mapper = handler.get('input_mapper')
+                endpoint_name = handler.get('name', name_of_obj(endpoint))
                 if input_mapper:
-                    input_mappers[endpoint.__name__] = input_mapper
+                    input_mappers[endpoint_name] = input_mapper
                 output_mapper = handler.get('output_mapper')
                 if output_mapper:
-                    output_mappers[endpoint.__name__] = output_mapper
+                    output_mappers[endpoint_name] = output_mapper
             if input_mappers:
                 app_configs['input_mapper'] = input_mappers
             if output_mappers:
                 app_configs['output_mapper'] = output_mappers
 
+        def gen_handlers():
+            for handler in app_spec:
+                if isinstance(handler, dict):
+                    yield _get_func_to_dispatch_handler(handler)
+                else:
+                    yield handler
+
         app_configs = dict(configs)
-        handlers = [x['endpoint'] if isinstance(x, dict) else x for x in app_spec]
+        handlers = list(gen_handlers())
         add_mappers_to_config()
         if framework == FLASK:
             return mk_flask_app(handlers, **app_configs)
@@ -532,3 +544,46 @@ def _get_framework(configs, default_configs):
         )
     os.environ['PY2HTTP_FRAMEWORK'] = framework
     return framework
+
+
+def _get_func_to_dispatch_handler(handler):
+    endpoint = handler.get('endpoint')
+    if endpoint is None:
+        raise InputError('No endpoint found in handler')
+    name = handler.get('name', name_of_obj(endpoint))
+    if not name:
+        raise InputError('No way to determine name of handler')
+    attr_names = handler.get('attr_names')
+    if attr_names is None:
+        return endpoint
+    if inspect.isclass(endpoint):
+        cls = endpoint
+        def func(_obj_id=None, _attr_name=None, **kwargs):
+            if _obj_id is None:
+                if _attr_name is not None:
+                    raise InputError('_attr_name must be None when _obj_id is None')
+                new_obj = cls(**kwargs)
+                new_id = str(uuid4())
+                obj_store[new_id] = new_obj
+                return new_id
+            obj = obj_store.get(_obj_id)
+            if not obj:
+                raise InputError(f'No object found with id {_obj_id}')
+            if _attr_name is None:
+                raise InputError('_attr_name must be provided when _obj_id is not None')
+            return _get_attr_value(obj, _attr_name, attr_names, **kwargs)
+    else:
+        def func(_attr_name=None, **kwargs):
+            return _get_attr_value(endpoint, _attr_name, attr_names, **kwargs)
+    func.__name__ = name
+    return func
+        
+
+def _get_attr_value(obj, attr_name, valid_attr_names, **kwargs):
+    valid_attr_names = [attr_name] if valid_attr_names == '*' else valid_attr_names
+    if attr_name not in valid_attr_names or not hasattr(obj, attr_name):
+        raise InputError(f'No attribute found with name {attr_name} or it is not dispatched')
+    attr = getattr(obj, attr_name)
+    if callable(attr):
+        return attr(**kwargs)
+    return attr
