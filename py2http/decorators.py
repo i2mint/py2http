@@ -1102,7 +1102,6 @@ def send_json_resp(func):
         def output_mapper(output, **input_kwargs):
             response.content_type = JSON_CONTENT_TYPE
             mapped_output = func(output, **input_kwargs)
-            print('COUCOU', mapped_output)
             return dumps(mapped_output, cls=JsonRespEncoder)
 
     output_mapper.content_type = JSON_CONTENT_TYPE
