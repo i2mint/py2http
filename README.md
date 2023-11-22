@@ -22,7 +22,7 @@ def multiply(a, b):
 
 class Divider:
     def __init__(self, dividend):
-        self.dividend = divident
+        self.dividend = dividend
     
     def divide(self, divisor):
         return self.dividend / divisor
