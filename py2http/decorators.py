@@ -164,7 +164,8 @@ class Decorator:
     >>> ff(10)
     calling <lambda> with (10,) and {}
     11
-    >>> LogCalls(f, real_arg=False)  # rejects arguments that weren't "registered" by the __new__
+    >>> # rejects arguments that weren't "registered" by the __new__:
+    >>> LogCalls(f, real_arg=False)  # doctest: +IGNORE_EXCEPTION_DETAIL
     Traceback (most recent call last):
         ...
     TypeError: __new__() got an unexpected keyword argument 'real_arg'

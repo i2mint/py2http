@@ -14,6 +14,7 @@ import traceback
 from swagger_ui import api_doc
 
 from i2.errors import InputError, DataError, AuthorizationError
+from i2 import Sig
 
 from py2http.bottle_plugins import CorsPlugin, OPTIONS
 from py2http.config import mk_config, FLASK, AIOHTTP, BOTTLE
@@ -44,7 +45,10 @@ def method_not_found(method_name):
 
 # default TypeAsserter used in this project
 assert_type = TypeAsserter(
-    types_for_kind={'input_mapper': Callable, 'output_mapper': Callable,}
+    types_for_kind={
+        'input_mapper': Callable,
+        'output_mapper': Callable,
+    }
 )
 
 
@@ -100,7 +104,9 @@ def mk_route(func, **configs):
         )
     request_content_type = getattr(input_mapper, 'content_type', DFLT_CONTENT_TYPE)
     response_schema = getattr(
-        output_mapper, 'response_schema', mk_output_schema_from_func(output_mapper),
+        output_mapper,
+        'response_schema',
+        mk_output_schema_from_func(output_mapper),
     )
     if not response_schema:
         response_schema = getattr(
@@ -244,7 +250,11 @@ Handlers = Iterable[
         ),
     ]
 ]
-SubAppSpec = TypedDict('SubAppSpec', handlers=Handlers, config=Dict[str, Any],)
+SubAppSpec = TypedDict(
+    'SubAppSpec',
+    handlers=Handlers,
+    config=Dict[str, Any],
+)
 AppSpec = Union[Handlers, Dict[str, Union[Handlers, SubAppSpec]]]
 
 
@@ -260,7 +270,10 @@ def mk_flask_app(funcs, **configs):
         app = middleware(app)
     for route in routes:
         app.add_url_rule(
-            route.path, route.method_name, route, methods=[route.http_method.upper()],
+            route.path,
+            route.method_name,
+            route,
+            methods=[route.http_method.upper()],
         )
     app.add_url_rule('/ping', 'ping', lambda: {'ping': 'pong'})
     app.add_url_rule('/openapi', 'openapi', lambda: openapi_spec)
@@ -299,7 +312,10 @@ def mk_bottle_app(funcs, **configs):
     if publish_openapi:
         skip = plugins if openapi_insecure else None
         app.route(
-            path='/openapi', callback=lambda: openapi_spec, name='openapi', skip=skip,
+            path='/openapi',
+            callback=lambda: openapi_spec,
+            name='openapi',
+            skip=skip,
         )
     app.openapi_spec = openapi_spec
     if publish_swagger:
@@ -332,22 +348,23 @@ def mk_aiohttp_app(funcs, **configs):
     return app
 
 
+@Sig.add_optional_keywords(default_configs)
 def mk_app(app_spec: AppSpec, **configs):
     """
-    Generates an application which exposes web services created from the given python 
+    Generates an application which exposes web services created from the given python
     functions to remotely run them.
-    You can generate a multi-service application defining a route per API or sub 
+    You can generate a multi-service application defining a route per API or sub
     application.
 
     First define a bunch of functions (or handlers) you want to expose as a web service.
     >>> def foo():
     ...     return 0
-    ... 
+    ...
     >>> def bar():
     ...     return True
-    ... 
+    ...
 
-    Let's make a single-service application. A single API will be generated with an 
+    Let's make a single-service application. A single API will be generated with an
     endpoint per handler, plus an auto-generated enpoints to ping the API.
     >>> handlers = [foo, bar]
     >>> app = mk_app(handlers)
@@ -359,8 +376,8 @@ def mk_app(app_spec: AppSpec, **configs):
     '/ping'
 
     You can also automatically generate an endpoint to expose the openapi specification
-    of your API by activating the flag "publish_openapi". Publishing the openapi 
-    specification will allow a client application to use the specification object to 
+    of your API by activating the flag "publish_openapi". Publishing the openapi
+    specification will allow a client application to use the specification object to
     build an interface to actually consume the API by wrapping the http layer.
     >>> app = mk_app(handlers, publish_openapi=True)
     >>> app.openapi_spec # doctest: +NORMALIZE_WHITESPACE
@@ -375,14 +392,14 @@ def mk_app(app_spec: AppSpec, **configs):
     'content': {'application/json': {'schema': {}}}}}}}}}
     >>> app.get_url('openapi')
     '/openapi'
-    
+
     Let's use http2py to consume the openapi specification
     >>> from http2py import HttpClient
     >>> api = HttpClient(openapi_spec=app.openapi_spec)
     >>> assert(hasattr(api, 'foo'))
     >>> assert(hasattr(api, 'bar'))
 
-    Now, let's make a multi-service application. You only have to define a route per 
+    Now, let's make a multi-service application. You only have to define a route per
     API with a list of handlers for each API.
     >>> handler_spec = {
     ...     'foo_api': [foo],
@@ -394,11 +411,11 @@ def mk_app(app_spec: AppSpec, **configs):
     >>> app.get_url('/bar_api')
     '/bar_api'
 
-    :param handler_spec: The handler specification. Can be a list of python to expose, 
-    or a dict with a list of functions to expose per route in case of a multi-service 
+    :param handler_spec: The handler specification. Can be a list of python to expose,
+    or a dict with a list of functions to expose per route in case of a multi-service
     application.
     :type handler_spec: HandlerSpec
-    :param **configs: The configuration for the application. See config.yaml for 
+    :param **configs: The configuration for the application. See config.yaml for
     configuration documentation.
     :type **configs: dict
     """
@@ -471,19 +488,21 @@ def mk_app(app_spec: AppSpec, **configs):
     return mk_single_api_app()
 
 
+@Sig.add_optional_keywords(default_configs)
 def run_app(app_obj: Union[AppSpec, Any], **configs):
     """
-    Run an application which exposes web services created from the given python 
+    Run an application which exposes web services created from the given python
     functions to remotely run them.
-    You can generate a multi-service application defining a route per api or sub 
+    You can generate a multi-service application defining a route per api or sub
     application.
     You can also generate the application first, then run it using this function.
 
-    :param app_obj: The handler specification or application object. Can be a list of 
-    python to expose, or a dict with a list of functions to expose per route in case 
-    of a multi-service. Can also be a pre-generated application object to run. 
+    :param app_obj: The handler specification or application object. Can be a list of
+    python to expose, or a dict with a list of functions to expose per route in case
+    of a multi-service. Can also be a pre-generated application object to run.
     :type handler_spec: Union[HandlerSpec, Any]
-    :param **configs: The configuration for the application. See config.yaml for 
+    :param **configs: The configuration for the application. See
+    `py2http.default_configs:default_configs` for defaults and config.yaml for
     configuration documentation.
     :type **configs: dict
     """
