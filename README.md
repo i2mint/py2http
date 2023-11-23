@@ -44,7 +44,7 @@ Given we asked for those options, you can:
 * access the swagger docs and fiddle of the http-service at http://localhost:3030/swagger
 * actually use the http-service's routes, for example:
 
-```
+```python
 # Test the server in a separate process
 import requests
 
