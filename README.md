@@ -10,7 +10,8 @@ You have some python objects and want to get an "equivalent" http service from t
 ## Usage
 
 Run a basic HTTP service from a list of functions.
-```
+
+```python
 from py2http.service import run_app
 
 # Define or import functions
@@ -33,9 +34,16 @@ divider_from_ten = Divider(10)
 func_list = [add, multiply, divider_from_ten.divide]
 
 # Create an HTTP server
-run_app(func_list)
+run_app(func_list, publish_openapi=True, publish_swagger=True)
 ```
+
 The HTTP server will listen on port 3030 by default.
+
+Given we asked for those options, you can:
+* access the OpenAPI specification of the http-service at http://localhost:3030/openapi
+* access the swagger docs and fiddle of the http-service at http://localhost:3030/swagger
+* actually use the http-service's routes, for example:
+
 ```
 # Test the server in a separate process
 import requests
