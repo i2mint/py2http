@@ -453,6 +453,7 @@ def mk_app(app_spec: AppSpec, **configs):
 
         app_configs = dict(configs)
         handlers = list(gen_handlers())
+        # print(f"{app_spec=}\n{handlers}")
         add_mappers_to_config()
         if framework == FLASK:
             return mk_flask_app(handlers, **app_configs)
@@ -574,7 +575,8 @@ def _get_func_to_dispatch_handler(handler):
         raise InputError('No way to determine name of handler')
     attr_names = handler.get('attr_names')
     if attr_names is None:
-        return endpoint
+        # was return endpoint, but then the output didn't get the __name__ = name
+        func = endpoint 
     if inspect.isclass(endpoint):
         cls = endpoint
 
