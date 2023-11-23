@@ -44,7 +44,7 @@ Given we asked for those options, you can:
 * access the swagger docs and fiddle of the http-service at http://localhost:3030/swagger
 * actually use the http-service's routes, for example:
 
-```
+```python
 # Test the server in a separate process
 import requests
 
@@ -62,7 +62,7 @@ requests.post(url, json=add_args).json()
 
 Expose class methods by flattening the init -> method call process.
 
-```
+```python
 from py2http import run_app
 from py2http.decorators import mk_flat
 
@@ -84,7 +84,7 @@ run_app(func_list)
 
 By default, the server will only accept JSON requests and parse the values from the request body as keyword arguments. You can define custom input mappers to perform extra handling on the JSON body or directly on the HTTP library request object, such as default injection or type mapping.
 
-```
+```python
 from numpy import array
 import soundfile
 from py2http.decorators import handle_json_req
@@ -128,7 +128,7 @@ get_user_data.input_mapper = custom_header_input_mapper
 
 By default, the server will send the return value of the handler function in an HTTP response in JSON format. You can define custom output mappers to perform extra handling or type conversion.
 
-```
+```python
 from io import BytesIO
 import soundfile
 
@@ -182,7 +182,8 @@ TODO
 ## Client generation
 
 Py2http generates an OpenAPI specification for the server before running. You can use this document with any OpenAPI-compatible client tools. To extract the specification, you can generate a server application object before running it.
-```
+
+```python
 import json
 from py2http import mk_app, run_app
 
