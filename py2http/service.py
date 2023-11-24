@@ -575,8 +575,18 @@ def _get_func_to_dispatch_handler(handler):
         raise InputError('No way to determine name of handler')
     attr_names = handler.get('attr_names')
     if attr_names is None:
+        # TODO: This is a hack! Address the problem in a cleaner way.
+        #   This hack is just completing some unclean handling of names already present 
+        #   in the code. At the end of this function there's a func.__name__ = name,
+        #   but this operation was forgotten here. That said, we shouldn't do this at 
+        #   all. 
+        #   --> When a function is specified for a handler, the long language specs
+        #   needs to be created from it, and subsequently, the "name" field, not the 
+        #   __name__ attribute, needs to be used. 
+        endpoint.__name__ = name  # the hack
+        return endpoint
         # was return endpoint, but then the output didn't get the __name__ = name
-        func = endpoint 
+        # func = endpoint 
     if inspect.isclass(endpoint):
         cls = endpoint
 
