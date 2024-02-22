@@ -4,7 +4,7 @@ from time import sleep
 
 import inspect
 
-ddir = lambda o: [x for x in dir(o) if not x.startswith("_")]
+ddir = lambda o: [x for x in dir(o) if not x.startswith('_')]
 
 
 def print_source(*funcs):
@@ -47,7 +47,7 @@ c = Struct(
     }
 )
 
-assert set(ddir(c)) == {"add", "mult", "formula1"}
+assert set(ddir(c)) == {'add', 'mult', 'formula1'}
 
 
 def my_print(*args):
@@ -55,13 +55,13 @@ def my_print(*args):
     print(*args)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # print_source(*funcs)
 
     def test_run_app():
         def is_server_up():
             try:
-                return requests.get(url="http://localhost:3030/ping").status_code == 200
+                return requests.get(url='http://localhost:3030/ping').status_code == 200
             except requests.exceptions.ConnectionError:
                 return False
 
@@ -90,15 +90,12 @@ if __name__ == "__main__":
 
     def test_my_print():
         process = run_process(
-            func=my_print,
-            func_args=("hello world",),
-            force_kill=False,
-            verbose=True,
+            func=my_print, func_args=('hello world',), force_kill=False, verbose=True,
         )
 
         with process:
             # process.join()
-            print("test")
+            print('test')
 
     # test_my_print()
     test_run_app()

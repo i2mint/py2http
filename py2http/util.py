@@ -55,8 +55,8 @@ class lazyprop:
     """
 
     def __init__(self, func):
-        self.__doc__ = getattr(func, "__doc__")
-        self.__isabstractmethod__ = getattr(func, "__isabstractmethod__", False)
+        self.__doc__ = getattr(func, '__doc__')
+        self.__isabstractmethod__ = getattr(func, '__isabstractmethod__', False)
         self.func = func
 
     def __get__(self, instance, cls):
@@ -68,7 +68,7 @@ class lazyprop:
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return "<%s func=%s>" % (cn, self.func)
+        return '<%s func=%s>' % (cn, self.func)
 
 
 def if_not_empty(obj, if_empty_val=None):
@@ -82,15 +82,11 @@ none_if_not_empty = partial(if_not_empty, if_not_empty=None)
 
 func_info_spec = Spec(
     {
-        "name": "__name__",
-        "qualname": "__qualname__",
-        "module": "__module__",
-        "return_annotation": (
-            signature,
-            "return_annotation",
-            none_if_not_empty,
-        ),
-        "params": (signature, "parameters"),
+        'name': '__name__',
+        'qualname': '__qualname__',
+        'module': '__module__',
+        'return_annotation': (signature, 'return_annotation', none_if_not_empty,),
+        'params': (signature, 'parameters'),
     }
 )
 
@@ -146,7 +142,7 @@ class CreateProcess:
         ... print process terminated
         """
         self.proc_func = proc_func
-        self.process_name = process_name or getattr(proc_func, "__name__", "")
+        self.process_name = process_name or getattr(proc_func, '__name__', '')
         self.wait_before_entering = float(wait_before_entering)
         self.verbose = verbose
         self.args = args
@@ -165,25 +161,25 @@ class CreateProcess:
             kwargs=self.kwargs,
             name=self.process_name,
         )
-        self.clog(f"Starting process: {self.process_name}...")
+        self.clog(f'Starting process: {self.process_name}...')
         try:
             self.process.start()
             if self.process_is_running():
-                self.clog(f"... {self.process_name} process started.")
+                self.clog(f'... {self.process_name} process started.')
                 sleep(self.wait_before_entering)
                 return self
             else:
-                raise RuntimeError("Process is not running")
+                raise RuntimeError('Process is not running')
         except Exception:
             raise RuntimeError(
-                f"Something went wrong when trying to launch process {self.process_name}"
+                f'Something went wrong when trying to launch process {self.process_name}'
             )
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.process is not None and self.process.is_alive():
-            self.clog(f"Terminating process: {self.process_name}...")
+            self.clog(f'Terminating process: {self.process_name}...')
             self.process.terminate()
-        self.clog(f"... {self.process_name} process terminated")
+        self.clog(f'... {self.process_name} process terminated')
         if exc_type is not None:
             self.exception_info = dict(
                 exc_type=exc_type, exc_val=exc_val, exc_tb=exc_tb
@@ -195,14 +191,14 @@ def deprecate(func=None, *, msg=None):
     if func is None:
         return partial(deprecate, msg=msg)
     else:
-        assert callable(func), f"func should be callable. Was {func}"
-        msg = msg or f"{func.__qualname__} is being deprecated."
+        assert callable(func), f'func should be callable. Was {func}'
+        msg = msg or f'{func.__qualname__} is being deprecated.'
 
         @wraps(func)
         def deprecated_func(*args, **kwargs):
-            simplefilter("always", DeprecationWarning)  # turn off filter
+            simplefilter('always', DeprecationWarning)  # turn off filter
             warn(msg, category=DeprecationWarning, stacklevel=2)
-            simplefilter("default", DeprecationWarning)  # reset filter
+            simplefilter('default', DeprecationWarning)  # reset filter
             return func(*args, **kwargs)
 
         return deprecated_func
@@ -255,9 +251,9 @@ def obj_to_items_gen(
     if kv_trans is not None:
         assert callable(kv_trans)
         assert list(signature(kv_trans).parameters) == [
-            "k",
-            "v",
-        ], f"kv_trans must have signature (k, v)"
+            'k',
+            'v',
+        ], f'kv_trans must have signature (k, v)'
         _gen = gen
 
         def gen():
@@ -283,7 +279,7 @@ class _pyparam_kv_trans:
     def with_str_kind(k, v):
         if v is Parameter.empty:
             return None
-        elif k == "kind":
+        elif k == 'kind':
             return k, str(v)
         else:
             return k, v
@@ -327,7 +323,7 @@ def pyparam_to_dict(param, kv_trans: Callable = _pyparam_kv_trans.skip_empties):
     """
     gen = obj_to_items_gen(
         param,
-        attrs=("name", "kind", "default", "annotation"),
+        attrs=('name', 'kind', 'default', 'annotation'),
         on_missing_attr=None,
         kv_trans=kv_trans,
     )
@@ -405,9 +401,9 @@ class TypeAsserter:
 
     """
 
-    def __init__(self, types_for_kind, if_kind_missing="ignore"):
+    def __init__(self, types_for_kind, if_kind_missing='ignore'):
         self.types_for_kind = types_for_kind
-        assert if_kind_missing in {"ignore", "raise", "warn"}
+        assert if_kind_missing in {'ignore', 'raise', 'warn'}
         self.if_kind_missing = if_kind_missing
 
     def __call__(self, k, v):
@@ -415,18 +411,18 @@ class TypeAsserter:
         if types is not None:
             assert isinstance(
                 v, types
-            ), f"Invalid {k} type, must be a {types}, but was a {type(v)}"
-        elif self.if_kind_missing == "ignore":
+            ), f'Invalid {k} type, must be a {types}, but was a {type(v)}'
+        elif self.if_kind_missing == 'ignore':
             pass
-        elif self.if_kind_missing == "raise":
+        elif self.if_kind_missing == 'raise':
             raise ValueError(
-                f"Unrecognized kind: {k}. The ones I recognize: {list(self.types_for_kind.keys())}"
+                f'Unrecognized kind: {k}. The ones I recognize: {list(self.types_for_kind.keys())}'
             )
-        elif self.if_kind_missing == "warn":
+        elif self.if_kind_missing == 'warn':
             from warnings import warn
 
             warn(
-                f"Unrecognized kind: {k}. The ones I recognize: {list(self.types_for_kind.keys())}"
+                f'Unrecognized kind: {k}. The ones I recognize: {list(self.types_for_kind.keys())}'
             )
 
 
@@ -481,8 +477,8 @@ def obj_to_path(obj):
     # >>> for t in [(A, ('foo',)), (A, ('B',)), (A, ('B', 'bar'))]:
     # ...     assert obj_to_path(path_to_obj(*t)) == t
     """
-    if hasattr(obj, "__qualname__") and hasattr(obj, "__globals__"):
-        root_name, *attr_path = obj.__qualname__.split(".")
+    if hasattr(obj, '__qualname__') and hasattr(obj, '__globals__'):
+        root_name, *attr_path = obj.__qualname__.split('.')
         return obj.__globals__[root_name], tuple(attr_path)
     else:
         return obj

@@ -58,17 +58,14 @@ obj_store = {}
 
 def method_not_found(method_name):
     raise web.HTTPNotFound(
-        text=json.dumps({"error": f"method {method_name} not found"}),
+        text=json.dumps({'error': f'method {method_name} not found'}),
         content_type=JSON_CONTENT_TYPE,
     )
 
 
 # default TypeAsserter used in this project
 assert_type = TypeAsserter(
-    types_for_kind={
-        "input_mapper": Callable,
-        "output_mapper": Callable,
-    }
+    types_for_kind={'input_mapper': Callable, 'output_mapper': Callable,}
 )
 
 
@@ -110,34 +107,32 @@ def mk_route(func, **configs):
         mk_config, func=func, configs=configs, defaults=default_configs
     )
     framework = _get_framework(configs, default_configs)
-    input_mapper = config_for("input_mapper")
-    output_mapper = config_for("output_mapper")
-    error_handler = config_for("error_handler")
-    header_inputs = config_for("header_inputs", type=dict)
-    logger = config_for("logger")
+    input_mapper = config_for('input_mapper')
+    output_mapper = config_for('output_mapper')
+    error_handler = config_for('error_handler')
+    header_inputs = config_for('header_inputs', type=dict)
+    logger = config_for('logger')
 
     exclude_request_keys = header_inputs.keys()
-    request_schema = getattr(input_mapper, "request_schema", None)
+    request_schema = getattr(input_mapper, 'request_schema', None)
     if request_schema is None or input_mapper.__name__ == default_input_mapper.__name__:
         request_schema = mk_input_schema_from_func(
             func, exclude_keys=exclude_request_keys
         )
-    request_content_type = getattr(input_mapper, "content_type", DFLT_CONTENT_TYPE)
+    request_content_type = getattr(input_mapper, 'content_type', DFLT_CONTENT_TYPE)
     response_schema = getattr(
-        output_mapper,
-        "response_schema",
-        mk_output_schema_from_func(output_mapper),
+        output_mapper, 'response_schema', mk_output_schema_from_func(output_mapper),
     )
     if not response_schema:
         response_schema = getattr(
-            func, "response_schema", mk_output_schema_from_func(func)
+            func, 'response_schema', mk_output_schema_from_func(func)
         )
-    response_content_type = getattr(output_mapper, "content_type", DFLT_CONTENT_TYPE)
+    response_content_type = getattr(output_mapper, 'content_type', DFLT_CONTENT_TYPE)
 
     def handle_error(func):
         def handle_request(req):
             if logger:
-                logger.debug(f"Handling {http_method.upper()} {path}")
+                logger.debug(f'Handling {http_method.upper()} {path}')
             try:
                 return func(req)
             except (DataError, AuthorizationError, InputError) as error:
@@ -184,8 +179,8 @@ def mk_route(func, **configs):
         return final_result
 
     #  TODO: Align config keys and variable names
-    valid_http_methods = {"get", "put", "post", "delete"}  # outside function
-    http_method = config_for("http_method")  # read
+    valid_http_methods = {'get', 'put', 'post', 'delete'}  # outside function
+    http_method = config_for('http_method')  # read
     assert isinstance(http_method, str)  # validation
     http_method = http_method.lower()  # normalization
     assert http_method in valid_http_methods  # validation
@@ -215,13 +210,13 @@ def mk_route(func, **configs):
 
     # TODO: Make func -> path a function (not hardcoded)
     # TODO: Make sure that func -> path MAPPING is known outside (perhaps through openapi)
-    method_name = config_for("name") or func.__name__
-    path = config_for("route") or f"/{method_name}"
+    method_name = config_for('name') or func.__name__
+    path = config_for('route') or f'/{method_name}'
 
     route = mk_framework_route(http_method, path, method_name)
 
-    extra_path_info = {"description": func.__doc__ or ""}
-    path_fields = dict({"x-method_name": method_name}, **extra_path_info)
+    extra_path_info = {'description': func.__doc__ or ''}
+    path_fields = dict({'x-method_name': method_name}, **extra_path_info)
     openapi_path = mk_openapi_path(
         path,
         http_method,
@@ -240,23 +235,23 @@ def mk_routes_and_openapi_specs(funcs, **configs):
     get_config = partial(
         mk_config, func=None, configs=configs, defaults=default_configs
     )
-    openapi_config = get_config("openapi", type=dict)
-    if "base_url" not in openapi_config:
-        host = get_config("host")
-        port = get_config("port")
-        protocol = "https" if port == 443 else "http"
-        openapi_config["base_url"] = f"{protocol}://{host}:{port}"
+    openapi_config = get_config('openapi', type=dict)
+    if 'base_url' not in openapi_config:
+        host = get_config('host')
+        port = get_config('port')
+        protocol = 'https' if port == 443 else 'http'
+        openapi_config['base_url'] = f'{protocol}://{host}:{port}'
     openapi_spec = mk_openapi_template(openapi_config)
-    header_inputs = get_config("header_inputs")
+    header_inputs = get_config('header_inputs')
     if header_inputs:
-        openapi_spec["x-header-inputs"] = header_inputs
+        openapi_spec['x-header-inputs'] = header_inputs
     for func in funcs:
         route, openapi_path = mk_route(func, **configs)
         routes.append(route)
-        add_paths_to_spec(openapi_spec["paths"], openapi_path)
-    openapi_filename = openapi_config.get("filename", None)
+        add_paths_to_spec(openapi_spec['paths'], openapi_path)
+    openapi_filename = openapi_config.get('filename', None)
     if openapi_filename:
-        with open(openapi_filename, "w") as fp:
+        with open(openapi_filename, 'w') as fp:
             json.dump(openapi_spec, fp)
     return routes, openapi_spec
 
@@ -265,18 +260,14 @@ Handlers = Iterable[
     Union[
         Callable,
         TypedDict(
-            "HandlerWithMappers",
+            'HandlerWithMappers',
             endpoint=Callable,
             input_mapper=Optional[Callable],
             output_mapper=Optional[Callable],
         ),
     ]
 ]
-SubAppSpec = TypedDict(
-    "SubAppSpec",
-    handlers=Handlers,
-    config=Dict[str, Any],
-)
+SubAppSpec = TypedDict('SubAppSpec', handlers=Handlers, config=Dict[str, Any],)
 AppSpec = Union[Handlers, Dict[str, Union[Handlers, SubAppSpec]]]
 
 
@@ -284,21 +275,18 @@ def mk_flask_app(funcs, **configs):
     from flask import Flask
 
     routes, openapi_spec = mk_routes_and_openapi_specs(funcs, **configs)
-    app_name = mk_config("app_name", None, configs, default_configs)
+    app_name = mk_config('app_name', None, configs, default_configs)
     app = Flask(app_name)
-    middleware = mk_config("middleware", None, configs, default_configs)
+    middleware = mk_config('middleware', None, configs, default_configs)
     # publish_openapi = mk_config('publish_openapi', None, configs, default_configs)
     if middleware:
         app = middleware(app)
     for route in routes:
         app.add_url_rule(
-            route.path,
-            route.method_name,
-            route,
-            methods=[route.http_method.upper()],
+            route.path, route.method_name, route, methods=[route.http_method.upper()],
         )
-    app.add_url_rule("/ping", "ping", lambda: {"ping": "pong"})
-    app.add_url_rule("/openapi", "openapi", lambda: openapi_spec)
+    app.add_url_rule('/ping', 'ping', lambda: {'ping': 'pong'})
+    app.add_url_rule('/openapi', 'openapi', lambda: openapi_spec)
     app.openapi_spec = openapi_spec
     return app
 
@@ -308,16 +296,16 @@ def mk_bottle_app(funcs, **configs):
 
     routes, openapi_spec = mk_routes_and_openapi_specs(funcs, **configs)
     app = Bottle(catchall=False)
-    enable_cors = mk_config("enable_cors", None, configs, default_configs)
-    plugins = mk_config("plugins", None, configs, default_configs)
+    enable_cors = mk_config('enable_cors', None, configs, default_configs)
+    plugins = mk_config('plugins', None, configs, default_configs)
     if enable_cors:
         cors_allowed_origins = mk_config(
-            "cors_allowed_origins", None, configs, default_configs
+            'cors_allowed_origins', None, configs, default_configs
         )
         app.install(CorsPlugin(cors_allowed_origins))
-    publish_openapi = mk_config("publish_openapi", None, configs, default_configs)
-    openapi_insecure = mk_config("openapi_insecure", None, configs, default_configs)
-    publish_swagger = mk_config("publish_swagger", None, configs, default_configs)
+    publish_openapi = mk_config('publish_openapi', None, configs, default_configs)
+    openapi_insecure = mk_config('openapi_insecure', None, configs, default_configs)
+    publish_swagger = mk_config('publish_swagger', None, configs, default_configs)
     if plugins:
         for plugin in plugins:
             app.install(plugin)
@@ -329,20 +317,17 @@ def mk_bottle_app(funcs, **configs):
         # print(f'Mounting route: {route.path} {route.http_method.upper()}')
         app.route(route.path, http_methods, route, route.method_name)
     app.route(
-        path="/ping", callback=lambda: {"ping": "pong"}, name="ping", skip=plugins
+        path='/ping', callback=lambda: {'ping': 'pong'}, name='ping', skip=plugins
     )
     if publish_openapi:
         skip = plugins if openapi_insecure else None
         app.route(
-            path="/openapi",
-            callback=lambda: openapi_spec,
-            name="openapi",
-            skip=skip,
+            path='/openapi', callback=lambda: openapi_spec, name='openapi', skip=skip,
         )
     app.openapi_spec = openapi_spec
     if publish_swagger:
-        swagger_url = mk_config("swagger_url", None, configs, default_configs)
-        swagger_title = mk_config("swagger_title", None, configs, default_configs)
+        swagger_url = mk_config('swagger_url', None, configs, default_configs)
+        swagger_title = mk_config('swagger_title', None, configs, default_configs)
         api_doc(
             app,
             config_spec=json.dumps(openapi_spec),
@@ -354,13 +339,13 @@ def mk_bottle_app(funcs, **configs):
 
 def mk_aiohttp_app(funcs, **configs):
     routes, openapi_spec = mk_routes_and_openapi_specs(funcs, **configs)
-    middleware = mk_config("middleware", None, configs, default_configs)
+    middleware = mk_config('middleware', None, configs, default_configs)
     app = web.Application(middlewares=middleware)
     app.add_routes(
         [
-            web.get("/ping", lambda: web.json_response({"ping": "pong"}), name="ping"),
+            web.get('/ping', lambda: web.json_response({'ping': 'pong'}), name='ping'),
             web.get(
-                "/openapi", lambda: web.json_response(openapi_spec), name="openapi"
+                '/openapi', lambda: web.json_response(openapi_spec), name='openapi'
             ),
             *routes,
         ]
@@ -459,18 +444,18 @@ def mk_app(app_spec: AppSpec, **configs):
             input_mappers = {}
             output_mappers = {}
             for handler in handlers_with_mappers:
-                endpoint = handler["endpoint"]
-                input_mapper = handler.get("input_mapper")
-                endpoint_name = handler.get("name", name_of_obj(endpoint))
+                endpoint = handler['endpoint']
+                input_mapper = handler.get('input_mapper')
+                endpoint_name = handler.get('name', name_of_obj(endpoint))
                 if input_mapper:
                     input_mappers[endpoint_name] = input_mapper
-                output_mapper = handler.get("output_mapper")
+                output_mapper = handler.get('output_mapper')
                 if output_mapper:
                     output_mappers[endpoint_name] = output_mapper
             if input_mappers:
-                app_configs["input_mapper"] = input_mappers
+                app_configs['input_mapper'] = input_mappers
             if output_mappers:
-                app_configs["output_mapper"] = output_mappers
+                app_configs['output_mapper'] = output_mappers
 
         def gen_handlers():
             for handler in app_spec:
@@ -502,23 +487,23 @@ def mk_app(app_spec: AppSpec, **configs):
         parent_app, add_subapp_meth = get_web_framework_objects()
         for route, route_spec in app_spec.items():
             if isinstance(route_spec, dict):
-                handlers = route_spec["handlers"]
-                subapp_configs = route_spec["config"]
+                handlers = route_spec['handlers']
+                subapp_configs = route_spec['config']
             else:
                 handlers = route_spec
                 subapp_configs = deepcopy(configs)
-            if "openapi" not in subapp_configs:
-                subapp_configs["openapi"] = {}
-            if "base_url" not in subapp_configs["openapi"]:
+            if 'openapi' not in subapp_configs:
+                subapp_configs['openapi'] = {}
+            if 'base_url' not in subapp_configs['openapi']:
                 get_config = partial(
                     mk_config, func=None, configs=configs, defaults=default_configs
                 )
-                host = get_config("host")
-                port = get_config("port")
-                protocol = "https" if port == 443 else "http"
-                subapp_configs["openapi"]["base_url"] = f"{protocol}://{host}:{port}"
-            subapp_configs["openapi"]["base_url"] = (
-                subapp_configs["openapi"]["base_url"] + route
+                host = get_config('host')
+                port = get_config('port')
+                protocol = 'https' if port == 443 else 'http'
+                subapp_configs['openapi']['base_url'] = f'{protocol}://{host}:{port}'
+            subapp_configs['openapi']['base_url'] = (
+                subapp_configs['openapi']['base_url'] + route
             )
             subapp = mk_app(handlers, **subapp_configs)
             add_subapp_meth(route, subapp)
@@ -555,7 +540,7 @@ def run_app(app_obj: Union[AppSpec, Any], **configs):
             return run_bottle
         elif framework == AIOHTTP:
             return web.run_app
-        raise NotImplementedError("")
+        raise NotImplementedError('')
 
     if isinstance(app_obj, Iterable):
         app = mk_app(app_obj, **configs)
@@ -565,11 +550,11 @@ def run_app(app_obj: Union[AppSpec, Any], **configs):
         get_config = partial(
             mk_config, func=None, configs=configs, defaults=default_configs
         )
-        host = get_config("host")
-        port = get_config("port")
-        server = get_config("server")
-        ssl_certfile = get_config("ssl_certfile")
-        ssl_keyfile = get_config("ssl_keyfile")
+        host = get_config('host')
+        port = get_config('port')
+        server = get_config('server')
+        ssl_certfile = get_config('ssl_certfile')
+        ssl_keyfile = get_config('ssl_keyfile')
 
         # run_func(app_obj, host=host, port=port, ssl_context=ssl_context, server='gunicorn')
         run_func(
@@ -583,25 +568,25 @@ def run_app(app_obj: Union[AppSpec, Any], **configs):
 
 
 def _get_framework(configs, default_configs):
-    framework = mk_config("framework", None, configs, default_configs)
+    framework = mk_config('framework', None, configs, default_configs)
     # NOTE Only support Bottle until we redesign py2http using a reusable tool for routing
     # if framework not in (FLASK, BOTTLE, AIOHTTP):
     if framework != BOTTLE:
         raise NotImplementedError(
             f'The Web Framework "{framework}" is not supported by py2http'
         )
-    os.environ["PY2HTTP_FRAMEWORK"] = framework
+    os.environ['PY2HTTP_FRAMEWORK'] = framework
     return framework
 
 
 def _get_func_to_dispatch_handler(handler):
-    endpoint = handler.get("endpoint")
+    endpoint = handler.get('endpoint')
     if endpoint is None:
-        raise InputError("No endpoint found in handler")
-    name = handler.get("name", name_of_obj(endpoint))
+        raise InputError('No endpoint found in handler')
+    name = handler.get('name', name_of_obj(endpoint))
     if not name:
-        raise InputError("No way to determine name of handler")
-    attr_names = handler.get("attr_names")
+        raise InputError('No way to determine name of handler')
+    attr_names = handler.get('attr_names')
     if attr_names is None:
         # TODO: This is a hack! Address the problem in a cleaner way.
         #   This hack is just completing some unclean handling of names already present
@@ -621,16 +606,16 @@ def _get_func_to_dispatch_handler(handler):
         def func(_obj_id=None, _attr_name=None, **kwargs):
             if _obj_id is None:
                 if _attr_name is not None:
-                    raise InputError("_attr_name must be None when _obj_id is None")
+                    raise InputError('_attr_name must be None when _obj_id is None')
                 new_obj = cls(**kwargs)
                 new_id = str(uuid4())
                 obj_store[new_id] = new_obj
                 return new_id
             obj = obj_store.get(_obj_id)
             if not obj:
-                raise InputError(f"No object found with id {_obj_id}")
+                raise InputError(f'No object found with id {_obj_id}')
             if _attr_name is None:
-                raise InputError("_attr_name must be provided when _obj_id is not None")
+                raise InputError('_attr_name must be provided when _obj_id is not None')
             return _get_attr_value(obj, _attr_name, attr_names, **kwargs)
 
     else:
@@ -643,10 +628,10 @@ def _get_func_to_dispatch_handler(handler):
 
 
 def _get_attr_value(obj, attr_name, valid_attr_names, **kwargs):
-    valid_attr_names = [attr_name] if valid_attr_names == "*" else valid_attr_names
+    valid_attr_names = [attr_name] if valid_attr_names == '*' else valid_attr_names
     if attr_name not in valid_attr_names or not hasattr(obj, attr_name):
         raise InputError(
-            f"No attribute found with name {attr_name} or it is not dispatched"
+            f'No attribute found with name {attr_name} or it is not dispatched'
         )
     attr = getattr(obj, attr_name)
     if callable(attr):

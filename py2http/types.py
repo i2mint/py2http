@@ -16,7 +16,7 @@ This module provides a convenient way to work with function parameters and signa
 from inspect import Parameter, Signature
 from typing import TypedDict, Optional, Iterable, Union, Mapping, Callable
 
-WriteOpResult = TypedDict("WriteOpResult", ok=bool, n=int, ids=Iterable[str])
+WriteOpResult = TypedDict('WriteOpResult', ok=bool, n=int, ids=Iterable[str])
 ParameterKind = type(Parameter.POSITIONAL_OR_KEYWORD)  # to get the enum type
 
 Params = Iterable[Parameter]

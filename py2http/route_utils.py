@@ -25,19 +25,19 @@ def create_handler(input_class, methodname):
         instance = input_class(**constructor_kwargs)
         return instance.getattr(methodname)(*input_args, **input_kwargs)
 
-    handler.input_trans = class_method.getattr("input_trans", None)
-    handler.output_trans = class_method.getattr("output_trans", None)
+    handler.input_trans = class_method.getattr('input_trans', None)
+    handler.output_trans = class_method.getattr('output_trans', None)
     return handler
 
 
 def mk_functions_from_class(input_class, whitelist):
     if isinstance(whitelist, Iterable):
-        whitelist = re.compile("(" + "|".join(whitelist) + ")$").match
+        whitelist = re.compile('(' + '|'.join(whitelist) + ')$').match
     elif isinstance(whitelist, str):
         whitelist = re.compile(whitelist).match
     assert callable(
         whitelist
-    ), f"whitelist needs to be an iterable, string, or callable. Was: {whitelist}"
+    ), f'whitelist needs to be an iterable, string, or callable. Was: {whitelist}'
 
     methods = [
         m

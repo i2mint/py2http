@@ -87,7 +87,7 @@ def p2h2p_test(
         verbose=verbose,
     ) as proc:
         for f, cf in zip(funcs, client_funcs):
-            clog(f"{signature(f)} -- {signature(cf)}")
+            clog(f'{signature(f)} -- {signature(cf)}')
             if check_signatures:
                 assert signature(f) == signature(cf)
             if isinstance(inputs_for_func, Iterable):
@@ -97,20 +97,20 @@ def p2h2p_test(
                     assert f_output == cf_output
 
 
-dflt_port = "3030"
-dflt_root_url = "http://localhost"
-dflt_base_url = dflt_root_url + ":" + dflt_port
+dflt_port = '3030'
+dflt_root_url = 'http://localhost'
+dflt_base_url = dflt_root_url + ':' + dflt_port
 
 
 def example_test(base_url=dflt_base_url):
-    add_result = requests.post(f"{base_url}/add", json={"a": 10, "b": 5})
-    assert str(add_result.json()) == "15"
+    add_result = requests.post(f'{base_url}/add', json={'a': 10, 'b': 5})
+    assert str(add_result.json()) == '15'
 
-    multiply_result = requests.post(f"{base_url}/multiply", json={"multiplier": 6})
-    assert str(multiply_result.json()) == "30"
+    multiply_result = requests.post(f'{base_url}/multiply', json={'multiplier': 6})
+    assert str(multiply_result.json()) == '30'
 
-    no_args_result = requests.post(f"{base_url}/no_args", json={})
-    assert str(no_args_result.json()) == "no args"
+    no_args_result = requests.post(f'{base_url}/no_args', json={})
+    assert str(no_args_result.json()) == 'no args'
 
 
 def square(x):
@@ -124,11 +124,11 @@ def power(x, p=1):
     return result
 
 
-def test_types(str="", int=0, float=0.0, list=[], dict={}, bool=True):
+def test_types(str='', int=0, float=0.0, list=[], dict={}, bool=True):
     pass
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     funcs = [
         square,
         power,
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     ]
     inputs_for_func = {
         square: zip([(10,)], [{}]),
-        power: zip([(10,), (5,)], [{"p": 1}, {"p": 2}]),
+        power: zip([(10,), (5,)], [{'p': 1}, {'p': 2}]),
     }
 
     p2h2p_test(funcs=funcs, inputs_for_func=inputs_for_func, verbose=True)

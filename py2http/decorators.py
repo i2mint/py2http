@@ -246,7 +246,7 @@ class DecoParam:
 from typing import Optional
 import re
 
-token_p = re.compile(r"\w+")
+token_p = re.compile(r'\w+')
 
 
 # TODO: Research how to keep the params in the order they were declared.
@@ -338,7 +338,7 @@ class ParamsSpecifier:
     def __init__(
         self,
         _annotations: Optional[dict] = None,
-        _names: str = "",
+        _names: str = '',
         _dflt_default=None,
         _kind=Parameter.KEYWORD_ONLY,
         **name_and_dflts,
@@ -352,35 +352,35 @@ class ParamsSpecifier:
         self._dflt_default = _dflt_default
         self._kind = _kind
 
-        if hasattr(self, "__annotations__"):
+        if hasattr(self, '__annotations__'):
             self.__annotations__.update(_annotations)
         else:
             self.__annotations__ = _annotations
 
         reserved = {
-            "_annotations",
-            "_names",
-            "_dflt_default",
-            "from_func",
-            "_extract_params",
-            "_to_signature",
-            "_kind",
-            "to_parameter_obj_list",
+            '_annotations',
+            '_names',
+            '_dflt_default',
+            'from_func',
+            '_extract_params',
+            '_to_signature',
+            '_kind',
+            'to_parameter_obj_list',
         }
         _name_and_dflts = {
             k: v
             for k, v in self.__class__.__dict__.items()
-            if not k.startswith("__") and k not in reserved
+            if not k.startswith('__') and k not in reserved
         }
         _name_and_dflts.update(name_and_dflts or {})
         self._name_and_dflts = _name_and_dflts
 
-        annots = set(getattr(self, "__annotations__", {}))
-        annots |= set(getattr(self.__class__, "__annotations__", {}))
+        annots = set(getattr(self, '__annotations__', {}))
+        annots |= set(getattr(self.__class__, '__annotations__', {}))
 
         _reserved = reserved.intersection(set(_name_and_dflts) | set(annots))
         if _reserved:
-            raise ValueError(f"Sorry, {_reserved} are reserved names")
+            raise ValueError(f'Sorry, {_reserved} are reserved names')
 
     @classmethod
     def from_func(cls, func, _dflt_default=None):
@@ -399,14 +399,12 @@ class ParamsSpecifier:
             for x in params
         }
         return cls(
-            _annotations=_annotations,
-            _dflt_default=_dflt_default,
-            **_name_and_dflts,
+            _annotations=_annotations, _dflt_default=_dflt_default, **_name_and_dflts,
         )
 
     def _extract_params(self):
         _name_and_dflts = self._name_and_dflts
-        annots = getattr(self, "__annotations__", {})
+        annots = getattr(self, '__annotations__', {})
         for name in set(annots) - set(_name_and_dflts):  # annots_not_in_attrs
             yield dict(
                 name=name,
@@ -430,7 +428,7 @@ class ParamsSpecifier:
         return list(self._extract_params())
 
     def __repr__(self):
-        return f"{self()}"
+        return f'{self()}'
 
 
 class Decora(Decorator):
@@ -541,7 +539,7 @@ class Decora(Decorator):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         if (
-            "__new__" not in cls.__dict__
+            '__new__' not in cls.__dict__
         ):  # if __new__ hasn't been defined in the subclass...
             params = []
             # cls_annots = getattr(cls, '__annotations__', {})
@@ -556,8 +554,8 @@ class Decora(Decorator):
             for p in params:
                 setattr(cls, p.name, p.default)
             params = [
-                Parameter("self", PK),
-                Parameter("func", PK, default=None),
+                Parameter('self', PK),
+                Parameter('func', PK, default=None),
             ] + params
             cls._injected_deco_params = [p.name for p in params]
 
@@ -566,8 +564,8 @@ class Decora(Decorator):
                     cls._injected_deco_params
                 ):
                     raise TypeError(
-                        "TypeError: __new__() got unexpected keyword arguments: "
-                        f"{kwargs.keys() - cls._injected_deco_params}"
+                        'TypeError: __new__() got unexpected keyword arguments: '
+                        f'{kwargs.keys() - cls._injected_deco_params}'
                     )
                 if func is None:
                     return partial(cls, **kwargs)
@@ -626,8 +624,7 @@ def replace_with_params(target=None, /, *, source=None, inplace=False):
                         target
                     )  # make a copy of the function so we don't
                 target.__signature__ = Signature(
-                    new_params,
-                    return_annotation=signature(target).return_annotation,
+                    new_params, return_annotation=signature(target).return_annotation,
                 )
                 return target
             else:
@@ -697,7 +694,7 @@ def methodizer(func=None, *, instance_params=()):
             kwargs.update(kwargs_from_self)
             return func(**kwargs)
 
-        set_signature_of_func(method, ["self"] + list(method_argnames))
+        set_signature_of_func(method, ['self'] + list(method_argnames))
 
         method.__name__ = func.__name__
 
@@ -709,14 +706,14 @@ from warnings import warn
 
 def _handle_exisisting_method_name(cls, method, if_method_exists):
     if hasattr(cls, method.__name__):
-        msg = f"{cls} already has a method named {method.__name__}"
-        if if_method_exists == "raise":
+        msg = f'{cls} already has a method named {method.__name__}'
+        if if_method_exists == 'raise':
             raise ValueError(msg)
-        elif if_method_exists == "warn":
-            warn(msg + " ... Will overwrite anyway.")
-        elif if_method_exists != "ignore":
+        elif if_method_exists == 'warn':
+            warn(msg + ' ... Will overwrite anyway.')
+        elif if_method_exists != 'ignore':
             raise ValueError(
-                f"if_method_exists value not recognized: {if_method_exists}"
+                f'if_method_exists value not recognized: {if_method_exists}'
             )
 
 
@@ -724,7 +721,7 @@ def _handle_exisisting_method_name(cls, method, if_method_exists):
 #   - signatures have different orders every time (need to use ordered containers)
 #   - Values not computed correctly
 def inject_methodized_funcs(
-    cls=None, *, funcs=(), instance_params=None, if_method_exists="raise"
+    cls=None, *, funcs=(), instance_params=None, if_method_exists='raise'
 ):
     """
 
@@ -765,7 +762,7 @@ def inject_methodized_funcs(
     # C.g(y, x)
     # C.h(kwargs, c, x)
     """
-    raise NotImplementedError("Not working yet: Come back to it!")
+    raise NotImplementedError('Not working yet: Come back to it!')
     if cls is None:
         return partial(
             inject_methodized_funcs,
@@ -790,7 +787,7 @@ def flatten_callables(*callables, func_name=None):
     """
     Flatten a pipeline of calls into one function.
     """
-    raise NotImplementedError("Meant to be a generalization of mk_flat")
+    raise NotImplementedError('Meant to be a generalization of mk_flat')
     for call in callables:
         pass
 
@@ -816,7 +813,7 @@ def _instantiate(cls, *, cache_id, **kwargs):
 
 # TODO: signature of flat function doesn't reflect actual call restrictions
 # TODO: Change default func_name to be dynamically, taking method as default
-def mk_flat(cls, method, *, func_name: str = "flat_func", cls_cache_key: str = None):
+def mk_flat(cls, method, *, func_name: str = 'flat_func', cls_cache_key: str = None):
     """
     Flatten a simple cls->instance->method call pipeline into one function.
 
@@ -892,7 +889,7 @@ def mk_flat(cls, method, *, func_name: str = "flat_func", cls_cache_key: str = N
     if cls_cache_key:
         param = dict(name=cls_cache_key, kind=KO, default=None)
         sig_flat = sig_flat.add_params([param])
-    sig_flat = sig_flat.remove_names(["self"])
+    sig_flat = sig_flat.remove_names(['self'])
     sig_flat = sig_flat.replace(return_annotation=sig_method.return_annotation)
 
     def flat_func(**kwargs):
@@ -953,7 +950,7 @@ def flatten_methods(methods: dict, decorator=None, validate_name_unicity=True):
     if validate_name_unicity:
         nb_function_names = len({x.__name__: x for x in functions})
         if nb_function_names != len(functions):
-            raise ValueError(f"Some function names are duplicated in {methods}")
+            raise ValueError(f'Some function names are duplicated in {methods}')
     return functions
 
 
@@ -990,10 +987,10 @@ def add_attrs(**attrs):
     return add_attrs_to_func
 
 
-http_get = add_attrs(http_method="get")
-http_post = add_attrs(http_method="post")
-http_put = add_attrs(http_method="put")
-http_delete = add_attrs(http_method="delete")
+http_get = add_attrs(http_method='get')
+http_post = add_attrs(http_method='post')
+http_put = add_attrs(http_method='put')
+http_delete = add_attrs(http_method='delete')
 
 
 def route(route_name):
@@ -1001,7 +998,7 @@ def route(route_name):
 
 
 def _validate_and_invoke_mapper(func, inputs):
-    request_schema = getattr(func, "request_schema", None)
+    request_schema = getattr(func, 'request_schema', None)
     if request_schema:
         validate_input(inputs, request_schema)
     return func(**inputs)
@@ -1085,8 +1082,7 @@ class ProposalJsonRespEncoder(JSONEncoder):
     # Note: Subclass and replace _pre_process_obj to get different preprocessing
     # Note: To get control from init, definte init to set _pre_process_obj
     _pre_process_obj = partial(
-        _json_reponse_preproc,
-        serializer_for_type=_mk_default_serializer_for_type(),
+        _json_reponse_preproc, serializer_for_type=_mk_default_serializer_for_type(),
     )
 
     def default(self, o):
@@ -1095,7 +1091,7 @@ class ProposalJsonRespEncoder(JSONEncoder):
 
 
 def send_json_resp(func):
-    framework = os.getenv("PY2HTTP_FRAMEWORK", BOTTLE)
+    framework = os.getenv('PY2HTTP_FRAMEWORK', BOTTLE)
     if framework == AIOHTTP:
 
         async def output_mapper(output, **input_kwargs):
@@ -1122,7 +1118,7 @@ def send_binary_resp(func):
         return pickle.dumps(mapped_output)
 
     output_mapper.content_type = BINARY_CONTENT_TYPE
-    output_mapper.response_schema = {"type": "binary"}
+    output_mapper.response_schema = {'type': 'binary'}
     return output_mapper
 
 
@@ -1173,25 +1169,25 @@ def mk_input_mapper(input_map):
 
 
 def _get_inputs_from_request(request, content_type):
-    defaults = getattr(request, "defaults", {})
-    if request.method == "POST":
+    defaults = getattr(request, 'defaults', {})
+    if request.method == 'POST':
         if content_type == JSON_CONTENT_TYPE:
             inputs = request.json
         elif content_type == RAW_CONTENT_TYPE:
-            data = request.body.read().decode("utf-8")
+            data = request.body.read().decode('utf-8')
             inputs = json.loads(data)
         elif content_type == BINARY_CONTENT_TYPE:
             data = request.body.read()
             inputs = pickle.loads(data)
         elif content_type == FORM_CONTENT_TYPE:
             fields = json.loads(
-                request.files.pop("__fields").file.read().decode("utf-8")
+                request.files.pop('__fields').file.read().decode('utf-8')
             )
             binaries = {k: v.file.read() for k, v in request.files.items()}
             inputs = dict(fields, **binaries)
         return dict(defaults, **inputs)
     else:
-        raise NotImplementedError("Only POST is supported for now")
+        raise NotImplementedError('Only POST is supported for now')
 
 
 def mk_handlers(methods: Iterable, *, decorator=None, cls_cache_key=None):
@@ -1204,7 +1200,7 @@ def mk_handlers(methods: Iterable, *, decorator=None, cls_cache_key=None):
         if inspect.isfunction(meth):
             cls = getattr(
                 inspect.getmodule(meth),
-                meth.__qualname__.split(".<locals>", 1)[0].rsplit(".", 1)[0],
+                meth.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0],
                 None,
             )
             if isinstance(cls, type):
@@ -1219,7 +1215,7 @@ def mk_handlers(methods: Iterable, *, decorator=None, cls_cache_key=None):
     handlers = []
     for item in methods:
         has_mappers = isinstance(item, dict)
-        method = item["endpoint"] if has_mappers else item
+        method = item['endpoint'] if has_mappers else item
         cls = get_class_that_defined_method(method)
         endpoint = decorator(
             mk_flat(cls, method, func_name=method.__name__, cls_cache_key=cls_cache_key)

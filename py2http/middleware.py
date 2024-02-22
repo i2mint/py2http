@@ -28,13 +28,13 @@ def mk_jwt_middleware(secret, verify=True):
 
     @web.middleware
     async def middleware(req, handler):
-        if handler.__name__ == "ping" or handler.__name__ == "openapi":
+        if handler.__name__ == 'ping' or handler.__name__ == 'openapi':
             return await handler(req)
-        auth_header = req.headers.get("Authorization", "")
+        auth_header = req.headers.get('Authorization', '')
         token = auth_header[7:]
         try:
             decoded = jwt.decode(
-                token, secret, options={"verify": verify}, algorithms=["HS256", "RS256"]
+                token, secret, options={'verify': verify}, algorithms=['HS256', 'RS256']
             )
             req.token = decoded
             return await handler(req)
@@ -43,12 +43,12 @@ def mk_jwt_middleware(secret, verify=True):
                 return web.HTTPUnauthorized(
                     text=json.dumps(
                         {
-                            "error": f'Invalid authentication token "{token}", {str(error)}'
+                            'error': f'Invalid authentication token "{token}", {str(error)}'
                         }
                     ),
                     content_type=JSON_CONTENT_TYPE,
                 )
-            warn(f"Invalid JWT: {token}")
+            warn(f'Invalid JWT: {token}')
             return await handler(req)
 
     return middleware
@@ -59,11 +59,11 @@ def mk_superadmin_middleware(secret):
 
     @web.middleware
     async def middleware(req, handler):
-        auth_header = req.headers.get("Authorization", "")
+        auth_header = req.headers.get('Authorization', '')
         if auth_header == secret:
             return await handler(req)
         return web.HTTPUnauthorized(
-            text=json.dumps({"error": "invalid API key"}),
+            text=json.dumps({'error': 'invalid API key'}),
             content_type=JSON_CONTENT_TYPE,
         )
 
