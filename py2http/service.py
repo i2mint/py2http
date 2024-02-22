@@ -362,6 +362,7 @@ def mk_app(app_spec: AppSpec, **configs):
     application.
 
     First define a bunch of functions (or handlers) you want to expose as a web service.
+
     >>> def foo():
     ...     return 0
     ...
@@ -371,6 +372,7 @@ def mk_app(app_spec: AppSpec, **configs):
 
     Let's make a single-service application. A single API will be generated with an
     endpoint per handler, plus an auto-generated enpoints to ping the API.
+
     >>> handlers = [foo, bar]
     >>> app = mk_app(handlers)
     >>> app.get_url('bar')
@@ -384,6 +386,7 @@ def mk_app(app_spec: AppSpec, **configs):
     of your API by activating the flag "publish_openapi". Publishing the openapi
     specification will allow a client application to use the specification object to
     build an interface to actually consume the API by wrapping the http layer.
+
     >>> app = mk_app(handlers, publish_openapi=True)
     >>> app.openapi_spec # doctest: +NORMALIZE_WHITESPACE
     {'openapi': '3.0.2', 'info': {'title': 'default', 'version': '0.1'}, 'servers':
@@ -398,7 +401,16 @@ def mk_app(app_spec: AppSpec, **configs):
     >>> app.get_url('openapi')
     '/openapi'
 
+    You can also generate swagger documentation by activating the "publish_swagger"
+    flag. This will generate a swagger documentation for the API and make it available
+    at the specified url.
+
+    >>> app = mk_app(handlers, publish_openapi=True, publish_swagger=True)
+    >>> app.get_url('swagger')
+    '/swagger'
+
     Let's use http2py to consume the openapi specification
+
     >>> from http2py import HttpClient
     >>> api = HttpClient(openapi_spec=app.openapi_spec)
     >>> assert(hasattr(api, 'foo'))
@@ -406,6 +418,7 @@ def mk_app(app_spec: AppSpec, **configs):
 
     Now, let's make a multi-service application. You only have to define a route per
     API with a list of handlers for each API.
+
     >>> handler_spec = {
     ...     'foo_api': [foo],
     ...     'bar_api': [bar],
@@ -576,17 +589,17 @@ def _get_func_to_dispatch_handler(handler):
     attr_names = handler.get('attr_names')
     if attr_names is None:
         # TODO: This is a hack! Address the problem in a cleaner way.
-        #   This hack is just completing some unclean handling of names already present 
+        #   This hack is just completing some unclean handling of names already present
         #   in the code. At the end of this function there's a func.__name__ = name,
-        #   but this operation was forgotten here. That said, we shouldn't do this at 
-        #   all. 
+        #   but this operation was forgotten here. That said, we shouldn't do this at
+        #   all.
         #   --> When a function is specified for a handler, the long language specs
-        #   needs to be created from it, and subsequently, the "name" field, not the 
-        #   __name__ attribute, needs to be used. 
+        #   needs to be created from it, and subsequently, the "name" field, not the
+        #   __name__ attribute, needs to be used.
         endpoint.__name__ = name  # the hack
         return endpoint
         # was return endpoint, but then the output didn't get the __name__ = name
-        # func = endpoint 
+        # func = endpoint
     if inspect.isclass(endpoint):
         cls = endpoint
 
