@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>py2http.decorators &mdash; py2http 0.1.59 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=755f2e77"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
+        <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+        <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="py2http.default_configs" href="default_configs.html" />
+    <link rel="prev" title="py2http.constants" href="constants.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            py2http
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../py2http.html">py2http</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bottle_plugins.html">py2http.bottle_plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">py2http.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="constants.html">py2http.constants</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">py2http.decorators</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.decorators.DecoParameter"><code class="docutils literal notranslate"><span class="pre">DecoParameter</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.decorators.Decora"><code class="docutils literal notranslate"><span class="pre">Decora</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.decorators.Decorator"><code class="docutils literal notranslate"><span class="pre">Decorator</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.decorators.JsonRespEncoder"><code class="docutils literal notranslate"><span class="pre">JsonRespEncoder</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#py2http.decorators.JsonRespEncoder.default"><code class="docutils literal notranslate"><span class="pre">JsonRespEncoder.default()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.decorators.Literal"><code class="docutils literal notranslate"><span class="pre">Literal</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.decorators.ParamsSpecifier"><code class="docutils literal notranslate"><span class="pre">ParamsSpecifier</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.decorators.ProposalJsonRespEncoder"><code class="docutils literal notranslate"><span class="pre">ProposalJsonRespEncoder</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#py2http.decorators.ProposalJsonRespEncoder.default"><code class="docutils literal notranslate"><span class="pre">ProposalJsonRespEncoder.default()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.decorators.add_attrs"><code class="docutils literal notranslate"><span class="pre">add_attrs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.decorators.ensure_awaitable_return_annot"><code class="docutils literal notranslate"><span class="pre">ensure_awaitable_return_annot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.decorators.flatten_callables"><code class="docutils literal notranslate"><span class="pre">flatten_callables()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.decorators.inject_methodized_funcs"><code class="docutils literal notranslate"><span class="pre">inject_methodized_funcs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.decorators.methodizer"><code class="docutils literal notranslate"><span class="pre">methodizer()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.decorators.mk_flat"><code class="docutils literal notranslate"><span class="pre">mk_flat()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.decorators.params_replacer"><code class="docutils literal notranslate"><span class="pre">params_replacer()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.decorators.replace_with_params"><code class="docutils literal notranslate"><span class="pre">replace_with_params()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="default_configs.html">py2http.default_configs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="diagnosis.html">py2http.diagnosis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/custom_input_mappers.html">py2http.examples.custom_input_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_service.html">py2http.examples.example_service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_service_bottle.html">py2http.examples.example_service_bottle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_service_flask.html">py2http.examples.example_service_flask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/object_dispatch.html">py2http.examples.object_dispatch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="middleware.html">py2http.middleware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="openapi_utils.html">py2http.openapi_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="route_utils.html">py2http.route_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schema_tools.html">py2http.schema_tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="service.html">py2http.service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/example_service_test.html">py2http.tests.example_service_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/objects_for_testing.html">py2http.tests.objects_for_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/simple_run_process_test.html">py2http.tests.simple_run_process_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_decorators.html">py2http.tests.test_decorators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_p2h2p.html">py2http.tests.test_p2h2p</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/utils_for_testing.html">py2http.tests.utils_for_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="types.html">py2http.types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="util.html">py2http.util</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">py2http</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">py2http.decorators</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/module_docs/py2http/decorators.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-py2http.decorators">
+<span id="py2http-decorators"></span><h1>py2http.decorators<a class="headerlink" href="#module-py2http.decorators" title="Link to this heading"></a></h1>
+<p>Decorator tools for py2http.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="py2http.decorators.DecoParameter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">py2http.decorators.</span></span><span class="sig-name descname"><span class="pre">DecoParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annotation</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/decorators.html#DecoParameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.decorators.DecoParameter" title="Link to this definition"></a></dt>
+<dd><p>A Parameter object that is meant to be the a parameter of a decorator factory.
+Subclassing inspect.Parameter so that it can be distinguished from it if needed.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py2http.decorators.Decora">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">py2http.decorators.</span></span><span class="sig-name descname"><span class="pre">Decora</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/decorators.html#Decora"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.decorators.Decora" title="Link to this definition"></a></dt>
+<dd><p>A version of Decorator where you can define your subclasses by defininig attributes
+of the subclass (instead of writing a manual __new__ method).</p>
+<p>Here’s a typical use, as a decorator factory…</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">py2http.decorators</span> <span class="kn">import</span> <span class="n">Decora</span><span class="p">,</span> <span class="n">ParamsSpecifier</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">whatevs</span><span class="p">(</span><span class="n">ParamsSpecifier</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">minus</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">... </span>    <span class="n">times</span><span class="p">:</span> <span class="nb">float</span>
+<span class="gp">... </span>    <span class="n">repeat</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">Deco</span><span class="p">(</span><span class="n">Decora</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">my_params</span> <span class="o">=</span> <span class="n">whatevs</span><span class="p">()</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">func_result</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="n">func_result</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="n">func_result</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">times</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">minus</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">w</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">greet</span><span class="o">=</span><span class="s1">&#39;hi&#39;</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">greet</span><span class="p">,</span> <span class="n">w</span> <span class="o">+</span> <span class="n">x</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">Deco</span><span class="p">(</span><span class="n">times</span><span class="o">=</span><span class="mi">3</span><span class="p">)(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">g</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="s1">&#39;hi&#39;</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">g</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="s1">&#39;hi&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">27</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">g</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">greet</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">Deco</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">times</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">minus</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">g</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="s1">&#39;hi&#39;</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">Deco</span><span class="p">(</span><span class="n">times</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">minus</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">1</span><span class="p">)(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">g</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="s1">&#39;hi&#39;</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">Deco</span><span class="p">(</span><span class="n">times</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">minus</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">1</span><span class="p">)(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">g</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="s1">&#39;hi&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">20</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">1</span><span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">11</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">&lt;Signature (x, y=1)&gt;</span>
+<span class="gp">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>More examples (of different forms)</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">LogCalls</span><span class="p">(</span><span class="n">Decora</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">class</span> <span class="nc">DecoParams</span><span class="p">(</span><span class="n">ParamsSpecifier</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">verb</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;calling&#39;</span>  <span class="c1"># will be taken and included in the __init__</span>
+<span class="gp">... </span>        <span class="n">decoy</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># will be taken (but not actually used in __call__)</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">verb</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1"> with </span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s1"> and </span><span class="si">{</span><span class="n">kwargs</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ff</span> <span class="o">=</span> <span class="n">LogCalls</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">verb</span><span class="o">=</span><span class="s1">&#39;launching&#39;</span><span class="p">)</span>  <span class="c1"># doing it the &quot;decorator way&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">ff</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="o">==</span> <span class="mi">11</span>
+<span class="go">launching &lt;lambda&gt; with (10,) and {}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signature</span><span class="p">(</span><span class="n">ff</span><span class="p">)</span>
+<span class="go">&lt;Signature (x, y=1)&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">signature</span><span class="p">(</span><span class="n">ff</span><span class="p">)</span> <span class="o">==</span> <span class="n">signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>  <span class="c1"># asserting same signature as the wrapped f</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signature</span><span class="p">(</span><span class="n">LogCalls</span><span class="p">)</span>  <span class="c1"># the signature of the decorator itself</span>
+<span class="go">&lt;Signature (func=None, *, verb: str = &#39;calling&#39;, decoy=None)&gt;</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ff</span> <span class="o">=</span> <span class="n">LogCalls</span><span class="p">()(</span><span class="n">f</span><span class="p">)</span>  <span class="c1"># defaults work when using as factory</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signature</span><span class="p">(</span><span class="n">ff</span><span class="p">)</span>
+<span class="go">&lt;Signature (x, y=1)&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ff</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">calling &lt;lambda&gt; with (10,) and {}</span>
+<span class="go">11</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ff</span> <span class="o">=</span> <span class="n">LogCalls</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>  <span class="c1"># defaults work when using as decorator</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ff</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">calling &lt;lambda&gt; with (10,) and {}</span>
+<span class="go">11</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">LogCalls</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">real_arg</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># rejects arguments that weren&#39;t &quot;registered&quot; by the __new__</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="w">    </span><span class="o">...</span>
+<span class="gr">TypeError</span>: <span class="n">TypeError: __new__() got unexpected keyword arguments: {&#39;real_arg&#39;}</span>
+<span class="gp">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>But you can still do it with __new__ if you want</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">ProcessOutput</span><span class="p">(</span><span class="n">Decora</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">postproc</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">postproc</span> <span class="o">=</span> <span class="n">postproc</span> <span class="ow">or</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">postproc</span><span class="o">=</span><span class="n">postproc</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">postproc</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fff</span> <span class="o">=</span> <span class="n">ProcessOutput</span><span class="p">(</span><span class="n">postproc</span><span class="o">=</span><span class="nb">str</span><span class="p">)(</span><span class="n">f</span><span class="p">)</span>  <span class="c1"># doing it the &quot;decorator factory way&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">fff</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;11&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">signature</span><span class="p">(</span><span class="n">fff</span><span class="p">)</span>  <span class="o">==</span> <span class="n">signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signature</span><span class="p">(</span><span class="n">ProcessOutput</span><span class="p">)</span>  <span class="c1"># the signature of the decorator itself</span>
+<span class="go">&lt;Signature (func=None, *, postproc=None)&gt;</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Verifying that LogCalls still has the right signature</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signature</span><span class="p">(</span><span class="n">LogCalls</span><span class="p">)</span>  <span class="c1"># the signature of the decorator itself</span>
+<span class="go">&lt;Signature (func=None, *, verb: str = &#39;calling&#39;, decoy=None)&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py2http.decorators.Decorator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">py2http.decorators.</span></span><span class="sig-name descname"><span class="pre">Decorator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/decorators.html#Decorator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.decorators.Decorator" title="Link to this definition"></a></dt>
+<dd><p>A “transparent” decorator meant to be used to subclass into specialized decorators.</p>
+<p>The signature of the wrapped function is carried to the __call__ of the decorated instance.</p>
+<p>To specialize (and do something else than just “transparent” wrapping, you need to subclass
+Decorator and define your own <cite>__call__</cite> method. You may assume that</p>
+<p>The decorator pattern is a significant reuse tool, and indeed we use them a lot in i2i tooling.
+The standard way is to write decorators (and decorator factories) the functional was,
+but writing them as classes has introspection (therefore debuggability) advantages.</p>
+<p>The approach comes with other kinds of problems though.
+One of them is signature transfer (both for the decorator and the decorator factory).
+Taken care of here.</p>
+<p>Another wish (not really a problem) is to be able to use both <cite>deco(func, params)</cite>
+and <cite>deco(params(func))</cite> forms. Also taken care of here.</p>
+<p>Another problem is an increased boilerplate in specifying the decorator mechanics.
+For example: If you want to have a proper signature (not just <a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs),
+you need to overwrite <cite>__new__</cite> for the sole purpose of specifying the arguments
+(names, and optional annotations and defaults).
+This problem is not taken care of here, but you can check out <cite>Decora</cite>,
+a subclass of Decorator, that does.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">py2http.decorators</span> <span class="kn">import</span> <span class="n">Decorator</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">1</span><span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>  <span class="c1"># a function to decorate</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">11</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="go">&lt;Signature (x, y=1)&gt;</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">LogCalls</span><span class="p">(</span><span class="n">Decorator</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">verb</span><span class="o">=</span><span class="s1">&#39;calling&#39;</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">verb</span><span class="o">=</span><span class="n">verb</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">verb</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1"> with </span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s1"> and </span><span class="si">{</span><span class="n">kwargs</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ff</span> <span class="o">=</span> <span class="n">LogCalls</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">verb</span><span class="o">=</span><span class="s1">&#39;launching&#39;</span><span class="p">)</span>  <span class="c1"># doing it the &quot;decorator way&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">ff</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="o">==</span> <span class="mi">11</span>
+<span class="go">launching &lt;lambda&gt; with (10,) and {}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signature</span><span class="p">(</span><span class="n">ff</span><span class="p">)</span>
+<span class="go">&lt;Signature (x, y=1)&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">signature</span><span class="p">(</span><span class="n">ff</span><span class="p">)</span> <span class="o">==</span> <span class="n">signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>  <span class="c1"># asserting same signature as the wrapped f</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signature</span><span class="p">(</span><span class="n">LogCalls</span><span class="p">)</span>
+<span class="go">&lt;Signature (func=None, *, verb=&#39;calling&#39;)&gt;</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">ProcessOutput</span><span class="p">(</span><span class="n">Decorator</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">postproc</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">postproc</span> <span class="o">=</span> <span class="n">postproc</span> <span class="ow">or</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">postproc</span><span class="o">=</span><span class="n">postproc</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">postproc</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fff</span> <span class="o">=</span> <span class="n">ProcessOutput</span><span class="p">(</span><span class="n">postproc</span><span class="o">=</span><span class="nb">str</span><span class="p">)(</span><span class="n">f</span><span class="p">)</span>  <span class="c1"># doing it the &quot;decorator factory way&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">fff</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;11&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">signature</span><span class="p">(</span><span class="n">fff</span><span class="p">)</span>  <span class="o">==</span> <span class="n">signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signature</span><span class="p">(</span><span class="n">ProcessOutput</span><span class="p">)</span>
+<span class="go">&lt;Signature (func=None, *, postproc=None)&gt;</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ff</span> <span class="o">=</span> <span class="n">LogCalls</span><span class="p">()(</span><span class="n">f</span><span class="p">)</span>  <span class="c1"># defaults work when using as factory</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">signature</span><span class="p">(</span><span class="n">ff</span><span class="p">)</span>
+<span class="go">&lt;Signature (x, y=1)&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ff</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">calling &lt;lambda&gt; with (10,) and {}</span>
+<span class="go">11</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ff</span> <span class="o">=</span> <span class="n">LogCalls</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>  <span class="c1"># defaults work when using as decorator</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ff</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="go">calling &lt;lambda&gt; with (10,) and {}</span>
+<span class="go">11</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># rejects arguments that weren&#39;t &quot;registered&quot; by the __new__:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">LogCalls</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">real_arg</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  
+<span class="gt">Traceback (most recent call last):</span>
+<span class="w">    </span><span class="o">...</span>
+<span class="gr">TypeError</span>: <span class="n">__new__() got an unexpected keyword argument &#39;real_arg&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py2http.decorators.JsonRespEncoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">py2http.decorators.</span></span><span class="sig-name descname"><span class="pre">JsonRespEncoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skipkeys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensure_ascii</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_circular</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_nan</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sort_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separators</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/decorators.html#JsonRespEncoder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.decorators.JsonRespEncoder" title="Link to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="py2http.decorators.JsonRespEncoder.default">
+<span class="sig-name descname"><span class="pre">default</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">o</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/decorators.html#JsonRespEncoder.default"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.decorators.JsonRespEncoder.default" title="Link to this definition"></a></dt>
+<dd><p>Implement this method in a subclass such that it returns
+a serializable object for <code class="docutils literal notranslate"><span class="pre">o</span></code>, or calls the base implementation
+(to raise a <code class="docutils literal notranslate"><span class="pre">TypeError</span></code>).</p>
+<p>For example, to support arbitrary iterators, you could
+implement default like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">o</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">iterable</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span>
+    <span class="c1"># Let the base class default method raise the TypeError</span>
+    <span class="k">return</span> <span class="n">JSONEncoder</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">o</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py2http.decorators.Literal">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">py2http.decorators.</span></span><span class="sig-name descname"><span class="pre">Literal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/decorators.html#Literal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.decorators.Literal" title="Link to this definition"></a></dt>
+<dd><p>An object to indicate that the value should be considered literally</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py2http.decorators.ParamsSpecifier">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">py2http.decorators.</span></span><span class="sig-name descname"><span class="pre">ParamsSpecifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_annotations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_dflt_default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">_ParameterKind.KEYWORD_ONLY</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">name_and_dflts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/decorators.html#ParamsSpecifier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.decorators.ParamsSpecifier" title="Link to this definition"></a></dt>
+<dd><p>A tool to specify params (that is, lists of inspect.Parameter instances that
+are used in callable signatures.</p>
+<p>But wait! you may not need this!</p>
+<p>Often the cleanest way to make a signature, or list of Parameters is to define an empty function
+with that signature, and extract it from there.</p>
+<p>See <cite>Decora</cite> for the original intended use of ParamsSpecifier.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">signature</span><span class="p">,</span> <span class="n">Signature</span><span class="p">,</span> <span class="n">Parameter</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">c</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;hi&#39;</span><span class="p">):</span> <span class="o">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sig</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sig</span>
+<span class="go">&lt;Signature (a, b: int, c: float = 0.0, d: str = &#39;hi&#39;)&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">sig</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+<span class="go">[&lt;Parameter &quot;a&quot;&gt;, &lt;Parameter &quot;b: int&quot;&gt;, &lt;Parameter &quot;c: float = 0.0&quot;&gt;, &lt;Parameter &quot;d: str = &#39;hi&#39;&quot;&gt;]</span>
+</pre></div>
+</div>
+<p>The reason for the existence of ParamsSpecifier was to do some magic around giving class-based
+decorators a signature. The reasons of this magic may be outdated soon.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">py2http.decorators</span> <span class="kn">import</span> <span class="n">ParamsSpecifier</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Signature</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">KO</span> <span class="o">=</span> <span class="n">Parameter</span><span class="o">.</span><span class="n">KEYWORD_ONLY</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">MyParams</span><span class="p">(</span><span class="n">ParamsSpecifier</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">b</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">... </span>    <span class="n">z</span><span class="p">:</span> <span class="nb">float</span>
+<span class="gp">... </span>    <span class="n">c</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">params</span> <span class="o">=</span> <span class="n">MyParams</span><span class="p">()()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">expected_params</span> <span class="o">=</span> <span class="p">[</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="n">KO</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;annotation&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">},</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="n">KO</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="n">KO</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;annotation&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">}]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">params</span> <span class="o">==</span> <span class="n">expected_params</span>
+</pre></div>
+</div>
+<p>See that the params are all valid kwargs to inspect.Parameter, by making a signature from them
+&gt;&gt;&gt; Signature(Parameter(<a href="#id3"><span class="problematic" id="id4">**</span></a>p) for p in params)
+&lt;Signature (<a href="#id5"><span class="problematic" id="id6">*</span></a>, z: float = None, b=3, c: int = 2)&gt;</p>
+<p>Let’s now get another params specifier.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">get_new_params</span> <span class="o">=</span> <span class="n">MyParams</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">_annotations</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">b</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="nb">str</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="n">_names</span><span class="o">=</span><span class="s1">&#39;a wol&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">another</span><span class="o">=</span><span class="s1">&#39;here&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">params</span> <span class="o">=</span> <span class="n">get_new_params</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">expected_params</span> <span class="o">=</span> <span class="p">[</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="n">KO</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;annotation&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">},</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="n">KO</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;annotation&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">},</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="n">KO</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;annotation&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">},</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;another&#39;</span><span class="p">,</span> <span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="n">KO</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="s1">&#39;here&#39;</span><span class="p">},</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="n">KO</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;annotation&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">},</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;wol&#39;</span><span class="p">,</span> <span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="n">KO</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}]</span>
+</pre></div>
+</div>
+<p>One thing to note in the expected_params is the order.
+Indeed, the order is not the order that is taken (because couldn’t figure out otherwise)
+is as such:
+- First the class-level attributes that are annotated, but not given a default</p>
+<blockquote>
+<div><p>(though a blanket _dflt_default default will be given to them all).
+Here order is not assured.</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Second the reset of the class-level attributes, in the order they were defined.</p></li>
+<li><p>Third the instance argument params given by the _names argument, in the order they were listed.</p></li>
+<li><p>Finally the instance argument name_and_dflts params, in the order they were listed.</p></li>
+</ul>
+<p>Remember, all this is meant to provide ways to specify signatures.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Signature</span><span class="p">(</span><span class="n">Parameter</span><span class="p">(</span><span class="o">**</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">params</span><span class="p">)</span>
+<span class="go">&lt;Signature (*, z: float = None, b: int = 3, c: int = 2, another=&#39;here&#39;, a: str = None, wol=None)&gt;</span>
+</pre></div>
+</div>
+<p>Now, not that ParamsSpecifier is the tool for this, but to demo what ParamsSpecifier’s
+params are, we’ll give one last example where we take a function, make a ParamsSpecifier
+from it, and add a different kind of default</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">c</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;hi&#39;</span><span class="p">):</span> <span class="o">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">param_maker</span> <span class="o">=</span> <span class="n">ParamsSpecifier</span><span class="o">.</span><span class="n">from_func</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">_dflt_default</span><span class="o">=</span><span class="s1">&#39;a different dflt&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Signature</span><span class="p">(</span><span class="n">Parameter</span><span class="p">(</span><span class="o">**</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">param_maker</span><span class="p">())</span>
+<span class="go">&lt;Signature (*, a=&#39;a different dflt&#39;, b: int = &#39;a different dflt&#39;, c: float = 0.0, d: str = &#39;hi&#39;)&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py2http.decorators.ProposalJsonRespEncoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">py2http.decorators.</span></span><span class="sig-name descname"><span class="pre">ProposalJsonRespEncoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skipkeys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensure_ascii</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_circular</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_nan</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sort_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separators</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/decorators.html#ProposalJsonRespEncoder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.decorators.ProposalJsonRespEncoder" title="Link to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="py2http.decorators.ProposalJsonRespEncoder.default">
+<span class="sig-name descname"><span class="pre">default</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">o</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/decorators.html#ProposalJsonRespEncoder.default"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.decorators.ProposalJsonRespEncoder.default" title="Link to this definition"></a></dt>
+<dd><p>Implement this method in a subclass such that it returns
+a serializable object for <code class="docutils literal notranslate"><span class="pre">o</span></code>, or calls the base implementation
+(to raise a <code class="docutils literal notranslate"><span class="pre">TypeError</span></code>).</p>
+<p>For example, to support arbitrary iterators, you could
+implement default like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">o</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">iterable</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span>
+    <span class="c1"># Let the base class default method raise the TypeError</span>
+    <span class="k">return</span> <span class="n">JSONEncoder</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">o</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.decorators.add_attrs">
+<span class="sig-prename descclassname"><span class="pre">py2http.decorators.</span></span><span class="sig-name descname"><span class="pre">add_attrs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">attrs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/decorators.html#add_attrs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.decorators.add_attrs" title="Link to this definition"></a></dt>
+<dd><p>Makes a function that adds attributes to a function.</p>
+<p>Used in it’s normal context, it looks something like this:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@add_attrs</span><span class="p">(</span><span class="n">my_special_attr</span><span class="o">=</span><span class="s1">&#39;my special value&#39;</span><span class="p">,</span> <span class="n">another</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">foo</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># checking that this great function still works</span>
+<span class="go">11</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># checking that it now has some extra attributes</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">foo</span><span class="o">.</span><span class="n">my_special_attr</span>
+<span class="go">&#39;my special value&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">foo</span><span class="o">.</span><span class="n">another</span>
+<span class="go">42</span>
+</pre></div>
+</div>
+<p>But it can be useful to make attribute adder, and reuse when needed.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">brand_my_func</span> <span class="o">=</span> <span class="n">add_attrs</span><span class="p">(</span><span class="n">author</span><span class="o">=</span><span class="s2">&quot;me&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="n">brand_my_func</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>  <span class="c1"># not capturing the output to show that the change happens in-place</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">foo</span><span class="o">.</span><span class="n">author</span>
+<span class="go">&#39;me&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.decorators.ensure_awaitable_return_annot">
+<span class="sig-prename descclassname"><span class="pre">py2http.decorators.</span></span><span class="sig-name descname"><span class="pre">ensure_awaitable_return_annot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/decorators.html#ensure_awaitable_return_annot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.decorators.ensure_awaitable_return_annot" title="Link to this definition"></a></dt>
+<dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">async</span> <span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span> <span class="o">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">foo</span><span class="p">))</span> <span class="o">==</span> <span class="s1">&#39;(x: str) -&gt; int&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">ensure_awaitable_return_annot</span><span class="p">(</span><span class="n">foo</span><span class="p">)))</span> <span class="o">==</span> <span class="s1">&#39;(x: str) -&gt; Awaitable[int]&#39;</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># but if func is not async, don&#39;t change anything</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">bar</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span> <span class="o">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">bar</span><span class="p">))</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">ensure_awaitable_return_annot</span><span class="p">(</span><span class="n">bar</span><span class="p">)))</span>  <span class="o">==</span> <span class="s1">&#39;(a) -&gt; str&#39;</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># or if the return annotation is already contained in an Awaitable, don&#39;t change anything</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">async</span> <span class="k">def</span> <span class="nf">baz</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Awaitable</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span> <span class="o">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">baz</span><span class="p">))</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">ensure_awaitable_return_annot</span><span class="p">(</span><span class="n">baz</span><span class="p">)))</span> <span class="o">==</span> <span class="s1">&#39;() -&gt; Awaitable[float]&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.decorators.flatten_callables">
+<span class="sig-prename descclassname"><span class="pre">py2http.decorators.</span></span><span class="sig-name descname"><span class="pre">flatten_callables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">callables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/decorators.html#flatten_callables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.decorators.flatten_callables" title="Link to this definition"></a></dt>
+<dd><p>Flatten a pipeline of calls into one function.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.decorators.inject_methodized_funcs">
+<span class="sig-prename descclassname"><span class="pre">py2http.decorators.</span></span><span class="sig-name descname"><span class="pre">inject_methodized_funcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">funcs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instance_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">if_method_exists</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'raise'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/decorators.html#inject_methodized_funcs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.decorators.inject_methodized_funcs" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cls</strong> – </p></li>
+<li><p><strong>funcs</strong> – </p></li>
+<li><p><strong>instance_params</strong> – </p></li>
+<li><p><strong>if_method_exists</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+<p># TODO: Come back to inject_methodized_funcs doctest once inject_methodized_funcs is well written
+# &gt;&gt;&gt; from inspect import signature
+# &gt;&gt;&gt;
+# &gt;&gt;&gt;
+# &gt;&gt;&gt; def f(a, b, x):
+# …     return x * (a + b)
+# …
+# &gt;&gt;&gt; def g(x, y=1):
+# …     return x * y
+# …
+# &gt;&gt;&gt;
+# &gt;&gt;&gt; def h(a, x, c, <a href="#id7"><span class="problematic" id="id8">**</span></a>kwargs):
+# …     return f”{a}-{x}-{c}: {list(kwargs.keys())}”
+# …
+# &gt;&gt;&gt; &#64;inject_methodized_funcs(funcs=(f, g, h))
+# … class C:
+# …     def __init__(self, x, a=0, bob=True):
+# …         self.x = x
+# …         self.a = a
+# …         self.bob = bob
+# …
+# &gt;&gt;&gt;
+# &gt;&gt;&gt;
+# &gt;&gt;&gt; c = C(x=10)
+# &gt;&gt;&gt; for m in (‘f’, ‘g’, ‘h’):
+# …     print(f”{C.__name__}.{m}{signature(getattr(c, m))}”)
+# …
+# C.f(b, x)
+# C.g(y, x)
+# C.h(kwargs, c, x)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.decorators.methodizer">
+<span class="sig-prename descclassname"><span class="pre">py2http.decorators.</span></span><span class="sig-name descname"><span class="pre">methodizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instance_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/decorators.html#methodizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.decorators.methodizer" title="Link to this definition"></a></dt>
+<dd><p>A decorator to get method versions of functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>func</strong> – </p></li>
+<li><p><strong>instance_params</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">py2http.decorators</span> <span class="kn">import</span> <span class="n">methodizer</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">g</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">y</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">methodize</span> <span class="o">=</span> <span class="n">methodizer</span><span class="p">(</span><span class="n">instance_params</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;non_existing_attr&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">A</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span>
+<span class="gp">...</span>
+<span class="gp">... </span>    <span class="n">f</span> <span class="o">=</span> <span class="n">methodize</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">g</span> <span class="o">=</span> <span class="n">methodize</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">A</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">a</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="n">b</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">9</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">a</span><span class="o">.</span><span class="n">g</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">a</span><span class="o">.</span><span class="n">g</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span> <span class="o">==</span> <span class="mi">30</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.decorators.mk_flat">
+<span class="sig-prename descclassname"><span class="pre">py2http.decorators.</span></span><span class="sig-name descname"><span class="pre">mk_flat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'flat_func'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cls_cache_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/decorators.html#mk_flat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.decorators.mk_flat" title="Link to this definition"></a></dt>
+<dd><p>Flatten a simple cls-&gt;instance-&gt;method call pipeline into one function.</p>
+<p>That is, a function mk_flat(cls, method) that returns a “flat function” such that
+<code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">cls(**init_kwargs).method(**method_kwargs)</span> <span class="pre">==</span> <span class="pre">flat_func(**init_kwargs,</span> <span class="pre">**method_kwargs)</span>
+<span class="pre">`</span></code></p>
+<p>So, instead of this:
+<code class="docutils literal notranslate"><span class="pre">`graphviz</span>
+<span class="pre">label=&quot;NESTED:</span> <span class="pre">result</span> <span class="pre">=</span> <span class="pre">cls(**init_kwargs).method(**method_kwargs)&quot;</span>
+<span class="pre">cls,</span> <span class="pre">init_kwargs</span> <span class="pre">-&gt;</span> <span class="pre">instance</span>
+<span class="pre">instance,</span> <span class="pre">method,</span> <span class="pre">method_kwargs</span> <span class="pre">-&gt;</span> <span class="pre">result</span>
+<span class="pre">`</span></code>
+you get a function <cite>flat_func</cite> that you can use like this:
+<code class="docutils literal notranslate"><span class="pre">`graphviz</span>
+<span class="pre">label=&quot;FLAT:</span> <span class="pre">result</span> <span class="pre">=</span> <span class="pre">flat_func(**init_kwargs,</span> <span class="pre">**method_kwargs)&quot;</span>
+<span class="pre">flat_func,</span> <span class="pre">init_kwargs,</span> <span class="pre">method_kwargs</span> <span class="pre">-&gt;</span> <span class="pre">result</span>
+<span class="pre">`</span></code>
+:param cls: A class
+:param method: A method of this class
+:param func_name: The name of the function (will be “flat_func” by default)
+:param cls_cache_key: The name of the kwarg used to manage cache. If not None, the
+same instance of <code class="docutils literal notranslate"><span class="pre">cls</span></code> will be used for all the flattened method called with the same
+value for this kwarg.
+:return:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">MultiplierClass</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">multiply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">*</span> <span class="n">y</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">subtract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">z</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">MultiplierClass</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
+<span class="go">42</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">MultiplierClass</span><span class="p">(</span><span class="mf">3.14</span><span class="p">)</span><span class="o">.</span><span class="n">multiply</span><span class="p">()</span>
+<span class="go">3.14</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">MultiplierClass</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">mk_flat</span><span class="p">(</span><span class="n">MultiplierClass</span><span class="p">,</span> <span class="s1">&#39;multiply&#39;</span><span class="p">,</span> <span class="n">func_name</span><span class="o">=</span><span class="s1">&#39;my_special_func&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">help</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>  
+<span class="go">Help on function my_special_func in module ...</span>
+
+<span class="go">my_special_func(x, y: float = 1) -&gt; float</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">mk_flat</span><span class="p">(</span><span class="n">MultiplierClass</span><span class="p">,</span> <span class="n">MultiplierClass</span><span class="o">.</span><span class="n">subtract</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">help</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>  
+<span class="go">Help on function flat_func in in module ...</span>
+
+<span class="go">flat_func(x, z)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.decorators.params_replacer">
+<span class="sig-prename descclassname"><span class="pre">py2http.decorators.</span></span><span class="sig-name descname"><span class="pre">params_replacer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">replace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Parameter</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Parameter</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/decorators.html#params_replacer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.decorators.params_replacer" title="Link to this definition"></a></dt>
+<dd><p>Generator of transformed params.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.decorators.replace_with_params">
+<span class="sig-prename descclassname"><span class="pre">py2http.decorators.</span></span><span class="sig-name descname"><span class="pre">replace_with_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/decorators.html#replace_with_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.decorators.replace_with_params" title="Link to this definition"></a></dt>
+<dd><p>Will return a version of the target type that has params taken from source.
+Both target and source can be of the HasParams type, i.e.
+<a href="#id9"><span class="problematic" id="id10">``</span></a><a href="#id11"><span class="problematic" id="id12">`</span></a></p>
+<blockquote>
+<div><p>Union[Iterable[Parameter], Mapping[str, Parameter], Signature, Callable]</p>
+</div></blockquote>
+<p><a href="#id13"><span class="problematic" id="id14">``</span></a><a href="#id15"><span class="problematic" id="id16">`</span></a></p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span> <span class="o">...</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">g</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span> <span class="o">...</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f_sig</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f_params_map</span> <span class="o">=</span> <span class="n">f_sig</span><span class="o">.</span><span class="n">parameters</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f_params</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">f_params_map</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g_sig</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g_params_map</span> <span class="o">=</span> <span class="n">g_sig</span><span class="o">.</span><span class="n">parameters</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g_params</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">g_params_map</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">original_f_sig</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">original_f_sig</span><span class="p">)</span>
+<span class="go">(a, /, b, *, c=None, **kwargs)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">new_f</span> <span class="o">=</span> <span class="n">replace_with_params</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">g</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">new_f</span><span class="p">))</span>
+<span class="go">(x, y=1, *args, **kwargs)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">signature</span><span class="p">(</span><span class="n">new_f</span><span class="p">)</span> <span class="o">==</span> <span class="n">signature</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># but f remains unchanged (there is inplace=False option though!)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="o">==</span> <span class="n">original_f_sig</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="constants.html" class="btn btn-neutral float-left" title="py2http.constants" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="default_configs.html" class="btn btn-neutral float-right" title="py2http.default_configs" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 
+2020
+Otosense.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

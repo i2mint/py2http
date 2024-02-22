@@ -1,0 +1,4 @@
+py2http.examples.object_dispatch
+================================
+.. automodule:: py2http.examples.object_dispatch
+   :members:

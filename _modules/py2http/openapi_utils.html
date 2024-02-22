@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>py2http.openapi_utils &mdash; py2http 0.1.59 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=755f2e77"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
+        <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+        <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            py2http
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http.html">py2http</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/bottle_plugins.html">py2http.bottle_plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/config.html">py2http.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/constants.html">py2http.constants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/decorators.html">py2http.decorators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/default_configs.html">py2http.default_configs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/diagnosis.html">py2http.diagnosis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/custom_input_mappers.html">py2http.examples.custom_input_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/example_service.html">py2http.examples.example_service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/example_service_bottle.html">py2http.examples.example_service_bottle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/example_service_flask.html">py2http.examples.example_service_flask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/examples/object_dispatch.html">py2http.examples.object_dispatch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/middleware.html">py2http.middleware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/openapi_utils.html">py2http.openapi_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/route_utils.html">py2http.route_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/schema_tools.html">py2http.schema_tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/service.html">py2http.service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/example_service_test.html">py2http.tests.example_service_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/objects_for_testing.html">py2http.tests.objects_for_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/simple_run_process_test.html">py2http.tests.simple_run_process_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/test_decorators.html">py2http.tests.test_decorators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/test_p2h2p.html">py2http.tests.test_p2h2p</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/tests/utils_for_testing.html">py2http.tests.utils_for_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/types.html">py2http.types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2http/util.html">py2http.util</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">py2http</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">py2http.openapi_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for py2http.openapi_utils</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This module is designed to generate OpenAPI specifications based on Python functions. </span>
+<span class="sd">It includes functions for creating OpenAPI paths, setting authentication details, </span>
+<span class="sd">and building OpenAPI templates. The `OpenApiExtractor` class can be used to extract </span>
+<span class="sd">information from an existing OpenAPI document.</span>
+
+<span class="sd">The `func_to_openapi_spec` function is particularly useful, as it takes a Python </span>
+<span class="sd">function as input and generates an OpenAPI path specification, including request </span>
+<span class="sd">and response schemas.</span>
+
+<span class="sd">Overall, this module allows you to define API routes and generate corresponding </span>
+<span class="sd">OpenAPI specifications directly from your Python functions. It provides a convenient </span>
+<span class="sd">way to document and expose your functions as HTTP endpoints.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">py2http.default_configs</span> <span class="kn">import</span> <span class="n">DFLT_CONTENT_TYPE</span>
+<span class="kn">from</span> <span class="nn">py2http.util</span> <span class="kn">import</span> <span class="n">conditional_logger</span><span class="p">,</span> <span class="n">CreateProcess</span><span class="p">,</span> <span class="n">lazyprop</span>
+
+<span class="n">oatype_for_pytype</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="nb">str</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span>
+    <span class="nb">int</span><span class="p">:</span> <span class="s2">&quot;integer&quot;</span><span class="p">,</span>
+    <span class="nb">float</span><span class="p">:</span> <span class="s2">&quot;number&quot;</span><span class="p">,</span>
+    <span class="nb">list</span><span class="p">:</span> <span class="s2">&quot;array&quot;</span><span class="p">,</span>
+    <span class="nb">dict</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+    <span class="nb">bool</span><span class="p">:</span> <span class="s2">&quot;boolean&quot;</span><span class="p">,</span>
+    <span class="n">Any</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">openapi_type_mapping</span><span class="p">(</span><span class="n">obj_type</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj_type</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">obj_type</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">oatype_for_pytype</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">obj_type</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+
+<span class="n">BINARY</span> <span class="o">=</span> <span class="s2">&quot;binary&quot;</span>
+<span class="n">DFLT_SERVER_URL</span> <span class="o">=</span> <span class="s2">&quot;http://localhost:3030&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">OpenApiExtractor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">openapi_spec</span><span class="p">,</span> <span class="n">func_to_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">openapi_spec</span> <span class="o">=</span> <span class="n">openapi_spec</span>
+        <span class="k">if</span> <span class="n">func_to_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+            <span class="k">def</span> <span class="nf">func_to_path</span><span class="p">(</span>
+                <span class="n">func</span><span class="p">,</span>
+            <span class="p">):</span>  <span class="c1"># TODO: Fragile. Need to make func &lt;-&gt; path more robust (e.g. include in openapi_spec)</span>
+                <span class="k">return</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">func_to_path</span> <span class="o">=</span> <span class="n">func_to_path</span>
+
+    <span class="k">def</span> <span class="nf">paths_and_methods_items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">path_info</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">openapi_spec</span><span class="p">[</span><span class="s2">&quot;paths&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">method</span><span class="p">,</span> <span class="n">path_method_info</span> <span class="ow">in</span> <span class="n">path_info</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">yield</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">method</span><span class="p">),</span> <span class="n">path_method_info</span>
+
+    <span class="nd">@lazyprop</span>
+    <span class="k">def</span> <span class="nf">info_for_path_and_method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">paths_and_methods_items</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">func_and_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">funcs</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+
+<span class="k">def</span> <span class="nf">mk_openapi_template</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">config</span><span class="p">:</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">openapi_spec</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;openapi&quot;</span><span class="p">:</span> <span class="s2">&quot;3.0.2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;info&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;version&quot;</span><span class="p">,</span> <span class="s2">&quot;0.1&quot;</span><span class="p">),</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;servers&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;base_url&quot;</span><span class="p">,</span> <span class="n">DFLT_SERVER_URL</span><span class="p">)}],</span>
+        <span class="s2">&quot;paths&quot;</span><span class="p">:</span> <span class="p">{},</span>
+    <span class="p">}</span>
+    <span class="n">auth_config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;auth&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">auth_config</span><span class="p">:</span>
+        <span class="n">auth_type</span> <span class="o">=</span> <span class="n">auth_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;auth_type&quot;</span><span class="p">,</span> <span class="s2">&quot;jwt&quot;</span><span class="p">)</span>
+        <span class="n">login_details</span> <span class="o">=</span> <span class="n">auth_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;login_details&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">set_auth</span><span class="p">(</span><span class="n">openapi_spec</span><span class="p">,</span> <span class="n">auth_type</span><span class="p">,</span> <span class="n">login_details</span><span class="o">=</span><span class="n">login_details</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">openapi_spec</span>
+
+
+<span class="k">def</span> <span class="nf">add_paths_to_spec</span><span class="p">(</span><span class="n">paths_spec</span><span class="p">,</span> <span class="n">new_paths</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">pathname</span> <span class="ow">in</span> <span class="n">new_paths</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">http_method</span> <span class="ow">in</span> <span class="n">new_paths</span><span class="p">[</span><span class="n">pathname</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">paths_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pathname</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">http_method</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;HTTP method </span><span class="si">{</span><span class="n">http_method</span><span class="si">}</span><span class="s2"> already exists for path </span><span class="si">{</span><span class="n">pathname</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+        <span class="n">paths_spec</span><span class="p">[</span><span class="n">pathname</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_paths</span><span class="p">[</span><span class="n">pathname</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="set_auth">
+<a class="viewcode-back" href="../../module_docs/py2http/openapi_utils.html#py2http.openapi_utils.set_auth">[docs]</a>
+<span class="k">def</span> <span class="nf">set_auth</span><span class="p">(</span><span class="n">openapi_spec</span><span class="p">,</span> <span class="n">auth_type</span><span class="o">=</span><span class="s2">&quot;jwt&quot;</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">login_details</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param openapi_spec: An OpenAPI formatted server specification</span>
+<span class="sd">    :param auth_type: Either &#39;jwt&#39; or &#39;api_key&#39;</span>
+<span class="sd">    :param login_details: Optional - {</span>
+<span class="sd">        &#39;login_url&#39;: the login url</span>
+<span class="sd">        &#39;refresh_url&#39;: the refresh url, if applicable</span>
+<span class="sd">        &#39;login_inputs&#39;: a list of strings e.g. [&#39;account&#39;, &#39;email&#39;, &#39;password&#39;]</span>
+<span class="sd">        &#39;refresh_inputs&#39;: a list of strings e.g. [&#39;account&#39;, &#39;refresh_token&#39;]</span>
+<span class="sd">        &#39;outputs&#39;: a list of strings e.g. [&#39;jwt&#39;, &#39;refresh_token&#39;]</span>
+<span class="sd">    }</span>
+<span class="sd">    &quot;&quot;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">auth_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;jwt&quot;</span><span class="p">,</span> <span class="s2">&quot;api_key&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;auth_type must be either &#39;jwt&#39; or &#39;api_key&#39;&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">login_details</span><span class="p">:</span>
+        <span class="n">login_details</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">openapi_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;components&quot;</span><span class="p">):</span>
+        <span class="n">openapi_spec</span><span class="p">[</span><span class="s2">&quot;components&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">openapi_spec</span><span class="p">[</span><span class="s2">&quot;components&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;securitySchemes&quot;</span><span class="p">):</span>
+        <span class="n">openapi_spec</span><span class="p">[</span><span class="s2">&quot;components&quot;</span><span class="p">][</span><span class="s2">&quot;securitySchemes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">openapi_spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;security&quot;</span><span class="p">):</span>
+        <span class="n">openapi_spec</span><span class="p">[</span><span class="s2">&quot;security&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">auth_type</span> <span class="o">==</span> <span class="s2">&quot;jwt&quot;</span><span class="p">:</span>
+        <span class="n">openapi_spec</span><span class="p">[</span><span class="s2">&quot;components&quot;</span><span class="p">][</span><span class="s2">&quot;securitySchemes&quot;</span><span class="p">][</span><span class="s2">&quot;bearerAuth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;http&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;scheme&quot;</span><span class="p">:</span> <span class="s2">&quot;bearer&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;bearerFormat&quot;</span><span class="p">:</span> <span class="s2">&quot;JWT&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">login_details</span><span class="p">:</span>
+            <span class="n">openapi_spec</span><span class="p">[</span><span class="s2">&quot;components&quot;</span><span class="p">][</span><span class="s2">&quot;securitySchemes&quot;</span><span class="p">][</span><span class="s2">&quot;bearerAuth&quot;</span><span class="p">][</span>
+                <span class="s2">&quot;x-login&quot;</span>
+            <span class="p">]</span> <span class="o">=</span> <span class="n">login_details</span>
+        <span class="n">openapi_spec</span><span class="p">[</span><span class="s2">&quot;security&quot;</span><span class="p">][</span><span class="s2">&quot;bearerAuth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">openapi_spec</span><span class="p">[</span><span class="s2">&quot;components&quot;</span><span class="p">][</span><span class="s2">&quot;securitySchemes&quot;</span><span class="p">][</span><span class="s2">&quot;apiKeyAuth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;apiKey&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;in&quot;</span><span class="p">:</span> <span class="s2">&quot;header&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Authorization&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">openapi_spec</span><span class="p">[</span><span class="s2">&quot;security&quot;</span><span class="p">][</span><span class="s2">&quot;apiKey&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">mk_openapi_path</span><span class="p">(</span>
+    <span class="n">pathname</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;post&quot;</span><span class="p">,</span>
+    <span class="n">request_content_type</span><span class="o">=</span><span class="n">DFLT_CONTENT_TYPE</span><span class="p">,</span>
+    <span class="n">request_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">response_content_type</span><span class="o">=</span><span class="n">DFLT_CONTENT_TYPE</span><span class="p">,</span>
+    <span class="n">response_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">path_fields</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="c1"># TODO: correctly handle input args in URL (params and query)</span>
+    <span class="c1"># TODO: allow args in header (specific to path, not just for whole service)</span>
+    <span class="n">method</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;get&quot;</span><span class="p">,</span> <span class="s2">&quot;put&quot;</span><span class="p">,</span> <span class="s2">&quot;post&quot;</span><span class="p">,</span> <span class="s2">&quot;delete&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;HTTP method must be GET, PUT, POST, or DELETE (case-insensitive)&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">path_fields</span><span class="p">:</span>
+        <span class="n">path_fields</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">new_path</span> <span class="o">=</span> <span class="p">{</span><span class="n">pathname</span><span class="p">:</span> <span class="p">{</span><span class="n">method</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">path_fields</span><span class="p">)}}</span>
+    <span class="n">new_path_spec</span> <span class="o">=</span> <span class="n">new_path</span><span class="p">[</span><span class="n">pathname</span><span class="p">][</span><span class="n">method</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">request_schema</span><span class="p">:</span>
+        <span class="n">new_path_spec</span><span class="p">[</span><span class="s2">&quot;requestBody&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="n">request_content_type</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;schema&quot;</span><span class="p">:</span> <span class="n">mk_arg_schema</span><span class="p">(</span><span class="n">request_schema</span><span class="p">)}</span>
+            <span class="p">},</span>
+        <span class="p">}</span>
+    <span class="n">new_path_spec</span><span class="p">[</span><span class="s2">&quot;responses&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;200&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">response_content_type</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;schema&quot;</span><span class="p">:</span> <span class="p">{}}}}</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">response_schema</span><span class="p">:</span>
+        <span class="n">new_path_spec</span><span class="p">[</span><span class="s2">&quot;responses&quot;</span><span class="p">][</span><span class="s2">&quot;200&quot;</span><span class="p">][</span><span class="s2">&quot;content&quot;</span><span class="p">][</span><span class="n">response_content_type</span><span class="p">][</span>
+            <span class="s2">&quot;schema&quot;</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="n">mk_arg_schema</span><span class="p">(</span><span class="n">response_schema</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">new_path</span>
+
+
+<span class="k">def</span> <span class="nf">mk_obj_schema</span><span class="p">(</span><span class="n">request_object</span><span class="p">):</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">request_object</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">output</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">mk_arg_schema</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Accidentally got a tuple: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">request_object</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">output</span>
+
+
+<span class="k">def</span> <span class="nf">mk_arg_schema</span><span class="p">(</span><span class="n">arg</span><span class="p">):</span>
+    <span class="n">arg_type</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="n">Any</span><span class="p">)</span>
+    <span class="n">required</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="s2">&quot;default&quot;</span> <span class="ow">in</span> <span class="n">arg</span><span class="p">:</span>
+        <span class="n">required</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">default</span> <span class="o">=</span> <span class="n">arg</span><span class="p">[</span><span class="s2">&quot;default&quot;</span><span class="p">]</span>
+    <span class="n">val_type</span> <span class="o">=</span> <span class="n">openapi_type_mapping</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="n">Any</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">val_type</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Request schema value </span><span class="si">{</span><span class="n">arg_type</span><span class="si">}</span><span class="s2"> is an invalid type. Only JSON-compatible types are allowed.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">val_type</span> <span class="o">==</span> <span class="s2">&quot;object&quot;</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="n">mk_obj_schema</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;properties&quot;</span><span class="p">,</span> <span class="p">{})),</span>
+        <span class="p">}</span>
+        <span class="n">required_props</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;required&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="n">required_props</span><span class="p">:</span>
+            <span class="n">output</span><span class="p">[</span><span class="s2">&quot;required&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">required_props</span>
+    <span class="k">elif</span> <span class="n">val_type</span> <span class="o">==</span> <span class="s2">&quot;array&quot;</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;array&quot;</span><span class="p">}</span>
+        <span class="n">sub_args</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;items&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sub_args</span><span class="p">:</span>
+            <span class="n">output</span><span class="p">[</span><span class="s2">&quot;items&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mk_arg_schema</span><span class="p">(</span><span class="n">sub_args</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">val_type</span> <span class="o">==</span> <span class="s2">&quot;number&quot;</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">val_type</span><span class="p">,</span> <span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;float&quot;</span><span class="p">}</span>
+    <span class="k">elif</span> <span class="n">arg_type</span> <span class="o">==</span> <span class="n">BINARY</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;binary&quot;</span><span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">val_type</span><span class="p">}</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">required</span><span class="p">:</span>
+        <span class="n">output</span><span class="p">[</span><span class="s2">&quot;default&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">default</span>
+    <span class="k">return</span> <span class="n">output</span>
+
+
+<span class="kn">from</span> <span class="nn">py2http.schema_tools</span> <span class="kn">import</span> <span class="n">mk_input_schema_from_func</span>
+
+
+<span class="k">def</span> <span class="nf">func_to_openapi_spec</span><span class="p">(</span>
+    <span class="n">func</span><span class="p">,</span>
+    <span class="n">exclude_keys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">pathname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;post&quot;</span><span class="p">,</span>
+    <span class="n">request_content_type</span><span class="o">=</span><span class="n">DFLT_CONTENT_TYPE</span><span class="p">,</span>
+    <span class="c1">#                     request_dict=None,</span>
+    <span class="n">response_content_type</span><span class="o">=</span><span class="n">DFLT_CONTENT_TYPE</span><span class="p">,</span>
+    <span class="n">response_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">path_fields</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="n">pathname</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">pathname</span> <span class="ow">or</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span>
+    <span class="p">)</span>  <span class="c1"># TODO: need safer get_name func, and name collision management</span>
+    <span class="n">request_schema</span> <span class="o">=</span> <span class="n">mk_input_schema_from_func</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">exclude_keys</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mk_openapi_path</span><span class="p">(</span>
+        <span class="n">pathname</span><span class="p">,</span>
+        <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
+        <span class="n">request_content_type</span><span class="o">=</span><span class="n">request_content_type</span><span class="p">,</span>
+        <span class="n">request_schema</span><span class="o">=</span><span class="n">request_schema</span><span class="p">,</span>
+        <span class="n">response_content_type</span><span class="o">=</span><span class="n">response_content_type</span><span class="p">,</span>
+        <span class="n">response_schema</span><span class="o">=</span><span class="n">response_schema</span><span class="p">,</span>
+        <span class="n">path_fields</span><span class="o">=</span><span class="n">path_fields</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="c1"># Wish for sigfrom and/or mkwith decorators to be able to do func_to_openapi_spec like this:</span>
+<span class="c1">#</span>
+<span class="c1"># @sigfrom(mk_input_schema_from_func, mk_openapi_path, exclude=&#39;request_dict&#39;, dflts={&#39;pathname&#39;: None})</span>
+<span class="c1"># def func_to_openapi_spec(*args, **kwargs):</span>
+<span class="c1">#     kws1, kws2 = extract_kwargs(mk_input_schema_from_func, mk_openapi_path)</span>
+<span class="c1">#     kws1[&#39;pathname&#39;] = kws1[&#39;pathname&#39;] or kws1[&#39;func&#39;].__name__</span>
+<span class="c1">#     request_dict = mk_input_schema_from_func(**kws1)</span>
+<span class="c1">#     return mk_openapi_path(request_dict=request_dict, **kws2)</span>
+<span class="c1">#</span>
+<span class="c1"># @sigfrom(mk_input_schema_from_func, mk_openapi_path, exclude=&#39;request_dict&#39;, dflts={&#39;pathname&#39;: None})</span>
+<span class="c1"># def func_to_openapi_spec(*args, **kwargs):</span>
+<span class="c1">#     pathname = pathname or func.__name__</span>
+<span class="c1">#     request_dict = mk_input_schema_from_func(func, exclude_keys)</span>
+<span class="c1">#     return mk_openapi_path(request_dict=request_dict, **kws2)</span>
+
+
+<span class="c1"># TODO: What&#39;s below is meant for http2py, and lives/maintains there.</span>
+<span class="c1">#   Copied below (but commented out) for reference. Can delete if never used.</span>
+<span class="c1"># from inspect import Parameter, Signature</span>
+<span class="c1">#</span>
+<span class="c1"># PK = Parameter.POSITIONAL_OR_KEYWORD</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># def _params_from_props(openapi_props):</span>
+<span class="c1">#     for name, p in openapi_props.items():</span>
+<span class="c1">#         yield Parameter(name=name, kind=PK,</span>
+<span class="c1">#                         default=p.get(&#39;default&#39;, Parameter.empty),</span>
+<span class="c1">#                         annotation=p.get(&#39;type&#39;, Parameter.empty))</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># def add_annots_from_openapi_props(func, openapi_props):</span>
+<span class="c1">#     func.__signature__ = Signature(_params_from_props(openapi_props))</span>
+<span class="c1">#     return func</span>
+<span class="c1">#</span>
+
+<span class="c1"># TODO Where to document the format of header inputs to be consumed by http2py</span>
+<span class="c1"># configs = {</span>
+<span class="c1">#     &#39;header_inputs&#39;: {</span>
+<span class="c1">#         &#39;account&#39;: {</span>
+<span class="c1">#             &#39;header&#39;: &#39;Authorization&#39;,</span>
+<span class="c1">#             &#39;type&#39;: &#39;string&#39;,</span>
+<span class="c1">#             &#39;encoding&#39;: &#39;jwt&#39;,</span>
+<span class="c1">#         },</span>
+<span class="c1">#         &#39;email&#39;: {</span>
+<span class="c1">#             &#39;header&#39;: &#39;Authorization&#39;,</span>
+<span class="c1">#             &#39;type&#39;: &#39;string&#39;,</span>
+<span class="c1">#             &#39;encoding&#39;: &#39;jwt&#39;,</span>
+<span class="c1">#         },</span>
+<span class="c1">#         &#39;api_key&#39;: {</span>
+<span class="c1">#             &#39;header&#39;: &#39;x-api-key&#39;,</span>
+<span class="c1">#             &#39;type&#39;: &#39;string&#39;, # no encoding, defaults to raw</span>
+<span class="c1">#         }</span>
+<span class="c1">#     }</span>
+<span class="c1"># }</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 
+2020
+Otosense.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

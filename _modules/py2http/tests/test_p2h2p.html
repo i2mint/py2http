@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>py2http.tests.test_p2h2p &mdash; py2http 0.1.59 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=eafc0fe6" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=755f2e77"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../../_static/toggleprompt.js?v=d7ede5d2"></script>
+        <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+        <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            py2http
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http.html">py2http</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/bottle_plugins.html">py2http.bottle_plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/config.html">py2http.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/constants.html">py2http.constants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/decorators.html">py2http.decorators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/default_configs.html">py2http.default_configs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/diagnosis.html">py2http.diagnosis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/examples/custom_input_mappers.html">py2http.examples.custom_input_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/examples/example_service.html">py2http.examples.example_service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/examples/example_service_bottle.html">py2http.examples.example_service_bottle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/examples/example_service_flask.html">py2http.examples.example_service_flask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/examples/object_dispatch.html">py2http.examples.object_dispatch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/middleware.html">py2http.middleware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/openapi_utils.html">py2http.openapi_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/route_utils.html">py2http.route_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/schema_tools.html">py2http.schema_tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/service.html">py2http.service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/tests/example_service_test.html">py2http.tests.example_service_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/tests/objects_for_testing.html">py2http.tests.objects_for_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/tests/simple_run_process_test.html">py2http.tests.simple_run_process_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/tests/test_decorators.html">py2http.tests.test_decorators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/tests/test_p2h2p.html">py2http.tests.test_p2h2p</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/tests/utils_for_testing.html">py2http.tests.utils_for_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/types.html">py2http.types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2http/util.html">py2http.util</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">py2http</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">py2http.tests.test_p2h2p</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for py2http.tests.test_p2h2p</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">from</span> <span class="nn">py2http.service</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">mk_app</span><span class="p">,</span>
+    <span class="n">mk_routes_and_openapi_specs</span><span class="p">,</span>
+    <span class="n">run_app</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">http2py.py2request</span> <span class="kn">import</span> <span class="n">mk_request_func_from_openapi_spec</span>
+<span class="kn">from</span> <span class="nn">py2http.util</span> <span class="kn">import</span> <span class="n">ModuleNotFoundIgnore</span>
+<span class="kn">from</span> <span class="nn">py2http.util</span> <span class="kn">import</span> <span class="n">conditional_logger</span><span class="p">,</span> <span class="n">run_process</span>
+<span class="kn">from</span> <span class="nn">py2http.openapi_utils</span> <span class="kn">import</span> <span class="n">OpenApiExtractor</span>
+<span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">signature</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
+
+
+<span class="c1"># def mk_app_launcher(app, **kwargs):</span>
+<span class="c1">#     with ModuleNotFoundIgnore():</span>
+<span class="c1">#         from aiohttp.web import Application, run_app</span>
+<span class="c1">#         if isinstance(app, Application):</span>
+<span class="c1">#             def app_launcher(app):</span>
+<span class="c1">#                 port = kwargs.pop(&#39;port&#39;, getattr(app, &#39;port&#39;, None))</span>
+<span class="c1">#                 return run_app(app, port=port, **kwargs)</span>
+<span class="c1">#</span>
+<span class="c1">#             return app_launcher</span>
+<span class="c1">#         else:</span>
+<span class="c1">#             raise TypeError(f&quot;Unknown app type ({type(app)}): {app}&quot;)</span>
+
+
+<span class="k">def</span> <span class="nf">client_funcs_from_openapi</span><span class="p">(</span><span class="n">openapi_spec</span><span class="p">,</span> <span class="o">**</span><span class="n">h2p_configs</span><span class="p">):</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">OpenApiExtractor</span><span class="p">(</span><span class="n">openapi_spec</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">method</span><span class="p">),</span> <span class="n">spec</span> <span class="ow">in</span> <span class="n">e</span><span class="o">.</span><span class="n">paths_and_methods_items</span><span class="p">():</span>
+        <span class="k">yield</span> <span class="n">mk_request_func_from_openapi_spec</span><span class="p">(</span>
+            <span class="n">path</span><span class="p">,</span> <span class="n">openapi_spec</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="o">**</span><span class="n">h2p_configs</span>
+        <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">get_client_funcs</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span> <span class="n">p2h_configs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">h2p_configs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">routes</span><span class="p">,</span> <span class="n">openapi_spec</span> <span class="o">=</span> <span class="n">mk_routes_and_openapi_specs</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">p2h_configs</span> <span class="ow">or</span> <span class="p">{}))</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">client_funcs_from_openapi</span><span class="p">(</span><span class="n">openapi_spec</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">h2p_configs</span> <span class="ow">or</span> <span class="p">{})))</span>
+
+
+<span class="k">def</span> <span class="nf">p2h2p_app</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span> <span class="n">p2h_configs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">h2p_configs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">app</span> <span class="o">=</span> <span class="n">mk_app</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">p2h_configs</span> <span class="ow">or</span> <span class="p">{}))</span>
+    <span class="c1"># w_funcs = list(_w_funcs(funcs, app.openapi_spec, **(h2p_configs or {})))</span>
+    <span class="n">c_funcs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">client_funcs_from_openapi</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">openapi_spec</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">h2p_configs</span> <span class="ow">or</span> <span class="p">{})))</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">funcs</span> <span class="o">=</span> <span class="n">funcs</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">c_funcs</span> <span class="o">=</span> <span class="n">c_funcs</span>
+    <span class="k">return</span> <span class="n">app</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># def run_service(funcs, configs=None):</span>
+<span class="c1">#     return run_app(funcs, **(configs or {}))</span>
+
+
+<span class="c1"># equivalence tests ############################################</span>
+
+
+<div class="viewcode-block" id="p2h2p_test">
+<a class="viewcode-back" href="../../../module_docs/py2http/tests/test_p2h2p.html#py2http.tests.test_p2h2p.p2h2p_test">[docs]</a>
+<span class="k">def</span> <span class="nf">p2h2p_test</span><span class="p">(</span>
+    <span class="n">funcs</span><span class="p">,</span>
+    <span class="n">inputs_for_func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">p2h_configs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">h2p_configs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">check_signatures</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">wait_before_entering</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    :param funcs: An iterable of callables</span>
+<span class="sd">    :param inputs_for_func: a map from functions of func to an [(args, kwargs),...] list of valid inputs</span>
+<span class="sd">    :param p2h_configs: py2http conversion configs</span>
+<span class="sd">    :param h2p_configs: http2py conversion configs</span>
+<span class="sd">    :param check_signatures:</span>
+<span class="sd">    :param wait_before_entering:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">clog</span> <span class="o">=</span> <span class="n">conditional_logger</span><span class="p">(</span><span class="n">verbose</span><span class="p">)</span>
+    <span class="n">client_funcs</span> <span class="o">=</span> <span class="n">get_client_funcs</span><span class="p">(</span>
+        <span class="n">funcs</span><span class="p">,</span> <span class="n">p2h_configs</span><span class="o">=</span><span class="n">p2h_configs</span><span class="p">,</span> <span class="n">h2p_configs</span><span class="o">=</span><span class="n">h2p_configs</span>
+    <span class="p">)</span>
+    <span class="k">with</span> <span class="n">run_process</span><span class="p">(</span>
+        <span class="n">func</span><span class="o">=</span><span class="n">run_app</span><span class="p">,</span>
+        <span class="n">func_args</span><span class="o">=</span><span class="p">(</span><span class="n">funcs</span><span class="p">,),</span>
+        <span class="n">func_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">({},</span> <span class="n">configs</span><span class="o">=</span><span class="n">p2h_configs</span><span class="p">),</span>
+        <span class="n">is_ready</span><span class="o">=</span><span class="n">wait_before_entering</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+    <span class="p">)</span> <span class="k">as</span> <span class="n">proc</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">f</span><span class="p">,</span> <span class="n">cf</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span> <span class="n">client_funcs</span><span class="p">):</span>
+            <span class="n">clog</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="si">}</span><span class="s2"> -- </span><span class="si">{</span><span class="n">signature</span><span class="p">(</span><span class="n">cf</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">check_signatures</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="o">==</span> <span class="n">signature</span><span class="p">(</span><span class="n">cf</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputs_for_func</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span> <span class="ow">in</span> <span class="n">inputs_for_func</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+                    <span class="n">f_output</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                    <span class="n">cf_output</span> <span class="o">=</span> <span class="n">cf</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                    <span class="k">assert</span> <span class="n">f_output</span> <span class="o">==</span> <span class="n">cf_output</span></div>
+
+
+
+<span class="n">dflt_port</span> <span class="o">=</span> <span class="s2">&quot;3030&quot;</span>
+<span class="n">dflt_root_url</span> <span class="o">=</span> <span class="s2">&quot;http://localhost&quot;</span>
+<span class="n">dflt_base_url</span> <span class="o">=</span> <span class="n">dflt_root_url</span> <span class="o">+</span> <span class="s2">&quot;:&quot;</span> <span class="o">+</span> <span class="n">dflt_port</span>
+
+
+<span class="k">def</span> <span class="nf">example_test</span><span class="p">(</span><span class="n">base_url</span><span class="o">=</span><span class="n">dflt_base_url</span><span class="p">):</span>
+    <span class="n">add_result</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/add&quot;</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">})</span>
+    <span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">add_result</span><span class="o">.</span><span class="n">json</span><span class="p">())</span> <span class="o">==</span> <span class="s2">&quot;15&quot;</span>
+
+    <span class="n">multiply_result</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/multiply&quot;</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;multiplier&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">})</span>
+    <span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">multiply_result</span><span class="o">.</span><span class="n">json</span><span class="p">())</span> <span class="o">==</span> <span class="s2">&quot;30&quot;</span>
+
+    <span class="n">no_args_result</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/no_args&quot;</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{})</span>
+    <span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">no_args_result</span><span class="o">.</span><span class="n">json</span><span class="p">())</span> <span class="o">==</span> <span class="s2">&quot;no args&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span>
+
+
+<span class="k">def</span> <span class="nf">power</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">p</span><span class="p">)):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">result</span> <span class="o">*</span> <span class="n">x</span> <span class="k">if</span> <span class="n">p</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">result</span> <span class="o">/</span> <span class="n">x</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="k">def</span> <span class="nf">test_types</span><span class="p">(</span><span class="nb">str</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="nb">int</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">list</span><span class="o">=</span><span class="p">[],</span> <span class="nb">dict</span><span class="o">=</span><span class="p">{},</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">funcs</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">square</span><span class="p">,</span>
+        <span class="n">power</span><span class="p">,</span>
+        <span class="c1"># test_types</span>
+    <span class="p">]</span>
+    <span class="n">inputs_for_func</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">square</span><span class="p">:</span> <span class="nb">zip</span><span class="p">([(</span><span class="mi">10</span><span class="p">,)],</span> <span class="p">[{}]),</span>
+        <span class="n">power</span><span class="p">:</span> <span class="nb">zip</span><span class="p">([(</span><span class="mi">10</span><span class="p">,),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,)],</span> <span class="p">[{</span><span class="s2">&quot;p&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="s2">&quot;p&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}]),</span>
+    <span class="p">}</span>
+
+    <span class="n">p2h2p_test</span><span class="p">(</span><span class="n">funcs</span><span class="o">=</span><span class="n">funcs</span><span class="p">,</span> <span class="n">inputs_for_func</span><span class="o">=</span><span class="n">inputs_for_func</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 
+2020
+Otosense.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

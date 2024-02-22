@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>py2http.util &mdash; py2http 0.1.59 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=755f2e77"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
+        <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+        <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="prev" title="py2http.types" href="types.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            py2http
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../py2http.html">py2http</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bottle_plugins.html">py2http.bottle_plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">py2http.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="constants.html">py2http.constants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="decorators.html">py2http.decorators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="default_configs.html">py2http.default_configs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="diagnosis.html">py2http.diagnosis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/custom_input_mappers.html">py2http.examples.custom_input_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_service.html">py2http.examples.example_service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_service_bottle.html">py2http.examples.example_service_bottle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/example_service_flask.html">py2http.examples.example_service_flask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/object_dispatch.html">py2http.examples.object_dispatch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="middleware.html">py2http.middleware</a></li>
+<li class="toctree-l1"><a class="reference internal" href="openapi_utils.html">py2http.openapi_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="route_utils.html">py2http.route_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schema_tools.html">py2http.schema_tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="service.html">py2http.service</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/example_service_test.html">py2http.tests.example_service_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/objects_for_testing.html">py2http.tests.objects_for_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/simple_run_process_test.html">py2http.tests.simple_run_process_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_decorators.html">py2http.tests.test_decorators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_p2h2p.html">py2http.tests.test_p2h2p</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/utils_for_testing.html">py2http.tests.utils_for_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="types.html">py2http.types</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">py2http.util</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.util.CreateProcess"><code class="docutils literal notranslate"><span class="pre">CreateProcess</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.util.Missing"><code class="docutils literal notranslate"><span class="pre">Missing</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.util.ModuleNotFoundIgnore"><code class="docutils literal notranslate"><span class="pre">ModuleNotFoundIgnore</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.util.Skip"><code class="docutils literal notranslate"><span class="pre">Skip</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.util.TypeAsserter"><code class="docutils literal notranslate"><span class="pre">TypeAsserter</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.util.deprecate"><code class="docutils literal notranslate"><span class="pre">deprecate()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.util.lazyprop"><code class="docutils literal notranslate"><span class="pre">lazyprop</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.util.obj_to_items_gen"><code class="docutils literal notranslate"><span class="pre">obj_to_items_gen()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.util.obj_to_path"><code class="docutils literal notranslate"><span class="pre">obj_to_path()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.util.path_to_obj"><code class="docutils literal notranslate"><span class="pre">path_to_obj()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#py2http.util.pyparam_to_dict"><code class="docutils literal notranslate"><span class="pre">pyparam_to_dict()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">py2http</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">py2http.util</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/module_docs/py2http/util.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-py2http.util">
+<span id="py2http-util"></span><h1>py2http.util<a class="headerlink" href="#module-py2http.util" title="Link to this heading"></a></h1>
+<p>This module contains various utilities including a <cite>lazyprop</cite> descriptor for lazy loading properties, a <cite>CreateProcess</cite> context manager for running functions in parallel processes, a <cite>ModuleFoundIgnore</cite> context manager for ignoring <cite>ModuleNotFoundErrors</cite>, and more.</p>
+<p>The <cite>lazyprop</cite> descriptor is used to define properties that are computed once and then cached until the instance of the class is destroyed. It is useful for computing properties on-demand but only once.</p>
+<p>The <cite>CreateProcess</cite> context manager is used to launch a parallel process and close it on exit. This is helpful when you need to execute tasks concurrently in a separate process.</p>
+<p>The <cite>ModuleFoundIgnore</cite> context manager allows you to ignore <cite>ModuleNotFoundError</cite> exceptions in a block of code. This can be useful when importing optional modules that may or may not exist.</p>
+<p>The <cite>TypeAsserter</cite> function generates a callable that asserts the expected type of a value based on a given kind. It can be used to validate the types of inputs based on predefined rules.</p>
+<p>Overall, this module provides a collection of useful tools for handling lazy property loading, parallel processing, exception handling, type validation, and more.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="py2http.util.CreateProcess">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">py2http.util.</span></span><span class="sig-name descname"><span class="pre">CreateProcess</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">proc_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">process_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wait_before_entering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/util.html#CreateProcess"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.util.CreateProcess" title="Link to this definition"></a></dt>
+<dd><p>A context manager to launch a parallel process and close it on exit.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py2http.util.Missing">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">py2http.util.</span></span><span class="sig-name descname"><span class="pre">Missing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/util.html#Missing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.util.Missing" title="Link to this definition"></a></dt>
+<dd><p>A class to use as a value to indicate that something was missing</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py2http.util.ModuleNotFoundIgnore">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">py2http.util.</span></span><span class="sig-name descname"><span class="pre">ModuleNotFoundIgnore</span></span><a class="reference internal" href="../../_modules/py2http/util.html#ModuleNotFoundIgnore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.util.ModuleNotFoundIgnore" title="Link to this definition"></a></dt>
+<dd><p>Context manager to ignore ModuleNotFoundErrors.</p>
+<p>When all goes well, code is executed normally:
+&gt;&gt;&gt; with ModuleNotFoundIgnore():
+…     import os.path  # test when the module exists
+…     # The following code is reached and executed
+…     print(‘hi there!’)
+…     print(str(os.path.join)[:14] + ‘…’)  # code is reached
+hi there!
+&lt;function join…</p>
+<p>But if you try to import a module that doesn’t exist on your system,
+the block will be skipped from that point onward, silently.
+&gt;&gt;&gt; with ModuleNotFoundIgnore():
+…     import do.i.exist
+…     # The following code is NEVER reached or executed
+…     print(do.i.exist)
+…     t = 0 / 0</p>
+<p>But if there’s any other kind of error (other than ModuleNotFoundError that is,
+the error will be raised normally.
+&gt;&gt;&gt; with ModuleNotFoundIgnore():
+…     t = 0/0
+Traceback (most recent call last):</p>
+<blockquote>
+<div><p>…</p>
+</div></blockquote>
+<p>ZeroDivisionError: division by zero</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py2http.util.Skip">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">py2http.util.</span></span><span class="sig-name descname"><span class="pre">Skip</span></span><a class="reference internal" href="../../_modules/py2http/util.html#Skip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.util.Skip" title="Link to this definition"></a></dt>
+<dd><p>Class to indicate if one should skip an item</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py2http.util.TypeAsserter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">py2http.util.</span></span><span class="sig-name descname"><span class="pre">TypeAsserter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">types_for_kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">if_kind_missing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ignore'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/util.html#TypeAsserter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.util.TypeAsserter" title="Link to this definition"></a></dt>
+<dd><p>Makes a callable that asserts that a value <cite>v</cite> has the expected type(s) that it’s kind <cite>k</cite> should be</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">assert_type</span> <span class="o">=</span> <span class="n">TypeAsserter</span><span class="p">({</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">Callable</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">assert_type</span><span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">assert_type</span><span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">assert_type</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;i am a string&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">assert_type</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="s1">&#39;i am not a string&#39;</span><span class="p">))</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="w">  </span><span class="c">...</span>
+<span class="gr">AssertionError</span>: <span class="n">Invalid foo type, must be a &lt;class &#39;str&#39;&gt;, but was a &lt;class &#39;list&#39;&gt;</span>
+</pre></div>
+</div>
+<p>If a kind wasn’t specified, the default is to ignore</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">assert_type</span><span class="p">(</span><span class="s1">&#39;not_a_kind&#39;</span><span class="p">,</span> <span class="s1">&#39;blah&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">assert_type</span> <span class="o">=</span> <span class="n">TypeAsserter</span><span class="p">({</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">Callable</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))})</span>  <span class="c1"># nothing happens</span>
+</pre></div>
+</div>
+<p>But you can choose to warn or raise an exception instead</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">assert_type</span> <span class="o">=</span> <span class="n">TypeAsserter</span><span class="p">({</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">:</span> <span class="nb">list</span><span class="p">},</span> <span class="n">if_kind_missing</span><span class="o">=</span><span class="s1">&#39;raise&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">assert_type</span><span class="p">(</span><span class="s1">&#39;not_a_kind&#39;</span><span class="p">,</span> <span class="s1">&#39;blah&#39;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="w">    </span><span class="o">...</span>
+<span class="gr">ValueError</span>: <span class="n">Unrecognized kind: not_a_kind. The ones I recognize: [&#39;foo&#39;, &#39;bar&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.util.deprecate">
+<span class="sig-prename descclassname"><span class="pre">py2http.util.</span></span><span class="sig-name descname"><span class="pre">deprecate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/util.html#deprecate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.util.deprecate" title="Link to this definition"></a></dt>
+<dd><p>Decorator to emit a DeprecationWarning when the decorated function is called.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py2http.util.lazyprop">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">py2http.util.</span></span><span class="sig-name descname"><span class="pre">lazyprop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/util.html#lazyprop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.util.lazyprop" title="Link to this definition"></a></dt>
+<dd><p>A descriptor implementation of lazyprop (cached property).
+Made based on David Beazley’s “Python Cookbook” book and enhanced with boltons.cacheutils ideas.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">Test</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">a</span>
+<span class="gp">... </span>    <span class="nd">@lazyprop</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;generating &quot;len&quot;&#39;</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">Test</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="vm">__dict__</span>
+<span class="go">{&#39;a&#39;: [0, 1, 2, 3, 4]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">len</span>
+<span class="go">generating &quot;len&quot;</span>
+<span class="go">5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="vm">__dict__</span>
+<span class="go">{&#39;a&#39;: [0, 1, 2, 3, 4], &#39;len&#39;: 5}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">len</span>
+<span class="go">5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># But careful when using lazyprop that no one will change the value of a without deleting the property first</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>  <span class="c1"># if we change a...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">len</span>  <span class="c1"># ... we still get the old cached value of len</span>
+<span class="go">5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">del</span> <span class="n">t</span><span class="o">.</span><span class="n">len</span>  <span class="c1"># if we delete the len prop</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">len</span>  <span class="c1"># ... then len being recomputed again</span>
+<span class="go">generating &quot;len&quot;</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.util.obj_to_items_gen">
+<span class="sig-prename descclassname"><span class="pre">py2http.util.</span></span><span class="sig-name descname"><span class="pre">obj_to_items_gen</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">obj,</span> <span class="pre">attrs:</span> <span class="pre">~typing.Iterable[str],</span> <span class="pre">on_missing_attr:</span> <span class="pre">~typing.Callable</span> <span class="pre">|</span> <span class="pre">~py2http.util.Skip</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">&lt;class</span> <span class="pre">'py2http.util.Missing'&gt;,</span> <span class="pre">kv_trans:</span> <span class="pre">~typing.Callable</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">&lt;lambda&gt;&gt;</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/util.html#obj_to_items_gen"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.util.obj_to_items_gen" title="Link to this definition"></a></dt>
+<dd><p>Make a generator of (k, v) items extracted from an input object, given an iterable of attributes to extract</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>obj</strong> – A python object</p></li>
+<li><p><strong>attrs</strong> – The iterable of attributes to extract from obj</p></li>
+<li><p><strong>on_missing_val</strong> – What to do if an attribute is missing:
+- Skip: Skip the item
+- Callable: Call a function with the attribute as an input
+- anything else: Just return that as a value</p></li>
+<li><p><strong>kv_trans</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A generator</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.util.obj_to_path">
+<span class="sig-prename descclassname"><span class="pre">py2http.util.</span></span><span class="sig-name descname"><span class="pre">obj_to_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/util.html#obj_to_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.util.obj_to_path" title="Link to this definition"></a></dt>
+<dd><p>Quasi-inverse of obj_to_path: Get a root_obj and attr_path from an object.
+Obviously, would only be able to work with some types (only by-ref types?).</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">A</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span> <span class="o">...</span>
+<span class="gp">... </span>    <span class="n">foo</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">... </span>    <span class="k">class</span> <span class="nc">B</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">def</span> <span class="nf">bar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span> <span class="o">...</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="p">[(</span><span class="n">A</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">,)),</span> <span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;B&#39;</span><span class="p">,)),</span> <span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">))]:</span> 
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">obj_to_path</span><span class="p">(</span><span class="n">path_to_obj</span><span class="p">(</span><span class="o">*</span><span class="n">t</span><span class="p">)))</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">()</span>
+<span class="go">(&lt;class &#39;util.A&#39;&gt;, (&#39;foo&#39;,))</span>
+<span class="go">(&lt;class &#39;util.A&#39;&gt;, (&#39;foo&#39;,))</span>
+
+<span class="go">&lt;class &#39;util.A.B&#39;&gt;</span>
+<span class="go">(&lt;class &#39;util.A&#39;&gt;, (&#39;B&#39;,))</span>
+
+<span class="go">(&lt;class &#39;util.A&#39;&gt;, (&#39;B&#39;, &#39;bar&#39;))</span>
+<span class="go">(&lt;class &#39;util.A&#39;&gt;, (&#39;B&#39;, &#39;bar&#39;))</span>
+</pre></div>
+</div>
+<p># &gt;&gt;&gt; for t in [(A, (‘foo’,)), (A, (‘B’,)), (A, (‘B’, ‘bar’))]:
+# …     assert obj_to_path(path_to_obj(<a href="#id1"><span class="problematic" id="id2">*</span></a>t)) == t</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.util.path_to_obj">
+<span class="sig-prename descclassname"><span class="pre">py2http.util.</span></span><span class="sig-name descname"><span class="pre">path_to_obj</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attr_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/util.html#path_to_obj"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.util.path_to_obj" title="Link to this definition"></a></dt>
+<dd><p>Get an object from a root object and “attribute path” specification.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">A</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span> <span class="o">...</span>
+<span class="gp">... </span>    <span class="n">foo</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">... </span>    <span class="k">class</span> <span class="nc">B</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">def</span> <span class="nf">bar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span> <span class="o">...</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">obj</span> <span class="o">=</span> <span class="n">path_to_obj</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">,))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">callable</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="ow">and</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;foo&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">path_to_obj</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">))</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">obj</span> <span class="o">=</span> <span class="n">path_to_obj</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">callable</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="ow">and</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__qualname__</span> <span class="o">==</span> <span class="s1">&#39;A.B.bar&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.util.pyparam_to_dict">
+<span class="sig-prename descclassname"><span class="pre">py2http.util.</span></span><span class="sig-name descname"><span class="pre">pyparam_to_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kv_trans:</span> <span class="pre">~typing.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">_pyparam_kv_trans.skip_empties&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2http/util.html#pyparam_to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2http.util.pyparam_to_dict" title="Link to this definition"></a></dt>
+<dd><p>Get dict from a Parameter object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>param</strong> – A inspect.Parameter instance</p></li>
+<li><p><strong>kv_trans</strong> – A callable that will be called on the (k, v) attribute items of the Parameter instance</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dict extracted from this Parameter</p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Signature</span><span class="p">,</span> <span class="n">signature</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">mult</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span> <span class="o">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">params_dicts</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">pyparam_to_dict</span><span class="p">,</span> <span class="n">signature</span><span class="p">(</span><span class="n">mult</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># see that we can recover the original signature from these dicts</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">Signature</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">kw</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="o">**</span><span class="n">kw</span><span class="p">),</span> <span class="n">params_dicts</span><span class="p">))</span> <span class="o">==</span> <span class="n">signature</span><span class="p">(</span><span class="n">mult</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now what about the kv_trans? It’s default is made to return None when a value is equal to
+<cite>Parameter.empty</cite> (which is the way the inspect module distinguishes the <cite>None</cite> object from
+“it’s just not there”.</p>
+<p>But we could provide our own kv_trans, which should be a function taking <cite>(k, v)</cite> pair
+(those k and v arg names are imposed!) and returns… well, what ever you want to return
+really. But you if return None, the <cite>(k, v)</cite> item will be skipped.</p>
+<p>Look here how using <cite>kv_trans=pyparam_to_dict.kv_trans.with_str_kind</cite> does the job
+of skipping <cite>Parameter.empty</cite> items, but also cast the <cite>kind</cite> value to a string,
+so that it can be jsonizable.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">params_to_jdict</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">pyparam_to_dict</span><span class="p">,</span> <span class="n">kv_trans</span><span class="o">=</span><span class="n">pyparam_to_dict</span><span class="o">.</span><span class="n">kv_trans</span><span class="o">.</span><span class="n">with_str_kind</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">got</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">params_to_jdict</span><span class="p">,</span> <span class="n">signature</span><span class="p">(</span><span class="n">mult</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">expected</span> <span class="o">=</span> <span class="p">[</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;POSITIONAL_ONLY&#39;</span><span class="p">,</span> <span class="s1">&#39;annotation&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">},</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;POSITIONAL_OR_KEYWORD&#39;</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+<span class="gp">... </span>    <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;KEYWORD_ONLY&#39;</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;annotation&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">}]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">got</span> <span class="o">==</span> <span class="n">expected</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  got=</span><span class="si">{</span><span class="n">got</span><span class="si">}</span><span class="se">\n</span><span class="s2">  expected=</span><span class="si">{</span><span class="n">expected</span><span class="si">}</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="types.html" class="btn btn-neutral float-left" title="py2http.types" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 
+2020
+Otosense.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
