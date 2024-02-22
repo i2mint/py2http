@@ -37,16 +37,16 @@ class BackendStore(MutableMapping):
 
 backend_store = BackendStore(
     {
-        'some_key': b'some_value',
-        'some_other_key': b'some_other_value',
+        "some_key": b"some_value",
+        "some_other_key": b"some_other_value",
     }
 )
 
 handlers = [
     dict(
         endpoint=backend_store,
-        name='backend_store',
-        attr_names=['__iter__', '__getitem__', '__setitem__'],
+        name="backend_store",
+        attr_names=["__iter__", "__getitem__", "__setitem__"],
     ),
 ]
 
@@ -55,21 +55,21 @@ from py2http import mk_app
 app = mk_app(handlers, publish_openapi=True, publish_swagger=True)
 
 
-def test_service(rooturl='http://localhost:8080'):
+def test_service(rooturl="http://localhost:8080"):
     import requests
 
-    url = f'{rooturl}/backend_store'
+    url = f"{rooturl}/backend_store"
 
     add_args = {
-        "_attr_name": '__iter__',
+        "_attr_name": "__iter__",
     }
-    assert requests.post(url, json=add_args).json() == ['some_key', 'some_other_key']
+    assert requests.post(url, json=add_args).json() == ["some_key", "some_other_key"]
 
-    add_args = {"_attr_name": '__getitem__', "key": 'some_key'}
-    assert requests.post(url, json=add_args).json() == 'some_value'
+    add_args = {"_attr_name": "__getitem__", "key": "some_key"}
+    assert requests.post(url, json=add_args).json() == "some_value"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run()
 
 

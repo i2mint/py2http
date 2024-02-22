@@ -9,7 +9,7 @@ def add(a, b: int = 0):
 
 
 def no_args():
-    return 'no args'
+    return "no args"
 
 
 class MultiplierClass:
@@ -21,13 +21,13 @@ class MultiplierClass:
 
 
 def input_mapper(req, schema):
-    print(f'input: {str(req.json)}')
+    print(f"input: {str(req.json)}")
     return req.json
 
 
 @binary_output
 def binary_string():
-    return b'Here is a binary response'
+    return b"Here is a binary response"
 
 
 multiplier_instance = MultiplierClass(5)
@@ -36,11 +36,11 @@ multiplier_instance = MultiplierClass(5)
 example_functions = [add, no_args, multiplier_instance.multiply, binary_string]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run_app(
         example_functions,
         framework=BOTTLE,
-        http_method='POST',
+        http_method="POST",
         input_mapper=input_mapper,
         output_mapper=bottle_output_mapper,
         publish_swagger=True,
