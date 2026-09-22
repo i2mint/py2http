@@ -30,7 +30,7 @@ def client_funcs_from_openapi(openapi_spec, **h2p_configs):
 
     for (path, method), spec in e.paths_and_methods_items():
         yield mk_request_func_from_openapi_spec(
-            path, openapi_spec, method, **h2p_configs
+            path, openapi_spec, method=method, **h2p_configs
         )
 
 

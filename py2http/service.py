@@ -486,6 +486,8 @@ def mk_app(app_spec: AppSpec, **configs):
 
         parent_app, add_subapp_meth = get_web_framework_objects()
         for route, route_spec in app_spec.items():
+            # bottle (>=0.13) and aiohttp both require mount prefixes to start with '/'
+            route = route if route.startswith('/') else '/' + route
             if isinstance(route_spec, dict):
                 handlers = route_spec['handlers']
                 subapp_configs = route_spec['config']
