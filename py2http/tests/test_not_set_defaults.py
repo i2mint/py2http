@@ -52,3 +52,24 @@ def test_openapi_spec_is_json_serializable_and_marks_required():
 def test_params_specifier_does_not_take_not_set_as_default():
     specifier = ParamsSpecifier.from_func(foo_with_not_set, _dflt_default='dflt')
     assert specifier._name_and_dflts == {'a': 'dflt', 'b': 'dflt', 'c': None, 'd': 1.5}
+
+
+def test_openapi_spec_of_a_func_factory_showing_not_set_defaults():
+    """What a re-landed i2#88 does: a ``FuncFactory`` whose signature shows ``NotSet``."""
+    from i2 import FuncFactory
+
+    def mk_factory():
+        factory = FuncFactory(foo)
+        factory.__name__ = 'foo_factory'  # FuncFactory instances have no __name__
+        return factory
+
+    plain, with_not_set = mk_factory(), mk_factory()
+    sig = Sig(with_not_set)
+    with_not_set.__signature__ = sig.ch_defaults(
+        **{name: NotSet for name in sig.required_names}
+    )
+    assert Sig(with_not_set).parameters['a'].default is NotSet
+
+    _, spec = mk_routes_and_openapi_specs([with_not_set])
+    assert 'NotSet' not in json.dumps(spec)
+    assert spec == mk_routes_and_openapi_specs([plain])[1]

@@ -198,6 +198,8 @@ def mk_input_schema_from_func(func, exclude_keys=None, include_func_params=False
         p['type'] = arg_type
 
         if include_func_params:
+            # The raw Parameter (which may still carry i2's NotSet default); it is
+            # for python-side consumers, not JSON.
             p['x-py-param'] = param
         # map key to this p info
         input_properties[key] = p
