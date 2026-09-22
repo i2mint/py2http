@@ -10,7 +10,8 @@ from inspect import (
 import inspect
 import json
 import pickle
-from typing import Iterable, Callable, Union, Mapping
+import warnings
+from typing import Iterable, Callable, Union, Mapping, Optional
 from functools import lru_cache, partial, wraps, update_wrapper
 from json import JSONEncoder, dumps
 from aiohttp import web
@@ -1007,7 +1008,7 @@ def _validate_and_invoke_mapper(func, inputs):
     return func(**inputs)
 
 
-def _handle_req(func, content_type):
+def _handle_req(func, content_type, *, binary_loads=None):
     func.request_schema = mk_input_schema_from_func(func)
     func.content_type = content_type
 
@@ -1017,7 +1018,7 @@ def _handle_req(func, content_type):
         if content_type not in req.content_type:
             raise RuntimeError(f"The incoming request's content is of type \
 {req.content_type}, when {content_type} is expected.")
-        inputs = _get_inputs_from_request(req, content_type)
+        inputs = _get_inputs_from_request(req, content_type, binary_loads=binary_loads)
         return _validate_and_invoke_mapper(func, inputs)
 
     return input_mapper
@@ -1027,8 +1028,53 @@ def handle_json_req(func):
     return _handle_req(func, JSON_CONTENT_TYPE)
 
 
-def handle_binary_req(func):
-    return _handle_req(func, BINARY_CONTENT_TYPE)
+def unsafe_pickle_loads(data: bytes):
+    """Unpickle ``data``. UNSAFE on anything a client can send.
+
+    Unpickling runs code chosen by whoever produced the bytes, so this must only
+    be used when every caller of the endpoint is fully trusted (for example, a
+    service reachable only by your own processes). It exists so that opting into
+    pickled request bodies is explicit and visible at the call site::
+
+        handle_binary_req(func, loads=unsafe_pickle_loads)
+    """
+    return pickle.loads(data)
+
+
+def handle_binary_req(func, *, loads: Optional[Callable[[bytes], Mapping]] = None):
+    """Make an input mapper that decodes a binary (octet-stream) request body.
+
+    ``loads`` turns the raw body bytes into the mapping of keyword arguments for
+    ``func``. There is deliberately no default: request bodies used to be
+    unpickled implicitly, which lets any client run code on the server. Pass a
+    safe decoder of your own, or ``loads=unsafe_pickle_loads`` if (and only if)
+    every client is trusted.
+
+    Note that ``http2py`` clients encode binary request bodies with pickle, so
+    they only work against endpoints that opted into ``unsafe_pickle_loads``.
+
+    >>> handle_binary_req(lambda x: x)  # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+      ...
+    TypeError: handle_binary_req needs an explicit loads=... (bytes -> dict of inputs). ...
+    """
+    if loads is None:
+        raise TypeError(
+            "handle_binary_req needs an explicit loads=... (bytes -> dict of "
+            "inputs). Request bodies are no longer unpickled by default, since "
+            "unpickling client data lets the client run code on the server. "
+            "Use loads=unsafe_pickle_loads only if every client is trusted."
+        )
+    if not callable(loads):
+        raise TypeError(f"loads must be callable, got {loads!r}")
+    if loads is pickle.loads:
+        warnings.warn(
+            "handle_binary_req(loads=pickle.loads) unpickles client data, which lets "
+            "clients run code on the server. Use loads=unsafe_pickle_loads to make "
+            "that choice explicit, and only if every client is trusted.",
+            stacklevel=2,
+        )
+    return _handle_req(func, BINARY_CONTENT_TYPE, binary_loads=loads)
 
 
 def handle_form_req(func):
@@ -1170,7 +1216,7 @@ def mk_input_mapper(input_map):
     return decorator
 
 
-def _get_inputs_from_request(request, content_type):
+def _get_inputs_from_request(request, content_type, *, binary_loads=None):
     defaults = getattr(request, "defaults", {})
     if request.method == "POST":
         if content_type == JSON_CONTENT_TYPE:
@@ -1179,8 +1225,16 @@ def _get_inputs_from_request(request, content_type):
             data = request.body.read().decode("utf-8")
             inputs = json.loads(data)
         elif content_type == BINARY_CONTENT_TYPE:
-            data = request.body.read()
-            inputs = pickle.loads(data)
+            if binary_loads is None:
+                raise TypeError(
+                    "No decoder given for a binary request body; see handle_binary_req."
+                )
+            inputs = binary_loads(request.body.read())
+            if not isinstance(inputs, Mapping):
+                raise TypeError(
+                    f"The binary request body decoded to a {type(inputs).__name__}, "
+                    "not a mapping of inputs."
+                )
         elif content_type == FORM_CONTENT_TYPE:
             fields = json.loads(
                 request.files.pop("__fields").file.read().decode("utf-8")
