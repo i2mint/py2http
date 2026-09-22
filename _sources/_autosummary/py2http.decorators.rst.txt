@@ -35,6 +35,7 @@ py2http.decorators
       send_html_resp
       send_json_resp
       send_raw_resp
+      unsafe_pickle_loads
    
    .. rubric:: Classes
 

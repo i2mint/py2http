@@ -1,34 +1,34 @@
 {
   "schema_version": 1,
-  "built_at": "2026-09-22T15:31:49Z",
+  "built_at": "2026-09-22T16:15:32Z",
   "package": {
     "name": "py2http",
-    "version": "0.1.61",
+    "version": "0.1.62",
     "display_name": "Py2http",
     "source": "setup.cfg"
   },
   "git": {
     "available": true,
-    "commit": "0f67e86a5219f2578c98dfa5bf7d82cd30d5f934",
-    "short_commit": "0f67e86",
+    "commit": "d6ede60632225f9ff8127f47524d0ab75eff32bb",
+    "short_commit": "d6ede60",
     "branch": "master",
     "tags": [
-      "0.1.61"
+      "0.1.62"
     ],
     "dirty": false,
     "remote_url": "https://github.com/i2mint/py2http",
-    "commit_url": "https://github.com/i2mint/py2http/commit/0f67e86a5219f2578c98dfa5bf7d82cd30d5f934",
+    "commit_url": "https://github.com/i2mint/py2http/commit/d6ede60632225f9ff8127f47524d0ab75eff32bb",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "i2mint/py2http",
-    "sha": "77fcb6f5a7bceffcd7f36559d91801abbf94f7d1",
+    "sha": "899e3d016582f424a4ed3b2fbcd8e83645ccef25",
     "sha_in_history": true,
     "ref": "refs/heads/master",
     "ref_name": "master",
-    "run_id": "35747762344",
-    "run_url": "https://github.com/i2mint/py2http/actions/runs/35747762344",
+    "run_id": "35752641959",
+    "run_url": "https://github.com/i2mint/py2http/actions/runs/35752641959",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -58,15 +58,15 @@
   },
   "site": {
     "modules_documented": 14,
-    "objects_documented": 39
+    "objects_documented": 41
   },
   "pypi": {
     "checked": true,
-    "latest": "0.1.61",
+    "latest": "0.1.62",
     "relation": "same",
     "error": null
   },
-  "reproduce": "git clone https://github.com/i2mint/py2http && cd py2http\ngit checkout 0f67e86a5219f2578c98dfa5bf7d82cd30d5f934\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/i2mint/py2http && cd py2http\ngit checkout d6ede60632225f9ff8127f47524d0ab75eff32bb\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
     "aligned": true,

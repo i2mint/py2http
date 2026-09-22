@@ -148,8 +148,8 @@
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">flatten_methods</span></code>(methods[, decorator, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">handle_binary_req</span></code>(func)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#py2http.decorators.handle_binary_req" title="py2http.decorators.handle_binary_req"><code class="xref py py-obj docutils literal notranslate"><span class="pre">handle_binary_req</span></code></a>(func, *[, loads])</p></td>
+<td><p>Make an input mapper that decodes a binary (octet-stream) request body.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">handle_form_req</span></code>(func)</p></td>
 <td><p></p></td>
@@ -210,6 +210,9 @@
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">send_raw_resp</span></code>(func)</p></td>
 <td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#py2http.decorators.unsafe_pickle_loads" title="py2http.decorators.unsafe_pickle_loads"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unsafe_pickle_loads</span></code></a>(data)</p></td>
+<td><p>Unpickle <code class="docutils literal notranslate"><span class="pre">data</span></code>.</p></td>
 </tr>
 </tbody>
 </table>
@@ -627,6 +630,26 @@ implement default like this:</p>
 <dd><p>Flatten a pipeline of calls into one function.</p>
 </dd></dl>
 <dl class="py function">
+<dt class="sig sig-object py" id="py2http.decorators.handle_binary_req">
+<span class="sig-prename descclassname"><span class="pre">py2http.decorators.</span></span><span class="sig-name descname"><span class="pre">handle_binary_req</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">loads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/decorators.html#handle_binary_req"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.decorators.handle_binary_req" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.decorators.handle_binary_req'">¶</a></dt>
+<dd><p>Make an input mapper that decodes a binary (octet-stream) request body.</p>
+<p><code class="docutils literal notranslate"><span class="pre">loads</span></code> turns the raw body bytes into the mapping of keyword arguments for
+<code class="docutils literal notranslate"><span class="pre">func</span></code>. There is deliberately no default: request bodies used to be
+unpickled implicitly, which lets any client run code on the server. Pass a
+safe decoder of your own, or <code class="docutils literal notranslate"><span class="pre">loads=unsafe_pickle_loads</span></code> if (and only if)
+every client is trusted.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">http2py</span></code> clients encode binary request bodies with pickle, so
+they only work against endpoints that opted into <code class="docutils literal notranslate"><span class="pre">unsafe_pickle_loads</span></code>.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="gp">&gt;&gt;&gt; </span><span class="n">handle_binary_req</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">)</span>
+</span><span id="line-2"><span class="gt">Traceback (most recent call last):</span>
+</span><span id="line-3"><span class="w">  </span><span class="c">...</span>
+</span><span id="line-4"><span class="gr">TypeError</span>: <span class="n">handle_binary_req needs an explicit loads=... (bytes -&gt; dict of inputs). ...</span>
+</span></code></pre></div>
+</div>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+<dl class="py function">
 <dt class="sig sig-object py" id="py2http.decorators.inject_methodized_funcs">
 <span class="sig-prename descclassname"><span class="pre">py2http.decorators.</span></span><span class="sig-name descname"><span class="pre">inject_methodized_funcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">funcs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instance_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">if_method_exists</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'raise'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/decorators.html#inject_methodized_funcs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.decorators.inject_methodized_funcs" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.decorators.inject_methodized_funcs'">¶</a></dt>
 <dd><dl class="field-list simple">
@@ -814,6 +837,20 @@ Both target and source can be of the HasParams type, i.e.</p>
 </span></code></pre></div>
 </div>
 </dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.decorators.unsafe_pickle_loads">
+<span class="sig-prename descclassname"><span class="pre">py2http.decorators.</span></span><span class="sig-name descname"><span class="pre">unsafe_pickle_loads</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/decorators.html#unsafe_pickle_loads"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.decorators.unsafe_pickle_loads" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.decorators.unsafe_pickle_loads'">¶</a></dt>
+<dd><p>Unpickle <code class="docutils literal notranslate"><span class="pre">data</span></code>. UNSAFE on anything a client can send.</p>
+<p>Unpickling runs code chosen by whoever produced the bytes, so this must only
+be used when every caller of the endpoint is fully trusted (for example, a
+service reachable only by your own processes). It exists so that opting into
+pickled request bodies is explicit and visible at the call site:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="n">handle_binary_req</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">loads</span><span class="o">=</span><span class="n">unsafe_pickle_loads</span><span class="p">)</span>
+</span></code></pre></div>
+</div>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
 </section>
 </div></div><aside class="hidden text-sm xl:block" id="right-sidebar">
 <div class="sticky top-16 -mt-10 max-h-[calc(100vh-5rem)] h-full overflow-y-auto pt-6 space-y-2"><p class="font-medium">On this page</p>
@@ -834,11 +871,13 @@ Both target and source can be of the HasParams type, i.e.</p>
 <li><a :data-current="activeSection === '#py2http.decorators.add_attrs'" class="reference internal" href="#py2http.decorators.add_attrs"><code class="docutils literal notranslate"><span class="pre">add_attrs()</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.decorators.ensure_awaitable_return_annot'" class="reference internal" href="#py2http.decorators.ensure_awaitable_return_annot"><code class="docutils literal notranslate"><span class="pre">ensure_awaitable_return_annot()</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.decorators.flatten_callables'" class="reference internal" href="#py2http.decorators.flatten_callables"><code class="docutils literal notranslate"><span class="pre">flatten_callables()</span></code></a></li>
+<li><a :data-current="activeSection === '#py2http.decorators.handle_binary_req'" class="reference internal" href="#py2http.decorators.handle_binary_req"><code class="docutils literal notranslate"><span class="pre">handle_binary_req()</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.decorators.inject_methodized_funcs'" class="reference internal" href="#py2http.decorators.inject_methodized_funcs"><code class="docutils literal notranslate"><span class="pre">inject_methodized_funcs()</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.decorators.methodizer'" class="reference internal" href="#py2http.decorators.methodizer"><code class="docutils literal notranslate"><span class="pre">methodizer()</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.decorators.mk_flat'" class="reference internal" href="#py2http.decorators.mk_flat"><code class="docutils literal notranslate"><span class="pre">mk_flat()</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.decorators.params_replacer'" class="reference internal" href="#py2http.decorators.params_replacer"><code class="docutils literal notranslate"><span class="pre">params_replacer()</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.decorators.replace_with_params'" class="reference internal" href="#py2http.decorators.replace_with_params"><code class="docutils literal notranslate"><span class="pre">replace_with_params()</span></code></a></li>
+<li><a :data-current="activeSection === '#py2http.decorators.unsafe_pickle_loads'" class="reference internal" href="#py2http.decorators.unsafe_pickle_loads"><code class="docutils literal notranslate"><span class="pre">unsafe_pickle_loads()</span></code></a></li>
 </ul>
 </div>
 </aside>
@@ -854,7 +893,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=fb9c6db4"></script>
+<script src="../_static/documentation_options.js?v=cc64e7de"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

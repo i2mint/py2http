@@ -11,7 +11,7 @@ Decorator tools for py2http.
 | [`ensure_awaitable_return_annot`](#py2http.decorators.ensure_awaitable_return_annot)(func)            |                                                                             |
 | [`flatten_callables`](#py2http.decorators.flatten_callables)(\*callables[, func_name])    | Flatten a pipeline of calls into one function.                              |
 | `flatten_methods`(methods[, decorator, ...])                                                    |                                                                             |
-| `handle_binary_req`(func)                                                                       |                                                                             |
+| [`handle_binary_req`](#py2http.decorators.handle_binary_req)(func, \*[, loads])           | Make an input mapper that decodes a binary (octet-stream) request body.     |
 | `handle_form_req`(func)                                                                         |                                                                             |
 | `handle_json_req`(func)                                                                         |                                                                             |
 | `handle_raw_req`(func)                                                                          |                                                                             |
@@ -32,6 +32,7 @@ Decorator tools for py2http.
 | `send_html_resp`(func)                                                                          |                                                                             |
 | `send_json_resp`(func)                                                                          |                                                                             |
 | `send_raw_resp`(func)                                                                           |                                                                             |
+| [`unsafe_pickle_loads`](#py2http.decorators.unsafe_pickle_loads)(data)                      | Unpickle `data`.                                                            |
 
 ### Classes
 
@@ -452,6 +453,26 @@ But it can be useful to make attribute adder, and reuse when needed.
 
 Flatten a pipeline of calls into one function.
 
+### py2http.decorators.handle_binary_req(func, , loads=None)
+
+Make an input mapper that decodes a binary (octet-stream) request body.
+
+`loads` turns the raw body bytes into the mapping of keyword arguments for
+`func`. There is deliberately no default: request bodies used to be
+unpickled implicitly, which lets any client run code on the server. Pass a
+safe decoder of your own, or `loads=unsafe_pickle_loads` if (and only if)
+every client is trusted.
+
+Note that `http2py` clients encode binary request bodies with pickle, so
+they only work against endpoints that opted into `unsafe_pickle_loads`.
+
+```pycon
+>>> handle_binary_req(lambda x: x)
+Traceback (most recent call last):
+  ...
+TypeError: handle_binary_req needs an explicit loads=... (bytes -> dict of inputs). ...
+```
+
 ### py2http.decorators.inject_methodized_funcs(cls=None, , funcs=(), instance_params=None, if_method_exists='raise')
 
 * **Parameters:**
@@ -623,4 +644,17 @@ Union[Iterable[Parameter], Mapping[str, Parameter], Signature, Callable]
 >>> assert signature(new_f) == signature(g)
 >>> # but f remains unchanged (there is inplace=False option though!)
 >>> assert signature(f) == original_f_sig
+```
+
+### py2http.decorators.unsafe_pickle_loads(data)
+
+Unpickle `data`. UNSAFE on anything a client can send.
+
+Unpickling runs code chosen by whoever produced the bytes, so this must only
+be used when every caller of the endpoint is fully trusted (for example, a
+service reachable only by your own processes). It exists so that opting into
+pickled request bodies is explicit and visible at the call site:
+
+```default
+handle_binary_req(func, loads=unsafe_pickle_loads)
 ```

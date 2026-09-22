@@ -1,4 +1,4 @@
-> built 2026-09-22 15:31 UTC from 0f67e86 (master) · py2http 0.1.61. Details: build_info.json
+> built 2026-09-22 16:15 UTC from d6ede60 (master) · py2http 0.1.62. Details: build_info.json
 
 # index.html.md
 
@@ -355,7 +355,7 @@ Decorator tools for py2http.
 | [`ensure_awaitable_return_annot`](_autosummary/py2http.decorators.html.md#py2http.decorators.ensure_awaitable_return_annot)(func)            |                                                                             |
 | [`flatten_callables`](_autosummary/py2http.decorators.html.md#py2http.decorators.flatten_callables)(\*callables[, func_name])    | Flatten a pipeline of calls into one function.                              |
 | `flatten_methods`(methods[, decorator, ...])                                                    |                                                                             |
-| `handle_binary_req`(func)                                                                       |                                                                             |
+| [`handle_binary_req`](_autosummary/py2http.decorators.html.md#py2http.decorators.handle_binary_req)(func, \*[, loads])           | Make an input mapper that decodes a binary (octet-stream) request body.     |
 | `handle_form_req`(func)                                                                         |                                                                             |
 | `handle_json_req`(func)                                                                         |                                                                             |
 | `handle_raw_req`(func)                                                                          |                                                                             |
@@ -376,6 +376,7 @@ Decorator tools for py2http.
 | `send_html_resp`(func)                                                                          |                                                                             |
 | `send_json_resp`(func)                                                                          |                                                                             |
 | `send_raw_resp`(func)                                                                           |                                                                             |
+| [`unsafe_pickle_loads`](_autosummary/py2http.decorators.html.md#py2http.decorators.unsafe_pickle_loads)(data)                      | Unpickle `data`.                                                            |
 
 ### Classes
 
@@ -796,6 +797,26 @@ But it can be useful to make attribute adder, and reuse when needed.
 
 Flatten a pipeline of calls into one function.
 
+### py2http.decorators.handle_binary_req(func, , loads=None)
+
+Make an input mapper that decodes a binary (octet-stream) request body.
+
+`loads` turns the raw body bytes into the mapping of keyword arguments for
+`func`. There is deliberately no default: request bodies used to be
+unpickled implicitly, which lets any client run code on the server. Pass a
+safe decoder of your own, or `loads=unsafe_pickle_loads` if (and only if)
+every client is trusted.
+
+Note that `http2py` clients encode binary request bodies with pickle, so
+they only work against endpoints that opted into `unsafe_pickle_loads`.
+
+```pycon
+>>> handle_binary_req(lambda x: x)
+Traceback (most recent call last):
+  ...
+TypeError: handle_binary_req needs an explicit loads=... (bytes -> dict of inputs). ...
+```
+
 ### py2http.decorators.inject_methodized_funcs(cls=None, , funcs=(), instance_params=None, if_method_exists='raise')
 
 * **Parameters:**
@@ -967,6 +988,19 @@ Union[Iterable[Parameter], Mapping[str, Parameter], Signature, Callable]
 >>> assert signature(new_f) == signature(g)
 >>> # but f remains unchanged (there is inplace=False option though!)
 >>> assert signature(f) == original_f_sig
+```
+
+### py2http.decorators.unsafe_pickle_loads(data)
+
+Unpickle `data`. UNSAFE on anything a client can send.
+
+Unpickling runs code chosen by whoever produced the bytes, so this must only
+be used when every caller of the endpoint is fully trusted (for example, a
+service reachable only by your own processes). It exists so that opting into
+pickled request bodies is explicit and visible at the call site:
+
+```default
+handle_binary_req(func, loads=unsafe_pickle_loads)
 ```
 
 
@@ -1716,7 +1750,7 @@ so that it can be jsonizable.
 
 # About this build
 
-This documentation was built on **2026-09-22 15:31 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/0f67e86a5219f2578c98dfa5bf7d82cd30d5f934"><code>0f67e86</code></a> on branch <code>master</code>, for **py2http 0.1.61** (from <code>setup.cfg</code>).
+This documentation was built on **2026-09-22 16:15 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/d6ede60632225f9ff8127f47524d0ab75eff32bb"><code>d6ede60</code></a> on branch <code>master</code>, for **py2http 0.1.62** (from <code>setup.cfg</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -1725,9 +1759,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                       |
 |---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2http/commit/0f67e86a5219f2578c98dfa5bf7d82cd30d5f934"><code>0f67e86a5219f2578c98dfa5bf7d82cd30d5f934</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2http/commit/d6ede60632225f9ff8127f47524d0ab75eff32bb"><code>d6ede60632225f9ff8127f47524d0ab75eff32bb</code></a> |
 | Branch              | <code>master</code>                                                                                                                                   |
-| Tags at this commit | <code>0.1.61</code>                                                                                                                                   |
+| Tags at this commit | <code>0.1.62</code>                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                 |
 | Remote              | <code>https://github.com/i2mint/py2http</code>                                                                                                        |
 
@@ -1736,9 +1770,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2http</code>                                                                |
-| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/35747762344">35747762344</a>       |
+| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/35752641959">35752641959</a>       |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>77fcb6f5a7bceffcd7f36559d91801abbf94f7d1</code> (in the history of the built commit) |
+| Event commit | <code>899e3d016582f424a4ed3b2fbcd8e83645ccef25</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -1763,13 +1797,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2http/0.1.61/">0.1.61</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/py2http/0.1.62/">0.1.62</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2http && cd py2http
-git checkout 0f67e86a5219f2578c98dfa5bf7d82cd30d5f934
+git checkout d6ede60632225f9ff8127f47524d0ab75eff32bb
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
