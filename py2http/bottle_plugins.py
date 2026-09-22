@@ -1,5 +1,4 @@
-"""Plugins for adding middleware functionality to Bottle apps.
-"""
+"""Plugins for adding middleware functionality to Bottle apps."""
 
 from bottle import request, response, abort
 from functools import wraps
@@ -9,7 +8,7 @@ from typing import Iterable
 from warnings import warn
 from py2http.constants import JSON_CONTENT_TYPE
 
-OPTIONS = 'OPTIONS'
+OPTIONS = "OPTIONS"
 
 
 class JWTPlugin:
@@ -21,7 +20,7 @@ class JWTPlugin:
 
     def __init__(
         self,
-        secret: str = '',
+        secret: str = "",
         verify: bool = True,
         mapper: dict = None,
         ignore_methods: Iterable[str] = None,
@@ -39,7 +38,7 @@ class JWTPlugin:
         self._verify = verify
         self._mapper = mapper if mapper else {}
         self._ignore_methods = ignore_methods if ignore_methods else []
-        self._algorithms = algorithms if algorithms else ['HS256']
+        self._algorithms = algorithms if algorithms else ["HS256"]
 
     def __call__(self, handler):
         if self._ignore_methods and handler.method_name in self._ignore_methods:
@@ -49,13 +48,13 @@ class JWTPlugin:
         def wrapped_handler(*args, **kwargs):
             if request.method == OPTIONS:
                 return handler(*args, *kwargs)
-            auth_header = request.headers.get('Authorization', '')
+            auth_header = request.headers.get("Authorization", "")
             token = auth_header[7:]
             try:
                 decoded = jwt.decode(
                     token,
                     self._secret,
-                    options={'verify_signature': self._verify},
+                    options={"verify_signature": self._verify},
                     algorithms=self._algorithms,
                 )
                 for k, v in self._mapper.items():
@@ -69,10 +68,10 @@ class JWTPlugin:
                     response.content_type = JSON_CONTENT_TYPE
                     return json.dumps(
                         {
-                            'error': f'Invalid authentication token "{token}", {str(error)}'
+                            "error": f'Invalid authentication token "{token}", {str(error)}'
                         }
                     )
-                warn(f'Invalid JWT: {token}')
+                warn(f"Invalid JWT: {token}")
                 return handler(*args, **kwargs)
 
         return wrapped_handler
@@ -84,12 +83,12 @@ class ApiKeyAuthPlugin:
 
     def __call__(self, handler):
         def wrapped_handler(*args, **kwargs):
-            auth_header = request.headers.get('Authorization', '')
+            auth_header = request.headers.get("Authorization", "")
             if auth_header == self._api_key:
                 return handler(*args, **kwargs)
             response.status = 401
             response.content_type = JSON_CONTENT_TYPE
-            return json.dumps({'error': 'invalid API key'})
+            return json.dumps({"error": "invalid API key"})
 
         return wrapped_handler
 
@@ -97,18 +96,18 @@ class ApiKeyAuthPlugin:
 # from https://stackoverflow.com/questions/17262170/bottle-py-enabling-cors-for-jquery-ajax-requests
 # TODO: accept lists of headers and methods as init args
 class CorsPlugin:
-    def __init__(self, origins: str = '*'):
+    def __init__(self, origins: str = "*"):
         self._origins = origins
 
     def __call__(self, handler):
         def wrapped_handler(*args, **kwargs):
-            response.headers['Access-Control-Allow-Origin'] = self._origins
-            response.headers[
-                'Access-Control-Allow-Methods'
-            ] = 'GET, POST, PUT, DELETE, OPTIONS'
-            response.headers[
-                'Access-Control-Allow-Headers'
-            ] = 'Origin, Accept, Content-Type, X-Requested-With, Authorization, X-api-key'
+            response.headers["Access-Control-Allow-Origin"] = self._origins
+            response.headers["Access-Control-Allow-Methods"] = (
+                "GET, POST, PUT, DELETE, OPTIONS"
+            )
+            response.headers["Access-Control-Allow-Headers"] = (
+                "Origin, Accept, Content-Type, X-Requested-With, Authorization, X-api-key"
+            )
             if request.method != OPTIONS:
                 return handler(*args, **kwargs)
 

@@ -31,27 +31,25 @@ foo_with_not_set.__name__ = foo.__name__  # same route and spec as foo
 
 
 def test_fixture_really_has_not_set_defaults():
-    assert Sig(foo_with_not_set).parameters['a'].default is NotSet
+    assert Sig(foo_with_not_set).parameters["a"].default is NotSet
 
 
 def test_input_schema_is_the_same_as_without_not_set():
-    assert mk_input_schema_from_func(foo_with_not_set) == mk_input_schema_from_func(
-        foo
-    )
-    assert mk_input_schema_from_func(foo_with_not_set)['required'] == ['a', 'b']
+    assert mk_input_schema_from_func(foo_with_not_set) == mk_input_schema_from_func(foo)
+    assert mk_input_schema_from_func(foo_with_not_set)["required"] == ["a", "b"]
 
 
 def test_openapi_spec_is_json_serializable_and_marks_required():
     _, spec = mk_routes_and_openapi_specs([foo_with_not_set])
     serialized = json.dumps(spec)  # used to raise: Sentinel is not JSON serializable
-    assert 'NotSet' not in serialized
+    assert "NotSet" not in serialized
     _, plain_spec = mk_routes_and_openapi_specs([foo])
     assert spec == plain_spec
 
 
 def test_params_specifier_does_not_take_not_set_as_default():
-    specifier = ParamsSpecifier.from_func(foo_with_not_set, _dflt_default='dflt')
-    assert specifier._name_and_dflts == {'a': 'dflt', 'b': 'dflt', 'c': None, 'd': 1.5}
+    specifier = ParamsSpecifier.from_func(foo_with_not_set, _dflt_default="dflt")
+    assert specifier._name_and_dflts == {"a": "dflt", "b": "dflt", "c": None, "d": 1.5}
 
 
 def test_openapi_spec_of_a_func_factory_showing_not_set_defaults():
@@ -60,7 +58,7 @@ def test_openapi_spec_of_a_func_factory_showing_not_set_defaults():
 
     def mk_factory():
         factory = FuncFactory(foo)
-        factory.__name__ = 'foo_factory'  # FuncFactory instances have no __name__
+        factory.__name__ = "foo_factory"  # FuncFactory instances have no __name__
         return factory
 
     plain, with_not_set = mk_factory(), mk_factory()
@@ -68,8 +66,8 @@ def test_openapi_spec_of_a_func_factory_showing_not_set_defaults():
     with_not_set.__signature__ = sig.ch_defaults(
         **{name: NotSet for name in sig.required_names}
     )
-    assert Sig(with_not_set).parameters['a'].default is NotSet
+    assert Sig(with_not_set).parameters["a"].default is NotSet
 
     _, spec = mk_routes_and_openapi_specs([with_not_set])
-    assert 'NotSet' not in json.dumps(spec)
+    assert "NotSet" not in json.dumps(spec)
     assert spec == mk_routes_and_openapi_specs([plain])[1]

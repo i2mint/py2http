@@ -38,7 +38,7 @@ def test_transparent_decora():
 
     assert _test_sameness(Deco)
 
-    assert str(signature(Deco)) == '(func=None, *, z: float = None, b=3, c: int = 2)'
+    assert str(signature(Deco)) == "(func=None, *, z: float = None, b=3, c: int = 2)"
 
     # Here's another way to inject your decorator factory's params
     class whatevs(ParamsSpecifier):
@@ -51,7 +51,7 @@ def test_transparent_decora():
 
     assert _test_sameness(Deco)
 
-    assert str(signature(Deco)) == '(func=None, *, z: float = None, b=3, c: int = 2)'
+    assert str(signature(Deco)) == "(func=None, *, z: float = None, b=3, c: int = 2)"
 
 
 def test_simple_decora():
@@ -70,17 +70,17 @@ def test_simple_decora():
                 [func_result[1] * self.times - self.minus] * self.repeat,
             )
 
-    def f(w: float, x: int = 0, greet='hi'):
+    def f(w: float, x: int = 0, greet="hi"):
         return greet, w + x
 
     g = Deco(times=3)(f)
-    assert g(0) == ('hi', [-3] * 2)
-    assert g(10) == ('hi', [27] * 2)
-    assert g(10, x=1, greet='hello') == ('hello', [30, 30])
+    assert g(0) == ("hi", [-3] * 2)
+    assert g(10) == ("hi", [27] * 2)
+    assert g(10, x=1, greet="hello") == ("hello", [30, 30])
 
     g = Deco(f, times=1, minus=2, repeat=3)
-    assert g(0) == ('hi', [-2, -2, -2])
+    assert g(0) == ("hi", [-2, -2, -2])
     g = Deco(times=0, minus=3, repeat=1)(f)
-    assert g(10) == ('hi', [-3])
+    assert g(10) == ("hi", [-3])
     g = Deco(times=2, minus=0, repeat=1)(f)
-    assert g(10) == ('hi', [20])
+    assert g(10) == ("hi", [20])
