@@ -10,7 +10,8 @@ from inspect import (
 import inspect
 import json
 import pickle
-from typing import Iterable, Callable, Union, Mapping
+import warnings
+from typing import Iterable, Callable, Union, Mapping, Optional
 from functools import lru_cache, partial, wraps, update_wrapper
 from json import JSONEncoder, dumps
 from aiohttp import web
@@ -1040,7 +1041,7 @@ def unsafe_pickle_loads(data: bytes):
     return pickle.loads(data)
 
 
-def handle_binary_req(func, *, loads: Callable[[bytes], Mapping] = None):
+def handle_binary_req(func, *, loads: Optional[Callable[[bytes], Mapping]] = None):
     """Make an input mapper that decodes a binary (octet-stream) request body.
 
     ``loads`` turns the raw body bytes into the mapping of keyword arguments for
@@ -1049,7 +1050,10 @@ def handle_binary_req(func, *, loads: Callable[[bytes], Mapping] = None):
     safe decoder of your own, or ``loads=unsafe_pickle_loads`` if (and only if)
     every client is trusted.
 
-    >>> handle_binary_req(lambda x: x)
+    Note that ``http2py`` clients encode binary request bodies with pickle, so
+    they only work against endpoints that opted into ``unsafe_pickle_loads``.
+
+    >>> handle_binary_req(lambda x: x)  # doctest: +ELLIPSIS
     Traceback (most recent call last):
       ...
     TypeError: handle_binary_req needs an explicit loads=... (bytes -> dict of inputs). ...
@@ -1063,6 +1067,13 @@ def handle_binary_req(func, *, loads: Callable[[bytes], Mapping] = None):
         )
     if not callable(loads):
         raise TypeError(f"loads must be callable, got {loads!r}")
+    if loads is pickle.loads:
+        warnings.warn(
+            "handle_binary_req(loads=pickle.loads) unpickles client data, which lets "
+            "clients run code on the server. Use loads=unsafe_pickle_loads to make "
+            "that choice explicit, and only if every client is trusted.",
+            stacklevel=2,
+        )
     return _handle_req(func, BINARY_CONTENT_TYPE, binary_loads=loads)
 
 
