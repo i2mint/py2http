@@ -1,0 +1,25 @@
+py2http.openapi\_utils
+======================
+
+.. automodule:: py2http.openapi_utils
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      add_paths_to_spec
+      func_to_openapi_spec
+      mk_arg_schema
+      mk_obj_schema
+      mk_openapi_path
+      mk_openapi_template
+      openapi_type_mapping
+      set_auth
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      OpenApiExtractor
+   

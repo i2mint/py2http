@@ -1,0 +1,30 @@
+py2http.util
+============
+
+.. automodule:: py2http.util
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      conditional_logger
+      deprecate
+      if_not_empty
+      obj_to_items_gen
+      obj_to_path
+      path_to_obj
+      py_obj_info
+      pyparam_to_dict
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      CreateProcess
+      Missing
+      ModuleNotFoundIgnore
+      Skip
+      TypeAsserter
+      lazyprop
+   

@@ -1,0 +1,51 @@
+py2http.decorators
+==================
+
+.. automodule:: py2http.decorators
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      add_attrs
+      base_output_mapper
+      binary_output
+      ensure_awaitable_return_annot
+      flatten_callables
+      flatten_methods
+      handle_binary_req
+      handle_form_req
+      handle_json_req
+      handle_raw_req
+      http_delete
+      http_get
+      http_post
+      http_put
+      ignore_extra_arguments
+      inject_methodized_funcs
+      methodizer
+      mk_flat
+      mk_handlers
+      mk_input_mapper
+      params_replacer
+      replace_with_params
+      route
+      send_binary_resp
+      send_html_resp
+      send_json_resp
+      send_raw_resp
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      DecoParam
+      DecoParameter
+      Decora
+      Decorator
+      JsonRespEncoder
+      Literal
+      ParamsSpecifier
+      ProposalJsonRespEncoder
+   

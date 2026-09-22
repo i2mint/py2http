@@ -1,0 +1,18 @@
+py2http.default\_configs
+========================
+
+.. automodule:: py2http.default_configs
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      aiohttp_error_handler
+      bottle_error_handler
+      bottle_output_mapper
+      default_error_handler
+      default_input_mapper
+      flask_error_handler
+      flask_output_mapper
+   

@@ -1,0 +1,18 @@
+py2http.schema\_tools
+=====================
+
+.. automodule:: py2http.schema_tools
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      mk_input_mapper
+      mk_input_schema_from_func
+      mk_output_schema_from_func
+      mk_sub_dict_schema_from_typed_dict
+      mk_sub_list_schema_from_iterable
+      param_default
+      validate_input
+   

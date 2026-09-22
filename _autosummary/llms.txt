@@ -1,0 +1,29 @@
+# py2http
+
+> Declarative HTTP service entry point.
+
+
+
+2020
+Otosense
+
+## Pages in this subsection
+
+- [py2http](py2http.html.md): This module provides functionality to easily create HTTP services from Python
+- [py2http.bottle_plugins](py2http.bottle_plugins.html.md): Plugins for adding middleware functionality to Bottle apps.
+- [py2http.config](py2http.config.html.md): The code module provides functions for retrieving configuration values for a
+- [py2http.constants](py2http.constants.html.md): This module provides functionality for dispatching Python functions as HTTP services. It allows user...
+- [py2http.decorators](py2http.decorators.html.md): Decorator tools for py2http.
+- [py2http.default_configs](py2http.default_configs.html.md): This module provides default configurations, input mappers, output mappers,
+- [py2http.diagnosis](py2http.diagnosis.html.md): This module is meant to contain diagnosis and validation tools.
+- [py2http.middleware](py2http.middleware.html.md): py2http is a Python module that allows you to dispatch Python functions as HTTP
+- [py2http.openapi_utils](py2http.openapi_utils.html.md): This module is designed to generate OpenAPI specifications based on Python functions.
+- [py2http.route_utils](py2http.route_utils.html.md): This module provides functionality to create handlers for class methods,
+- [py2http.schema_tools](py2http.schema_tools.html.md): This module provides functions for generating OpenAPI input and output schemas from
+- [py2http.service](py2http.service.html.md): This Python module provides a framework for dispatching Python functions as HTTP
+- [py2http.types](py2http.types.html.md): This module defines several type aliases and constants related to function parameters and signatures...
+- [py2http.util](py2http.util.html.md): This module contains various utilities including a &#96;lazyprop&#96; descriptor for lazy loading properties...
+
+## Optional
+
+- [Top-level llms.txt](../llms.txt): Complete documentation index.

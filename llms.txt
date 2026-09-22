@@ -1,0 +1,36 @@
+# py2http
+
+> Declarative HTTP service entry point.
+
+
+
+2020
+Otosense
+
+## Pages
+
+- [py2http](index.html.md): Documentation here
+- [API reference](api.html.md): | &#96;py2http&#96;   | This module provides functionality to easily create HTTP services from Python functi...
+- [py2http](_autosummary/py2http.html.md): This module provides functionality to easily create HTTP services from Python
+- [py2http.bottle_plugins](_autosummary/py2http.bottle_plugins.html.md): Plugins for adding middleware functionality to Bottle apps.
+- [py2http.config](_autosummary/py2http.config.html.md): The code module provides functions for retrieving configuration values for a
+- [py2http.constants](_autosummary/py2http.constants.html.md): This module provides functionality for dispatching Python functions as HTTP services. It allows user...
+- [py2http.decorators](_autosummary/py2http.decorators.html.md): Decorator tools for py2http.
+- [py2http.default_configs](_autosummary/py2http.default_configs.html.md): This module provides default configurations, input mappers, output mappers,
+- [py2http.diagnosis](_autosummary/py2http.diagnosis.html.md): This module is meant to contain diagnosis and validation tools.
+- [py2http.middleware](_autosummary/py2http.middleware.html.md): py2http is a Python module that allows you to dispatch Python functions as HTTP
+- [py2http.openapi_utils](_autosummary/py2http.openapi_utils.html.md): This module is designed to generate OpenAPI specifications based on Python functions.
+- [py2http.route_utils](_autosummary/py2http.route_utils.html.md): This module provides functionality to create handlers for class methods,
+- [py2http.schema_tools](_autosummary/py2http.schema_tools.html.md): This module provides functions for generating OpenAPI input and output schemas from
+- [py2http.service](_autosummary/py2http.service.html.md): This Python module provides a framework for dispatching Python functions as HTTP
+- [py2http.types](_autosummary/py2http.types.html.md): This module defines several type aliases and constants related to function parameters and signatures...
+- [py2http.util](_autosummary/py2http.util.html.md): This module contains various utilities including a &#96;lazyprop&#96; descriptor for lazy loading properties...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-09-22 15:31 UTC&#42;&#42; from commit &lt;a href="https://github.com/i2m...
+
+## Optional
+
+- [py2http.md](py2http.md): Complete documentation in a single file.
+
+## Build
+
+- [build_info.json](build_info.json): build provenance (commit, version, tool versions, whether the docs match the package)

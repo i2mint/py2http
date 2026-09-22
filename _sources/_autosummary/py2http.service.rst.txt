@@ -1,0 +1,26 @@
+py2http.service
+===============
+
+.. automodule:: py2http.service
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      func_copy
+      method_not_found
+      mk_aiohttp_app
+      mk_app
+      mk_bottle_app
+      mk_flask_app
+      mk_route
+      mk_routes_and_openapi_specs
+      run_app
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      SubAppSpec
+   

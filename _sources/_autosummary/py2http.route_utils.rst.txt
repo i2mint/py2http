@@ -1,0 +1,13 @@
+py2http.route\_utils
+====================
+
+.. automodule:: py2http.route_utils
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      create_handler
+      mk_functions_from_class
+   

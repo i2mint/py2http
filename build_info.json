@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "built_at": "2026-09-22T15:31:49Z",
+  "package": {
+    "name": "py2http",
+    "version": "0.1.61",
+    "display_name": "Py2http",
+    "source": "setup.cfg"
+  },
+  "git": {
+    "available": true,
+    "commit": "0f67e86a5219f2578c98dfa5bf7d82cd30d5f934",
+    "short_commit": "0f67e86",
+    "branch": "master",
+    "tags": [
+      "0.1.61"
+    ],
+    "dirty": false,
+    "remote_url": "https://github.com/i2mint/py2http",
+    "commit_url": "https://github.com/i2mint/py2http/commit/0f67e86a5219f2578c98dfa5bf7d82cd30d5f934",
+    "error": null
+  },
+  "ci": {
+    "provider": "github",
+    "repository": "i2mint/py2http",
+    "sha": "77fcb6f5a7bceffcd7f36559d91801abbf94f7d1",
+    "sha_in_history": true,
+    "ref": "refs/heads/master",
+    "ref_name": "master",
+    "run_id": "35747762344",
+    "run_url": "https://github.com/i2mint/py2http/actions/runs/35747762344",
+    "server_url": "https://github.com"
+  },
+  "tools": {
+    "epythet": "0.2.12",
+    "sphinx": "9.1.0",
+    "docutils": "0.22.4",
+    "python": "3.12.14"
+  },
+  "config": {
+    "theme": "auto",
+    "html_theme": "sphinxawesome_theme",
+    "accent": "#186a23",
+    "mode": "auto",
+    "api_generator": "autosummary",
+    "ignore": [
+      "tests/",
+      "scrap/",
+      "examples/"
+    ],
+    "agent_outputs": true,
+    "aggregates": [
+      "md"
+    ],
+    "ai_artifacts": true,
+    "provenance": true,
+    "docs_dir": "docsrc"
+  },
+  "site": {
+    "modules_documented": 14,
+    "objects_documented": 39
+  },
+  "pypi": {
+    "checked": true,
+    "latest": "0.1.61",
+    "relation": "same",
+    "error": null
+  },
+  "reproduce": "git clone https://github.com/i2mint/py2http && cd py2http\ngit checkout 0f67e86a5219f2578c98dfa5bf7d82cd30d5f934\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "warnings": [],
+  "alignment": {
+    "aligned": true,
+    "notes": []
+  }
+}

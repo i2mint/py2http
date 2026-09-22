@@ -1,0 +1,13 @@
+py2http.config
+==============
+
+.. automodule:: py2http.config
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      get_result
+      mk_config
+   

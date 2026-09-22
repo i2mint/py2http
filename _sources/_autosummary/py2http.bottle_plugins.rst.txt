@@ -1,0 +1,14 @@
+py2http.bottle\_plugins
+=======================
+
+.. automodule:: py2http.bottle_plugins
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      ApiKeyAuthPlugin
+      CorsPlugin
+      JWTPlugin
+   

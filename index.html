@@ -1,246 +1,388 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="./">
+
+<html :class="{ 'dark' : darkMode === true }" data-content_root="./" lang="en" x-data="{ darkMode: $persist(window.matchMedia('(prefers-color-scheme: dark)').matches), activeSection: ''}">
 <head>
-  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<script>
+    (function () {
+      // Set initial color scheme
+      if ((localStorage.getItem("_x_darkMode") === "true") || (window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.classList.add("dark");
+      }
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome to Py2http’s documentation! &mdash; py2http 0.1.59 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
-      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=eafc0fe6" />
-
-  
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="_static/jquery.js?v=5d32c60e"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=755f2e77"></script>
-        <script src="_static/doctools.js?v=888ff710"></script>
-        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-        <script src="_static/toggleprompt.js?v=d7ede5d2"></script>
-        <script src="_static/clipboard.min.js?v=a7894cd8"></script>
-        <script src="_static/copybutton.js?v=f281be69"></script>
-    <script src="_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="py2http" href="module_docs/py2http.html" /> 
-</head>
-
-<body class="wy-body-for-nav"> 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
-
-          
-          
-          <a href="#" class="icon icon-home">
-            py2http
-          </a>
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
-</div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http.html">py2http</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/bottle_plugins.html">py2http.bottle_plugins</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/config.html">py2http.config</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/constants.html">py2http.constants</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/decorators.html">py2http.decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/default_configs.html">py2http.default_configs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/diagnosis.html">py2http.diagnosis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/examples/custom_input_mappers.html">py2http.examples.custom_input_mappers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/examples/example_service.html">py2http.examples.example_service</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/examples/example_service_bottle.html">py2http.examples.example_service_bottle</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/examples/example_service_flask.html">py2http.examples.example_service_flask</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/examples/object_dispatch.html">py2http.examples.object_dispatch</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/middleware.html">py2http.middleware</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/openapi_utils.html">py2http.openapi_utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/route_utils.html">py2http.route_utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/schema_tools.html">py2http.schema_tools</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/service.html">py2http.service</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/tests/example_service_test.html">py2http.tests.example_service_test</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/tests/objects_for_testing.html">py2http.tests.objects_for_testing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/tests/simple_run_process_test.html">py2http.tests.simple_run_process_test</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/tests/test_decorators.html">py2http.tests.test_decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/tests/test_p2h2p.html">py2http.tests.test_p2h2p</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/tests/utils_for_testing.html">py2http.tests.utils_for_testing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/types.html">py2http.types</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/util.html">py2http.util</a></li>
-</ul>
-
-        </div>
-      </div>
-    </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="#">py2http</a>
-      </nav>
-
-      <div class="wy-nav-content">
-        <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
-  <ul class="wy-breadcrumbs">
-      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Welcome to Py2http’s documentation!</li>
-      <li class="wy-breadcrumbs-aside">
-            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
-      </li>
-  </ul>
-  <hr/>
-</div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-             
-  <section id="welcome-to-py2http-s-documentation">
-<h1>Welcome to Py2http’s documentation!<a class="headerlink" href="#welcome-to-py2http-s-documentation" title="Link to this heading"></a></h1>
-<div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http.html">py2http</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/bottle_plugins.html">py2http.bottle_plugins</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/bottle_plugins.html#py2http.bottle_plugins.JWTPlugin"><code class="docutils literal notranslate"><span class="pre">JWTPlugin</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/config.html">py2http.config</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/config.html#py2http.config.get_result"><code class="docutils literal notranslate"><span class="pre">get_result()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/config.html#py2http.config.mk_config"><code class="docutils literal notranslate"><span class="pre">mk_config()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/constants.html">py2http.constants</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/decorators.html">py2http.decorators</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/decorators.html#py2http.decorators.DecoParameter"><code class="docutils literal notranslate"><span class="pre">DecoParameter</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/decorators.html#py2http.decorators.Decora"><code class="docutils literal notranslate"><span class="pre">Decora</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/decorators.html#py2http.decorators.Decorator"><code class="docutils literal notranslate"><span class="pre">Decorator</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/decorators.html#py2http.decorators.JsonRespEncoder"><code class="docutils literal notranslate"><span class="pre">JsonRespEncoder</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/decorators.html#py2http.decorators.Literal"><code class="docutils literal notranslate"><span class="pre">Literal</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/decorators.html#py2http.decorators.ParamsSpecifier"><code class="docutils literal notranslate"><span class="pre">ParamsSpecifier</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/decorators.html#py2http.decorators.ProposalJsonRespEncoder"><code class="docutils literal notranslate"><span class="pre">ProposalJsonRespEncoder</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/decorators.html#py2http.decorators.add_attrs"><code class="docutils literal notranslate"><span class="pre">add_attrs()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/decorators.html#py2http.decorators.ensure_awaitable_return_annot"><code class="docutils literal notranslate"><span class="pre">ensure_awaitable_return_annot()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/decorators.html#py2http.decorators.flatten_callables"><code class="docutils literal notranslate"><span class="pre">flatten_callables()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/decorators.html#py2http.decorators.inject_methodized_funcs"><code class="docutils literal notranslate"><span class="pre">inject_methodized_funcs()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/decorators.html#py2http.decorators.methodizer"><code class="docutils literal notranslate"><span class="pre">methodizer()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/decorators.html#py2http.decorators.mk_flat"><code class="docutils literal notranslate"><span class="pre">mk_flat()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/decorators.html#py2http.decorators.params_replacer"><code class="docutils literal notranslate"><span class="pre">params_replacer()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/decorators.html#py2http.decorators.replace_with_params"><code class="docutils literal notranslate"><span class="pre">replace_with_params()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/default_configs.html">py2http.default_configs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/diagnosis.html">py2http.diagnosis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/examples/custom_input_mappers.html">py2http.examples.custom_input_mappers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/examples/example_service.html">py2http.examples.example_service</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/examples/example_service_bottle.html">py2http.examples.example_service_bottle</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/examples/example_service_flask.html">py2http.examples.example_service_flask</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/examples/object_dispatch.html">py2http.examples.object_dispatch</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/examples/object_dispatch.html#py2http.examples.object_dispatch.BackendStore"><code class="docutils literal notranslate"><span class="pre">BackendStore</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/middleware.html">py2http.middleware</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/openapi_utils.html">py2http.openapi_utils</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/openapi_utils.html#py2http.openapi_utils.set_auth"><code class="docutils literal notranslate"><span class="pre">set_auth()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/route_utils.html">py2http.route_utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/schema_tools.html">py2http.schema_tools</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/schema_tools.html#py2http.schema_tools.mk_input_schema_from_func"><code class="docutils literal notranslate"><span class="pre">mk_input_schema_from_func()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/service.html">py2http.service</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/service.html#py2http.service.SubAppSpec"><code class="docutils literal notranslate"><span class="pre">SubAppSpec</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/service.html#py2http.service.mk_app"><code class="docutils literal notranslate"><span class="pre">mk_app()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/service.html#py2http.service.mk_route"><code class="docutils literal notranslate"><span class="pre">mk_route()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/service.html#py2http.service.run_app"><code class="docutils literal notranslate"><span class="pre">run_app()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/tests/example_service_test.html">py2http.tests.example_service_test</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/tests/objects_for_testing.html">py2http.tests.objects_for_testing</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/tests/objects_for_testing.html#py2http.tests.objects_for_testing.add"><code class="docutils literal notranslate"><span class="pre">add()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/tests/objects_for_testing.html#py2http.tests.objects_for_testing.f"><code class="docutils literal notranslate"><span class="pre">f()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/tests/objects_for_testing.html#py2http.tests.objects_for_testing.sum_of_args"><code class="docutils literal notranslate"><span class="pre">sum_of_args()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/tests/simple_run_process_test.html">py2http.tests.simple_run_process_test</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/tests/test_decorators.html">py2http.tests.test_decorators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/tests/test_p2h2p.html">py2http.tests.test_p2h2p</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/tests/test_p2h2p.html#py2http.tests.test_p2h2p.p2h2p_test"><code class="docutils literal notranslate"><span class="pre">p2h2p_test()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/tests/utils_for_testing.html">py2http.tests.utils_for_testing</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/tests/utils_for_testing.html#py2http.tests.utils_for_testing.run_server"><code class="docutils literal notranslate"><span class="pre">run_server()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/types.html">py2http.types</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/types.html#py2http.types.WriteOpResult"><code class="docutils literal notranslate"><span class="pre">WriteOpResult</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="module_docs/py2http/util.html">py2http.util</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/util.html#py2http.util.CreateProcess"><code class="docutils literal notranslate"><span class="pre">CreateProcess</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/util.html#py2http.util.Missing"><code class="docutils literal notranslate"><span class="pre">Missing</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/util.html#py2http.util.ModuleNotFoundIgnore"><code class="docutils literal notranslate"><span class="pre">ModuleNotFoundIgnore</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/util.html#py2http.util.Skip"><code class="docutils literal notranslate"><span class="pre">Skip</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/util.html#py2http.util.TypeAsserter"><code class="docutils literal notranslate"><span class="pre">TypeAsserter</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/util.html#py2http.util.deprecate"><code class="docutils literal notranslate"><span class="pre">deprecate()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/util.html#py2http.util.lazyprop"><code class="docutils literal notranslate"><span class="pre">lazyprop</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/util.html#py2http.util.obj_to_items_gen"><code class="docutils literal notranslate"><span class="pre">obj_to_items_gen()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/util.html#py2http.util.obj_to_path"><code class="docutils literal notranslate"><span class="pre">obj_to_path()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/util.html#py2http.util.path_to_obj"><code class="docutils literal notranslate"><span class="pre">path_to_obj()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="module_docs/py2http/util.html#py2http.util.pyparam_to_dict"><code class="docutils literal notranslate"><span class="pre">pyparam_to_dict()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</div>
-</section>
-<section id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading"></a></h1>
-<ul class="simple">
-<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
-<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
-<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
-</ul>
-<p>Release: 0.1.59</p>
-<p>Last change: Feb 22, 2024</p>
-</section>
-
-
-           </div>
-          </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="module_docs/py2http.html" class="btn btn-neutral float-right" title="py2http" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-    </div>
-
-  <hr/>
-
-  <div role="contentinfo">
-    <p>&#169; Copyright 
-2020
-Otosense.</p>
-  </div>
-
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
-
-</footer>
-        </div>
-      </div>
-    </section>
-  </div>
-  <script>
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
+      // Watch for media preference changes
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (event) => {
+        localStorage.setItem("_x_darkMode", event.matches);
+        document.documentElement.classList.toggle("dark", event.matches);
       });
-  </script> 
+    })();
+  </script>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta charset="utf-8"/>
+<meta content="#ffffff" media="(prefers-color-scheme: light)" name="theme-color"/>
+<meta content="#030711" media="(prefers-color-scheme: dark)" name="theme-color"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<link href="index.html.md" rel="alternate" type="text/markdown"/>
+<link href="llms.txt" rel="describedby" type="text/markdown"/>
+<link href="index.html.md" rel="alternate" type="text/markdown"/>
+<link href="llms.txt" rel="describedby"/>
+<title>py2http | Py2http</title>
+<meta content="py2http | Py2http" property="og:title"/>
+<meta content="py2http | Py2http" name="twitter:title"/>
+<link href="_static/pygments.css?v=d75fae25" rel="stylesheet" type="text/css"/>
+<link href="_static/theme.css?v=d6d7c91b" rel="stylesheet" type="text/css"/>
+<link href="_static/copybutton.css?v=76b2166b" rel="stylesheet" type="text/css"/>
+<link href="_static/epythet.css?v=681d3bae" rel="stylesheet" type="text/css"/>
+<link href="search.html" rel="search" title="Search"/>
+<link href="genindex.html" rel="index" title="Index"/>
+<link href="api.html" rel="next" title="API reference"/>
+</head>
+<body :class="{ 'overflow-hidden': showSidebar }" class="min-h-screen font-sans antialiased bg-background text-foreground" x-data="{ showSidebar: false, showScrollTop: false }">
+<div @click.self="showSidebar = false" class="fixed inset-0 z-50 overflow-hidden bg-background/80 backdrop-blur-sm md:hidden" x-cloak="" x-show="showSidebar"></div><div class="relative flex flex-col min-h-screen" id="page"><a class="absolute top-0 left-0 z-[100] block bg-background p-4 text-xl transition -translate-x-full opacity-0 focus:translate-x-0 focus:opacity-100" href="#content">
+      Skip to content
+    </a><header class="sticky top-0 z-40 w-full border-b shadow-xs border-border bg-background/90 backdrop-blur"><div class="container flex items-center h-14">
+<div class="hidden mr-4 md:flex">
+<a class="flex items-center mr-6" href="#"><span class="hidden font-bold sm:inline-block text-clip whitespace-nowrap">Py2http</span>
+</a><nav class="flex items-center gap-6 text-sm font-medium">
+<a class="transition-colors hover:text-foreground/80 text-foreground/60" href="https://github.com/i2mint/py2http" rel="noopener nofollow">GitHub</a>
+</nav></div><button @click="showSidebar = true" class="inline-flex items-center justify-center h-10 px-0 py-2 mr-2 text-base font-medium transition-colors rounded-md hover:text-accent-foreground hover:bg-transparent md:hidden" type="button">
+<svg aria-hidden="true" fill="currentColor" height="24" viewbox="0 96 960 960" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M152.587 825.087q-19.152 0-32.326-13.174t-13.174-32.326q0-19.152 13.174-32.326t32.326-13.174h440q19.152 0 32.326 13.174t13.174 32.326q0 19.152-13.174 32.326t-32.326 13.174h-440Zm0-203.587q-19.152 0-32.326-13.174T107.087 576q0-19.152 13.174-32.326t32.326-13.174h320q19.152 0 32.326 13.174T518.087 576q0 19.152-13.174 32.326T472.587 621.5h-320Zm0-203.587q-19.152 0-32.326-13.174t-13.174-32.326q0-19.152 13.174-32.326t32.326-13.174h440q19.152 0 32.326 13.174t13.174 32.326q0 19.152-13.174 32.326t-32.326 13.174h-440ZM708.913 576l112.174 112.174q12.674 12.674 12.674 31.826t-12.674 31.826Q808.413 764.5 789.261 764.5t-31.826-12.674l-144-144Q600 594.391 600 576t13.435-31.826l144-144q12.674-12.674 31.826-12.674t31.826 12.674q12.674 12.674 12.674 31.826t-12.674 31.826L708.913 576Z"></path>
+</svg>
+<span class="sr-only">Toggle navigation menu</span>
+</button>
+<div class="flex items-center justify-between flex-1 gap-2 sm:gap-4 md:justify-end">
+<div class="flex-1 w-full md:w-auto md:flex-none"><form @keydown.k.window.meta="$refs.search.focus()" action="search.html" class="relative flex items-center group" id="searchbox" method="get">
+<input aria-label="Search the docs" class="inline-flex items-center font-medium transition-colors bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background border border-input hover:bg-accent focus:bg-accent hover:text-accent-foreground focus:text-accent-foreground hover:placeholder-accent-foreground py-2 px-4 relative h-9 w-full justify-start rounded-[0.5rem] text-sm text-muted-foreground sm:pr-12 md:w-40 lg:w-64" id="search-input" name="q" placeholder="Search ..." type="search" x-ref="search"/>
+<kbd class="pointer-events-none absolute right-1.5 top-2 hidden h-5 select-none text-muted-foreground items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex group-hover:bg-accent group-hover:text-accent-foreground">
+<span class="text-xs">⌘</span>
+    K
+  </kbd>
+</form>
+</div>
+<nav class="flex items-center gap-1">
+<button @click="darkMode = !darkMode" class="relative inline-flex items-center justify-center px-0 text-sm font-medium transition-colors rounded-md hover:bg-accent hover:text-accent-foreground h-9 w-9" title="Toggle color scheme" type="button">
+<svg class="absolute transition-all scale-100 rotate-0 dark:-rotate-90 dark:scale-0" fill="currentColor" height="16" viewbox="0 96 960 960" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M480 685q45.456 0 77.228-31.772Q589 621.456 589 576q0-45.456-31.772-77.228Q525.456 467 480 467q-45.456 0-77.228 31.772Q371 530.544 371 576q0 45.456 31.772 77.228Q434.544 685 480 685Zm0 91q-83 0-141.5-58.5T280 576q0-83 58.5-141.5T480 376q83 0 141.5 58.5T680 576q0 83-58.5 141.5T480 776ZM80 621.5q-19.152 0-32.326-13.174T34.5 576q0-19.152 13.174-32.326T80 530.5h80q19.152 0 32.326 13.174T205.5 576q0 19.152-13.174 32.326T160 621.5H80Zm720 0q-19.152 0-32.326-13.174T754.5 576q0-19.152 13.174-32.326T800 530.5h80q19.152 0 32.326 13.174T925.5 576q0 19.152-13.174 32.326T880 621.5h-80Zm-320-320q-19.152 0-32.326-13.174T434.5 256v-80q0-19.152 13.174-32.326T480 130.5q19.152 0 32.326 13.174T525.5 176v80q0 19.152-13.174 32.326T480 301.5Zm0 720q-19.152 0-32.326-13.17Q434.5 995.152 434.5 976v-80q0-19.152 13.174-32.326T480 850.5q19.152 0 32.326 13.174T525.5 896v80q0 19.152-13.174 32.33-13.174 13.17-32.326 13.17ZM222.174 382.065l-43-42Q165.5 327.391 166 308.239t13.174-33.065q13.435-13.674 32.587-13.674t32.065 13.674l42.239 43q12.674 13.435 12.555 31.706-.12 18.272-12.555 31.946-12.674 13.674-31.445 13.413-18.772-.261-32.446-13.174Zm494 494.761-42.239-43q-12.674-13.435-12.674-32.087t12.674-31.565Q686.609 756.5 705.38 757q18.772.5 32.446 13.174l43 41.761Q794.5 824.609 794 843.761t-13.174 33.065Q767.391 890.5 748.239 890.5t-32.065-13.674Zm-42-494.761Q660.5 369.391 661 350.62q.5-18.772 13.174-32.446l41.761-43Q728.609 261.5 747.761 262t33.065 13.174q13.674 13.435 13.674 32.587t-13.674 32.065l-43 42.239q-13.435 12.674-31.706 12.555-18.272-.12-31.946-12.555Zm-495 494.761Q165.5 863.391 165.5 844.239t13.674-32.065l43-42.239q13.435-12.674 32.087-12.674t31.565 12.674Q299.5 782.609 299 801.38q-.5 18.772-13.174 32.446l-41.761 43Q231.391 890.5 212.239 890t-33.065-13.174ZM480 576Z"></path>
+</svg>
+<svg class="absolute transition-all scale-0 rotate-90 dark:rotate-0 dark:scale-100" fill="currentColor" height="16" viewbox="0 96 960 960" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M480 936q-151 0-255.5-104.5T120 576q0-138 90-239.5T440 218q25-3 39 18t-1 44q-17 26-25.5 55t-8.5 61q0 90 63 153t153 63q31 0 61.5-9t54.5-25q21-14 43-1.5t19 39.5q-14 138-117.5 229T480 936Zm0-80q88 0 158-48.5T740 681q-20 5-40 8t-40 3q-123 0-209.5-86.5T364 396q0-20 3-40t8-40q-78 32-126.5 102T200 576q0 116 82 198t198 82Zm-10-270Z"></path>
+</svg>
+</button>
+</nav>
+</div>
+</div>
+</header>
+<div class="flex-1"><div class="container md:grid md:grid-cols-[220px_minmax(0,1fr)] md:gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10"><aside :aria-hidden="!showSidebar" :class="{ 'translate-x-0': showSidebar }" class="fixed inset-y-0 left-0 md:top-14 z-50 md:z-30 bg-background md:bg-transparent transition-all duration-100 -translate-x-full md:translate-x-0 ml-0 p-6 md:p-0 md:-ml-2 md:h-[calc(100vh-3.5rem)] w-5/6 md:w-full overflow-y-auto border-r border-border md:sticky" id="left-sidebar">
+<a class="justify-start text-sm md:!hidden bg-background" href="#"><span class="font-bold text-clip whitespace-nowrap">Py2http</span>
+</a>
+<div class="relative overflow-hidden md:overflow-auto my-4 md:my-0">
+<div class="overflow-y-auto h-full w-full relative pr-6"><nav class="flex md:hidden flex-col font-medium mt-4">
+<a href="https://github.com/i2mint/py2http" rel="nofollow noopener">GitHub</a>
+</nav><nav class="table w-full min-w-full my-6 lg:my-8">
+<ul>
+<li class="toctree-l1" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="api.html">API reference<button @click.prevent.stop="expanded = !expanded" type="button" x-cloak=""><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-cloak="" x-show="expanded">
+<li class="toctree-l2" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="_autosummary/py2http.html">py2http<button @click.prevent.stop="expanded = !expanded" type="button" x-cloak=""><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-cloak="" x-show="expanded">
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.bottle_plugins.html">py2http.bottle_plugins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.config.html">py2http.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.constants.html">py2http.constants</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.decorators.html">py2http.decorators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.default_configs.html">py2http.default_configs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.diagnosis.html">py2http.diagnosis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.middleware.html">py2http.middleware</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.openapi_utils.html">py2http.openapi_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.route_utils.html">py2http.route_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.schema_tools.html">py2http.schema_tools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.service.html">py2http.service</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.types.html">py2http.types</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.util.html">py2http.util</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+<button @click="showSidebar = false" class="absolute md:hidden right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100" type="button">
+<svg class="h-4 w-4" fill="currentColor" height="24" stroke="none" viewbox="0 96 960 960" width="24" xmlns="http://www.w3.org/2000/svg">
+<path d="M480 632 284 828q-11 11-28 11t-28-11q-11-11-11-28t11-28l196-196-196-196q-11-11-11-28t11-28q11-11 28-11t28 11l196 196 196-196q11-11 28-11t28 11q11 11 11 28t-11 28L536 576l196 196q11 11 11 28t-11 28q-11 11-28 11t-28-11L480 632Z"></path>
+</svg>
+</button>
+</aside>
+<main class="relative py-6 lg:gap-10 lg:py-8 xl:grid xl:grid-cols-[1fr_300px]">
+<div class="w-full min-w-0 mx-auto">
+<div id="content" role="main">
 
+<p><a class="reference external" href="https://i2mint.github.io/py2http/" rel="nofollow noopener">Documentation here<svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a></p>
+<section id="py2http">
+<h1>py2http<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http">¶</a></h1>
+<p>Dispatching Python functions as http services.</p>
+<p>You have some python objects and want to get an “equivalent” http service from them…</p>
+<section id="usage">
+<h2>Usage<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#usage" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#usage'">¶</a></h2>
+<p>Run a basic HTTP service from a list of functions.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="kn">from</span><span class="w"> </span><span class="nn">py2http.service</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_app</span>
+</span><span id="line-2">
+</span><span id="line-3"><span class="c1"># Define or import functions</span>
+</span><span id="line-4"><span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+</span><span id="line-5">    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+</span><span id="line-6">
+</span><span id="line-7"><span class="k">def</span><span class="w"> </span><span class="nf">multiply</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+</span><span id="line-8">    <span class="k">return</span> <span class="n">a</span> <span class="o">*</span> <span class="n">b</span>
+</span><span id="line-9">
+</span><span id="line-10"><span class="k">class</span><span class="w"> </span><span class="nc">Divider</span><span class="p">:</span>
+</span><span id="line-11">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dividend</span><span class="p">):</span>
+</span><span id="line-12">        <span class="bp">self</span><span class="o">.</span><span class="n">dividend</span> <span class="o">=</span> <span class="n">dividend</span>
+</span><span id="line-13">    
+</span><span id="line-14">    <span class="k">def</span><span class="w"> </span><span class="nf">divide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">divisor</span><span class="p">):</span>
+</span><span id="line-15">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dividend</span> <span class="o">/</span> <span class="n">divisor</span>
+</span><span id="line-16">
+</span><span id="line-17"><span class="n">divider_from_ten</span> <span class="o">=</span> <span class="n">Divider</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</span><span id="line-18">
+</span><span id="line-19"><span class="c1"># Make a list of functions or instance methods</span>
+</span><span id="line-20"><span class="n">func_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">add</span><span class="p">,</span> <span class="n">multiply</span><span class="p">,</span> <span class="n">divider_from_ten</span><span class="o">.</span><span class="n">divide</span><span class="p">]</span>
+</span><span id="line-21">
+</span><span id="line-22"><span class="c1"># Create an HTTP server</span>
+</span><span id="line-23"><span class="n">run_app</span><span class="p">(</span><span class="n">func_list</span><span class="p">,</span> <span class="n">publish_openapi</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">publish_swagger</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span></code></pre></div>
+</div>
+<p>The HTTP server will listen on port 3030 by default.</p>
+<p>Given we asked for those options, you can:</p>
+<ul class="simple">
+<li><p>access the OpenAPI specification of the http-service at http://localhost:3030/openapi</p></li>
+<li><p>access the swagger docs and fiddle of the http-service at http://localhost:3030/swagger</p></li>
+<li><p>actually use the http-service’s routes, for example:</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="c1"># Test the server in a separate process</span>
+</span><span id="line-2"><span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+</span><span id="line-3">
+</span><span id="line-4"><span class="n">url</span> <span class="o">=</span> <span class="s1">'http://localhost:3030/add'</span>
+</span><span id="line-5"><span class="n">add_args</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'a'</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span> <span class="s1">'b'</span><span class="p">:</span> <span class="mi">22</span><span class="p">}</span>
+</span><span id="line-6"><span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">add_args</span><span class="p">)</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+</span><span id="line-7"><span class="c1"># should return 42</span>
+</span></code></pre></div>
+</div>
+</section>
+<section id="configuration">
+<h2>Configuration<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#configuration" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#configuration'">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">run_app</span></code> accept many configuration values to customize the handling of HTTP requests and responses. Configuration documentation is listed in the file <code class="docutils literal notranslate"><span class="pre">config.yaml</span></code>.</p>
+</section>
+<section id="method-transformation">
+<h2>Method transformation<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#method-transformation" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#method-transformation'">¶</a></h2>
+<p>Expose class methods by flattening the init -&gt; method call process.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="kn">from</span><span class="w"> </span><span class="nn">py2http</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_app</span>
+</span><span id="line-2"><span class="kn">from</span><span class="w"> </span><span class="nn">py2http.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">mk_flat</span>
+</span><span id="line-3">
+</span><span id="line-4"><span class="k">class</span><span class="w"> </span><span class="nc">Adder</span><span class="p">:</span>
+</span><span id="line-5">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">):</span>
+</span><span id="line-6">        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">a</span>
+</span><span id="line-7">
+</span><span id="line-8">    <span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+</span><span id="line-9">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+</span><span id="line-10">
+</span><span id="line-11"><span class="n">add</span> <span class="o">=</span> <span class="n">mk_flat</span><span class="p">(</span><span class="n">Adder</span><span class="p">,</span> <span class="n">Adder</span><span class="o">.</span><span class="n">add</span><span class="p">,</span> <span class="n">func_name</span><span class="o">=</span><span class="s1">'add'</span><span class="p">)</span>
+</span><span id="line-12">
+</span><span id="line-13"><span class="n">func_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">add</span><span class="p">]</span>
+</span><span id="line-14">
+</span><span id="line-15"><span class="n">run_app</span><span class="p">(</span><span class="n">func_list</span><span class="p">)</span>
+</span></code></pre></div>
+</div>
+</section>
+<section id="input-mapping">
+<h2>Input mapping<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#input-mapping" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#input-mapping'">¶</a></h2>
+<p>By default, the server will only accept JSON requests and parse the values from the request body as keyword arguments. You can define custom input mappers to perform extra handling on the JSON body or directly on the HTTP library request object, such as default injection or type mapping.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">array</span>
+</span><span id="line-2"><span class="kn">import</span><span class="w"> </span><span class="nn">soundfile</span>
+</span><span id="line-3"><span class="kn">from</span><span class="w"> </span><span class="nn">py2http.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">handle_json_req</span>
+</span><span id="line-4">
+</span><span id="line-5"><span class="kn">from</span><span class="w"> </span><span class="nn">my_service.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">fetch_user_data</span>
+</span><span id="line-6">
+</span><span id="line-7"><span class="nd">@handle_json_req</span>  <span class="c1"># extracts the JSON body and passes it to the input mapper as a dict</span>
+</span><span id="line-8"><span class="k">def</span><span class="w"> </span><span class="nf">array_input_mapper</span><span class="p">(</span><span class="n">input_kwargs</span><span class="p">):</span>
+</span><span id="line-9">    <span class="k">return</span> <span class="p">{</span><span class="s1">'arr'</span><span class="p">:</span> <span class="n">array</span><span class="p">(</span><span class="n">input_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'arr'</span><span class="p">,</span> <span class="p">[])),</span>
+</span><span id="line-10">            <span class="s1">'scalar'</span><span class="p">:</span> <span class="n">input_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'scalar'</span><span class="p">,</span> <span class="mi">1</span><span class="p">)}</span>
+</span><span id="line-11">
+</span><span id="line-12"><span class="nd">@handle_multipart_req</span>  <span class="c1"># extracts a multipart body and passes it as a dict</span>
+</span><span id="line-13"><span class="k">def</span><span class="w"> </span><span class="nf">sound_file_input_mapper</span><span class="p">(</span><span class="n">input_kwargs</span><span class="p">):</span>
+</span><span id="line-14">    <span class="n">file_input</span> <span class="o">=</span> <span class="n">input_kwargs</span><span class="p">[</span><span class="s1">'file_upload'</span><span class="p">]</span>
+</span><span id="line-15">    <span class="n">filename</span> <span class="o">=</span> <span class="n">file_input</span><span class="o">.</span><span class="n">filename</span>
+</span><span id="line-16">    <span class="n">file_bytes</span> <span class="o">=</span> <span class="n">BytesIO</span><span class="p">(</span><span class="n">file_input</span><span class="o">.</span><span class="n">file</span><span class="p">)</span>
+</span><span id="line-17">    <span class="n">wf</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="n">soundfile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">file_bytes</span><span class="p">)</span>
+</span><span id="line-18">    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">input_kwargs</span><span class="p">,</span> <span class="n">wf</span><span class="o">=</span><span class="n">wf</span><span class="p">,</span> <span class="n">sr</span><span class="o">=</span><span class="n">sr</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">)</span>
+</span><span id="line-19">
+</span><span id="line-20"><span class="k">def</span><span class="w"> </span><span class="nf">custom_header_input_mapper</span><span class="p">(</span><span class="n">req</span><span class="p">):</span>  <span class="c1"># takes a raw aiohttp request</span>
+</span><span id="line-21">    <span class="n">user</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'User'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span>
+</span><span id="line-22">    <span class="k">return</span> <span class="p">{</span><span class="s1">'user'</span><span class="p">:</span> <span class="n">user</span><span class="p">}</span>
+</span><span id="line-23">
+</span><span id="line-24">
+</span><span id="line-25"><span class="k">def</span><span class="w"> </span><span class="nf">array_multiplier</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">scalar</span><span class="p">):</span>
+</span><span id="line-26">    <span class="k">return</span> <span class="n">arr</span> <span class="o">*</span> <span class="n">scalar</span>
+</span><span id="line-27">
+</span><span id="line-28"><span class="k">def</span><span class="w"> </span><span class="nf">save_audio</span><span class="p">(</span><span class="n">wf</span><span class="p">,</span> <span class="n">sr</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">storage_path</span><span class="o">=</span><span class="s1">'/audio'</span><span class="p">):</span>
+</span><span id="line-29">    <span class="n">target</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">storage_path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+</span><span id="line-30">    <span class="n">soundfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">wf</span><span class="p">,</span> <span class="n">sr</span><span class="p">)</span>
+</span><span id="line-31">
+</span><span id="line-32"><span class="k">def</span><span class="w"> </span><span class="nf">get_user_data</span><span class="p">(</span><span class="n">user</span><span class="p">):</span>
+</span><span id="line-33">    <span class="k">return</span> <span class="n">fetch_user_data</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+</span><span id="line-34">
+</span><span id="line-35"><span class="n">array_multiplier</span><span class="o">.</span><span class="n">input_mapper</span> <span class="o">=</span> <span class="n">array_input_mapper</span>
+</span><span id="line-36"><span class="n">save_audio</span><span class="o">.</span><span class="n">input_mapper</span> <span class="o">=</span> <span class="n">sound_file_input_mapper</span>
+</span><span id="line-37"><span class="n">get_user_data</span><span class="o">.</span><span class="n">input_mapper</span> <span class="o">=</span> <span class="n">custom_header_input_mapper</span>
+</span></code></pre></div>
+</div>
+</section>
+<section id="output-mapping">
+<h2>Output mapping<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#output-mapping" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#output-mapping'">¶</a></h2>
+<p>By default, the server will send the return value of the handler function in an HTTP response in JSON format. You can define custom output mappers to perform extra handling or type conversion.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">BytesIO</span>
+</span><span id="line-2"><span class="kn">import</span><span class="w"> </span><span class="nn">soundfile</span>
+</span><span id="line-3">
+</span><span id="line-4"><span class="kn">from</span><span class="w"> </span><span class="nn">py2http.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">send_json_resp</span><span class="p">,</span> <span class="n">send_html_resp</span>
+</span><span id="line-5">
+</span><span id="line-6"><span class="kn">from</span><span class="w"> </span><span class="nn">my_service.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">fetch_blog</span>
+</span><span id="line-7">
+</span><span id="line-8"><span class="nd">@send_json_resp</span>  <span class="c1"># sends a JSON response</span>
+</span><span id="line-9"><span class="k">def</span><span class="w"> </span><span class="nf">array_output_mapper</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">):</span>
+</span><span id="line-10">    <span class="k">return</span> <span class="p">{</span><span class="s1">'array_value'</span><span class="p">:</span> <span class="n">output</span><span class="p">[</span><span class="s1">'array_value'</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()}</span>
+</span><span id="line-11">
+</span><span id="line-12"><span class="nd">@send_html_resp</span>  <span class="c1"># sends an HTML response</span>
+</span><span id="line-13"><span class="k">def</span><span class="w"> </span><span class="nf">mk_html_list</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">):</span>
+</span><span id="line-14">    <span class="n">tag</span> <span class="o">=</span> <span class="n">input_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'tag'</span><span class="p">,</span> <span class="s1">'p'</span><span class="p">)</span>
+</span><span id="line-15">    <span class="n">item_list</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'</span><span class="se">\n</span><span class="s1">'</span><span class="p">)</span>
+</span><span id="line-16">    <span class="n">result</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">'&lt;</span><span class="si">{</span><span class="n">tag</span><span class="si">}</span><span class="s1">&gt;</span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s1">&lt;/</span><span class="si">{</span><span class="n">tag</span><span class="si">}</span><span class="s1">&gt;'</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">item_list</span><span class="p">]</span>
+</span><span id="line-17">    <span class="k">return</span> <span class="s1">''</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+</span><span id="line-18">
+</span><span id="line-19"><span class="k">def</span><span class="w"> </span><span class="nf">return_wav</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">):</span>
+</span><span id="line-20">    <span class="n">wf</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="n">output</span>
+</span><span id="line-21">    <span class="n">wf_bytes</span> <span class="o">=</span> <span class="n">BytesIO</span><span class="p">()</span>
+</span><span id="line-22">    <span class="n">soundfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">wf_bytes</span><span class="p">,</span> <span class="n">wf</span><span class="p">,</span> <span class="n">sr</span><span class="p">)</span>
+</span><span id="line-23">    <span class="n">binary_result</span> <span class="o">=</span> <span class="n">wf_bytes</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+</span><span id="line-24">    <span class="k">return</span> <span class="n">web</span><span class="o">.</span><span class="n">Response</span><span class="p">(</span><span class="n">body</span><span class="o">=</span><span class="n">binary_result</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s1">'application/octet-stream'</span><span class="p">)</span>
+</span><span id="line-25">
+</span><span id="line-26">
+</span><span id="line-27"><span class="k">def</span><span class="w"> </span><span class="nf">array_multiplier</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">scalar</span><span class="p">):</span>
+</span><span id="line-28">    <span class="k">return</span> <span class="n">arr</span> <span class="o">*</span> <span class="n">scalar</span>
+</span><span id="line-29">
+</span><span id="line-30"><span class="k">def</span><span class="w"> </span><span class="nf">get_blog_posts</span><span class="p">(</span><span class="n">page</span><span class="p">):</span>
+</span><span id="line-31">    <span class="k">return</span> <span class="n">fetch_blog</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+</span><span id="line-32">
+</span><span id="line-33"><span class="k">def</span><span class="w"> </span><span class="nf">download_audio</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+</span><span id="line-34">    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+</span><span id="line-35">        <span class="n">wf</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="n">soundfile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+</span><span id="line-36">    <span class="k">return</span> <span class="n">wf</span><span class="p">,</span> <span class="n">sr</span>
+</span><span id="line-37">
+</span><span id="line-38"><span class="n">array_multipler</span><span class="o">.</span><span class="n">output_mapper</span> <span class="o">=</span> <span class="n">array_output_mapper</span>
+</span><span id="line-39">
+</span><span id="line-40"><span class="n">get_blog_posts</span><span class="o">.</span><span class="n">output_mapper</span> <span class="o">=</span> <span class="n">mk_html_list</span>
+</span><span id="line-41">
+</span><span id="line-42"><span class="n">download_audio</span><span class="o">.</span><span class="n">output_mapper</span> <span class="o">=</span> <span class="n">return_wav</span>
+</span><span id="line-43">
+</span><span id="line-44">
+</span></code></pre></div>
+</div>
+</section>
+<section id="error-handling">
+<h2>Error handling<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#error-handling" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#error-handling'">¶</a></h2>
+<p>TODO</p>
+</section>
+<section id="client-generation">
+<h2>Client generation<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#client-generation" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#client-generation'">¶</a></h2>
+<p>Py2http generates an OpenAPI specification for the server before running. You can use this document with any OpenAPI-compatible client tools. To extract the specification, you can generate a server application object before running it.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+</span><span id="line-2"><span class="kn">from</span><span class="w"> </span><span class="nn">py2http</span><span class="w"> </span><span class="kn">import</span> <span class="n">mk_app</span><span class="p">,</span> <span class="n">run_app</span>
+</span><span id="line-3">
+</span><span id="line-4"><span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+</span><span id="line-5">    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+</span><span id="line-6">
+</span><span id="line-7"><span class="n">func_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">add</span><span class="p">]</span>
+</span><span id="line-8">
+</span><span id="line-9"><span class="n">app</span> <span class="o">=</span> <span class="n">mk_app</span><span class="p">(</span><span class="n">func_list</span><span class="p">)</span>
+</span><span id="line-10"><span class="n">openapi_spec</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">openapi_spec</span>
+</span><span id="line-11">
+</span><span id="line-12"><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'~/openapi.json'</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+</span><span id="line-13">    <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">openapi_spec</span><span class="p">,</span> <span class="n">fp</span><span class="p">)</span>
+</span><span id="line-14">
+</span><span id="line-15"><span class="n">run_app</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">3030</span><span class="p">)</span>
+</span></code></pre></div>
+</div>
+</section>
+<section id="id1">
+<h2>Configuration<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#id1" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#id1'">¶</a></h2>
+<p>Functions that generate an HTTP service, such as <code class="docutils literal notranslate"><span class="pre">run_app</span></code>, accept a number of keyword arguments for configuration. The available configuration arguments are listed below with their defaults.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">framework=py2http.config.BOTTLE</span></code> The HTTP framework to use.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">input_mapper=py2http.default_configs.default_input_mapper</span></code> A function to map an HTTP request to a dict of input arguments.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">output_mapper=py2http.default_configs.default_output_mapper</span></code> A function to map the output of a function to an HTTP response.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">error_handler=py2http.default_configs.default_error_handler</span></code> A function to map an exception to an HTTP response.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">header_inputs={}</span></code> A dict of object properties in JSON schema format describing keys that should be excluded from request body definitions. These inputs are expected to be extracted from the request headers in the input mapper.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">host='localhost'</span></code> The hostname the server can be reached at, to include in the OpenAPI specification.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">port=3030</span></code> The TCP port to listen on.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">http_method='post'</span></code> The default HTTP method for exposing functions, if a function does not specify its method.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">openapi={}</span></code> A dict with several configuration options specific to the OpenAPI specification, described below.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">logger=None</span></code> An object that implements a <code class="docutils literal notranslate"><span class="pre">log</span></code> method.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">app_name='HTTP</span> <span class="pre">Service'</span></code> The name of the application (Flask only).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">middleware=[]</span></code> A list of middlewares to run (aiohttp only).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">plugins=[]</span></code> A list of plugins to install (bottle only).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">enable_cors=False</span></code> Whether to enable CORS features.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cors_allowed_origins='*'</span></code> If CORS is enabled, the value to pass in the Access-Control-Allow-Origin header.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">publish_openapi=False</span></code> Whether to add a GET /openapi route to the app that returns the OpenAPI specification.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">openapi_insecure=False</span></code> Whether to skip middlewares and plugins for the /openapi route (disabling any authentication).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">publish_swagger=False</span></code> Whether to add a GET route to the app that returns a Swagger HTML interface.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">swagger_url='/swagger'</span></code> The URL of the swagger route.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">swagger_title='Swagger'</span></code> The title to display on the Swagger HTML page.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ssl_certfile=None</span></code> The path to a valid SSL certificate.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ssl_keyfile=None</span></code> The path to a valid SSL certificate’s key.</p></li>
+</ul>
+<p>OpenAPI configuration:</p>
+<p>These values will be put in the OpenAPI specification document. All values are optional.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">title</span></code> The title of the application.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">version</span></code> The version number of the application.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">auth</span></code>: A dict specifying the authentication details to include in the document, to make it easier for clients to automate authentication.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">auth['auth_type']</span></code> Either ‘jwt’ or ‘api_key’.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">auth['login_details']</span></code> A dict describing how a client can log in (for jwt authentication only).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">auth['login_details']['login_url']</span></code> The URL of the login route.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">auth['login_details']['refresh_url']</span></code>: The URL of the refresh route.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">auth['login_details']['login_inputs']</span></code>: A list of strings with the keys expected by the login endpoint.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">auth['login_details']['refresh_inputs']</span></code>: A list of strings with the keys expected by the refresh endpoint.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">auth['login_details']['outputs']</span></code>: A list of strings with the keys returned by the login/refresh endpoints.,</p></li>
+</ul>
+<p class="epythet-aggregates">This documentation as a single file: <a href="py2http.md">py2http.md</a> (Markdown, for agents).</p>
+
+</section>
+</section>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-09-22 15:31 UTC from <a href="https://github.com/i2mint/py2http/commit/0f67e86a5219f2578c98dfa5bf7d82cd30d5f934">0f67e86</a> (master) · py2http 0.1.61 · <a href="about-this-build.html">about this build</a></p>
+</div></div><aside class="hidden text-sm xl:block" id="right-sidebar">
+<div class="sticky top-16 -mt-10 max-h-[calc(100vh-5rem)] h-full overflow-y-auto pt-6 space-y-2"><p class="font-medium">On this page</p>
+<ul>
+<li><a :data-current="activeSection === '#usage'" class="reference internal" href="#usage">Usage</a></li>
+<li><a :data-current="activeSection === '#configuration'" class="reference internal" href="#configuration">Configuration</a></li>
+<li><a :data-current="activeSection === '#method-transformation'" class="reference internal" href="#method-transformation">Method transformation</a></li>
+<li><a :data-current="activeSection === '#input-mapping'" class="reference internal" href="#input-mapping">Input mapping</a></li>
+<li><a :data-current="activeSection === '#output-mapping'" class="reference internal" href="#output-mapping">Output mapping</a></li>
+<li><a :data-current="activeSection === '#error-handling'" class="reference internal" href="#error-handling">Error handling</a></li>
+<li><a :data-current="activeSection === '#client-generation'" class="reference internal" href="#client-generation">Client generation</a></li>
+<li><a :data-current="activeSection === '#id1'" class="reference internal" href="#id1">Configuration</a></li>
+</ul>
+</div>
+</aside>
+</main>
+</div>
+</div><footer class="py-6 border-t border-border md:py-0">
+<div class="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
+<div class="flex flex-col items-center gap-4 px-8 md:flex-row md:gap-2 md:px-0">
+<p class="text-sm leading-loose text-center text-muted-foreground md:text-left">© 
+2020
+Otosense </p>
+</div>
+</div>
+</footer>
+</div>
+<script src="_static/documentation_options.js?v=fb9c6db4"></script>
+<script src="_static/doctools.js?v=fd6eb6e6"></script>
+<script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+<script src="_static/clipboard.min.js?v=a7894cd8"></script>
+<script src="_static/copybutton.js?v=fd10adb8"></script>
+<script defer="defer" src="_static/theme.js?v=5db23cf8"></script>
 </body>
 </html>
