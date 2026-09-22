@@ -30,7 +30,11 @@ from i2.signatures import (
 )
 from i2.errors import ModuleNotFoundIgnore
 
-from py2http.schema_tools import mk_input_schema_from_func, validate_input
+from py2http.schema_tools import (
+    mk_input_schema_from_func,
+    param_default,
+    validate_input,
+)
 from py2http.config import AIOHTTP, BOTTLE
 from py2http.constants import (
     JSON_CONTENT_TYPE,
@@ -388,16 +392,12 @@ class ParamsSpecifier:
         _annotations = {
             x.name: x.annotation for x in params if x.annotation is not Parameter.empty
         }
-        _name_and_dflts = dict()
-        for x in params:
-            dflt = x.default
-            if dflt is Parameter.empty:
-                dflt = _dflt_default
-            _name_and_dflts.update({x.name: dflt})
-        _name_and_dflts = {
-            x.name: x.default if x.default is not Parameter.empty else _dflt_default
-            for x in params
-        }
+
+        def dflt_of(param):
+            dflt = param_default(param)  # i2's NotSet sentinel counts as "no default"
+            return _dflt_default if dflt is Parameter.empty else dflt
+
+        _name_and_dflts = {x.name: dflt_of(x) for x in params}
         return cls(
             _annotations=_annotations, _dflt_default=_dflt_default, **_name_and_dflts,
         )

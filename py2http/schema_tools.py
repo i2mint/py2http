@@ -9,6 +9,32 @@ from inspect import signature, Signature, Parameter
 from typing import Any, _TypedDictMeta, T_co, Union, _GenericAlias
 from i2.errors import InputError
 
+try:
+    from i2 import is_not_set
+except ImportError:  # older i2: same sentinel, not exported from the root yet
+    from i2.deco import NotSet as _NotSet
+
+    def is_not_set(x) -> bool:
+        """Return True iff ``x`` is ``i2``'s ``NotSet`` sentinel."""
+        return x is _NotSet
+
+
+def param_default(param: Parameter):
+    """Return ``param.default``, or ``Parameter.empty`` if it is ``i2``'s ``NotSet``.
+
+    ``NotSet`` in a signature means "no value given", not a real default, so schema
+    builders treat that param as required, with no default (it is not JSON
+    serializable either).
+
+    >>> from i2.deco import NotSet
+    >>> param_default(Parameter('x', Parameter.KEYWORD_ONLY, default=3))
+    3
+    >>> param_default(Parameter('x', Parameter.KEYWORD_ONLY, default=NotSet))
+    <class 'inspect._empty'>
+    """
+    default = param.default
+    return Parameter.empty if is_not_set(default) else default
+
 COMPLEX_TYPE_MAPPING = {}
 JSON_TYPES = [list, str, int, float, dict, bool]
 
@@ -111,6 +137,18 @@ def mk_input_schema_from_func(func, exclude_keys=None, include_func_params=False
     ...        'z': {'type': int, 'default': 1}},
     ...     'required': ['x']}
     >>> assert got == expected, f"\\n  expected {expected}\\n  got {got}"
+    >>>
+    >>> # i2's ``NotSet`` sentinel as a default (e.g. in an ``i2.FuncFactory``
+    >>> # signature) means "no default": the param stays required.
+    >>> from i2.deco import NotSet
+    >>> def mult_(x: float = NotSet, y=NotSet, z: int = 1):
+    ...     return (x * y) ** z
+    >>> mk_input_schema_from_func(mult_) == {
+    ...     'type': dict,
+    ...     'properties': {
+    ...         'x': {'type': float}, 'y': {'type': Any}, 'z': {'type': int, 'default': 1}},
+    ...     'required': ['x', 'y']}
+    True
     """
     if not exclude_keys:
         exclude_keys = {}
@@ -124,8 +162,8 @@ def mk_input_schema_from_func(func, exclude_keys=None, include_func_params=False
 
         default_type = Any
         p = {}
-        if param.default != Parameter.empty:
-            default = param.default
+        default = param_default(param)  # i2's NotSet sentinel counts as "no default"
+        if default is not Parameter.empty:
             if type(default) in JSON_TYPES:
                 default_type = type(default)
             p['default'] = default
