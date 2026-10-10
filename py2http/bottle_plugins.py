@@ -5,7 +5,7 @@ from bottle import request, response, abort
 from functools import wraps
 import json
 import jwt
-from typing import Iterable
+from collections.abc import Iterable
 from warnings import warn
 from py2http.constants import JSON_CONTENT_TYPE
 

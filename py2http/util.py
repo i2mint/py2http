@@ -9,7 +9,8 @@ The `ModuleFoundIgnore` context manager allows you to ignore `ModuleNotFoundErro
 The `TypeAsserter` function generates a callable that asserts the expected type of a value based on a given kind. It can be used to validate the types of inputs based on predefined rules.
 
 Overall, this module provides a collection of useful tools for handling lazy property loading, parallel processing, exception handling, type validation, and more."""
-from typing import Optional, Callable, Union, Iterable, Any
+from typing import Optional, Union, Any
+from collections.abc import Callable, Iterable
 from inspect import Parameter, signature
 from multiprocessing.context import Process
 from multiprocessing import Queue, active_children
@@ -68,7 +69,7 @@ class lazyprop:
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '<%s func=%s>' % (cn, self.func)
+        return '<{} func={}>'.format(cn, self.func)
 
 
 def if_not_empty(obj, if_empty_val=None):
@@ -218,8 +219,8 @@ class Skip:
 def obj_to_items_gen(
     obj,
     attrs: Iterable[str],
-    on_missing_attr: Union[Callable, Skip, None] = Missing,
-    kv_trans: Optional[Callable] = lambda k, v: (k, v)
+    on_missing_attr: Callable | Skip | None = Missing,
+    kv_trans: Callable | None = lambda k, v: (k, v)
     if v is not Parameter.empty
     else None,
 ):

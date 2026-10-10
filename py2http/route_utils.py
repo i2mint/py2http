@@ -11,7 +11,7 @@ which can be useful for creating HTTP services or APIs based on existing class
 functionality."""
 import inspect
 import re
-from typing import Iterable
+from collections.abc import Iterable
 
 
 def create_handler(input_class, methodname):

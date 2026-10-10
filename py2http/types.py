@@ -14,9 +14,13 @@ Additionally, shorthand constants are defined for the different kinds of paramet
 
 This module provides a convenient way to work with function parameters and signatures in Python."""
 from inspect import Parameter, Signature
-from typing import TypedDict, Optional, Iterable, Union, Mapping, Callable
+from typing import TypedDict, Optional, Union
+from collections.abc import Iterable, Mapping, Callable
 
-WriteOpResult = TypedDict('WriteOpResult', ok=bool, n=int, ids=Iterable[str])
+class WriteOpResult(TypedDict):
+    ok: bool
+    n: int
+    ids: Iterable[str]
 ParameterKind = type(Parameter.POSITIONAL_OR_KEYWORD)  # to get the enum type
 
 Params = Iterable[Parameter]

@@ -23,7 +23,8 @@ from copy import deepcopy
 from functools import partial, wraps
 from inspect import isawaitable
 import json
-from typing import Any, Callable, Dict, Iterable, Optional, TypedDict, Union
+from typing import Any, Dict, Optional, TypedDict, Union
+from collections.abc import Callable, Iterable
 from types import FunctionType
 import logging
 import os
@@ -267,8 +268,10 @@ Handlers = Iterable[
         ),
     ]
 ]
-SubAppSpec = TypedDict('SubAppSpec', handlers=Handlers, config=Dict[str, Any],)
-AppSpec = Union[Handlers, Dict[str, Union[Handlers, SubAppSpec]]]
+class SubAppSpec(TypedDict):
+    handlers: Handlers
+    config: Dict[str, Any]
+AppSpec = Union[Handlers, dict[str, Union[Handlers, SubAppSpec]]]
 
 
 def mk_flask_app(funcs, **configs):
@@ -516,7 +519,7 @@ def mk_app(app_spec: AppSpec, **configs):
 
 
 @Sig.add_optional_keywords(default_configs)
-def run_app(app_obj: Union[AppSpec, Any], **configs):
+def run_app(app_obj: AppSpec | Any, **configs):
     """
     Run an application which exposes web services created from the given python
     functions to remotely run them.

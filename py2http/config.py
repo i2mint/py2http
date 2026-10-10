@@ -12,7 +12,7 @@ options such as the function name and expected type.
 Overall, the module helps manage and retrieve configuration values for functions, 
 ensuring they are appropriately set and validated based on the function's requirements.
 """
-from typing import Callable
+from collections.abc import Callable
 
 AIOHTTP = 'aiohttp'
 BOTTLE = 'bottle'

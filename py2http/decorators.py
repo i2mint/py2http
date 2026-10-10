@@ -10,14 +10,16 @@ from inspect import (
 import inspect
 import json
 import pickle
-from typing import Iterable, Callable, Union, Mapping
+from typing import Union
+from collections.abc import Iterable, Callable, Mapping
 from functools import lru_cache, partial, wraps, update_wrapper
 from json import JSONEncoder, dumps
 from aiohttp import web
 from bottle import response
 
 # import collections
-from typing import Awaitable, get_origin
+from typing import get_origin
+from collections.abc import Awaitable
 from collections.abc import Awaitable as _Awaitable
 import os
 
@@ -337,7 +339,7 @@ class ParamsSpecifier:
 
     def __init__(
         self,
-        _annotations: Optional[dict] = None,
+        _annotations: dict | None = None,
         _names: str = '',
         _dflt_default=None,
         _kind=Parameter.KEYWORD_ONLY,
@@ -634,7 +636,7 @@ def replace_with_params(target=None, /, *, source=None, inplace=False):
 
 
 def params_replacer(
-    replace: Union[dict, Callable[[Parameter], dict]], obj: Iterable[Parameter]
+    replace: dict | Callable[[Parameter], dict], obj: Iterable[Parameter]
 ):
     """Generator of transformed params."""
 
@@ -805,7 +807,7 @@ def flatten_callables(*callables, func_name=None):
     # return flat_func
 
 
-@lru_cache()
+@lru_cache
 def _instantiate(cls, *, cache_id, **kwargs):
     del cache_id  # to emphasize we don't use it and to shut pylint up
     return cls(**kwargs)

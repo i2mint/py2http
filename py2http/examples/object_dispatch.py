@@ -9,7 +9,7 @@ and its ecosystem (mongodol, s3dol, etc.).
 
 """
 
-from typing import MutableMapping
+from collections.abc import MutableMapping
 
 
 class BackendStore(MutableMapping):
