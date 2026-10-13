@@ -4,3 +4,9 @@ py2http.constants
 .. automodule:: py2http.constants
 
    
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      WWW_AUTHENTICATE_ENV_VAR
+   

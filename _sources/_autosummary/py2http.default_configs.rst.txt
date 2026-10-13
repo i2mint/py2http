@@ -16,4 +16,5 @@ py2http.default\_configs
       error_status
       flask_error_handler
       flask_output_mapper
+      www_authenticate_challenge
    

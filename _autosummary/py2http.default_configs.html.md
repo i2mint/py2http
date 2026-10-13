@@ -16,15 +16,16 @@ up an HTTP service in Python using the py2http library.
 
 ### Functions
 
-| `aiohttp_error_handler`(error)                                       |                                                                                |
-|----------------------------------------------------------------------|--------------------------------------------------------------------------------|
-| `bottle_error_handler`(error)                                        |                                                                                |
-| `bottle_output_mapper`(output, \*\*inputs)                           |                                                                                |
-| `default_error_handler`(error)                                       |                                                                                |
-| `default_input_mapper`(\*\*inputs)                                   |                                                                                |
-| [`error_status`](#py2http.default_configs.error_status)(error) | The HTTP status for an error a handler raised (500 when it is not a client's). |
-| `flask_error_handler`(error)                                         |                                                                                |
-| `flask_output_mapper`(output, \*\*inputs)                            |                                                                                |
+| `aiohttp_error_handler`(error)                                                |                                                                                                                                                                                                                              |
+|-------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `bottle_error_handler`(error)                                                 |                                                                                                                                                                                                                              |
+| `bottle_output_mapper`(output, \*\*inputs)                                    |                                                                                                                                                                                                                              |
+| `default_error_handler`(error)                                                |                                                                                                                                                                                                                              |
+| `default_input_mapper`(\*\*inputs)                                            |                                                                                                                                                                                                                              |
+| [`error_status`](#py2http.default_configs.error_status)(error)          | The HTTP status for an error a handler raised (500 when it is not a client's).                                                                                                                                               |
+| `flask_error_handler`(error)                                                  |                                                                                                                                                                                                                              |
+| `flask_output_mapper`(output, \*\*inputs)                                     |                                                                                                                                                                                                                              |
+| [`www_authenticate_challenge`](#py2http.default_configs.www_authenticate_challenge)() | The `WWW-Authenticate` value of a 401 a dispatched function raised: the `PY2HTTP_WWW_AUTHENTICATE` environment variable, else `Bearer` (also when the variable holds a line break, which would make every 401 fail to send). |
 
 ### py2http.default_configs.error_status(error)
 
@@ -38,4 +39,19 @@ The HTTP status for an error a handler raised (500 when it is not a client’s).
 (401, 403)
 >>> error_status(InputError()), error_status(KeyError())
 (400, 500)
+```
+
+### py2http.default_configs.www_authenticate_challenge()
+
+The `WWW-Authenticate` value of a 401 a dispatched function raised: the
+`PY2HTTP_WWW_AUTHENTICATE` environment variable, else `Bearer` (also when the
+variable holds a line break, which would make every 401 fail to send).
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+```pycon
+>>> os.environ.pop(WWW_AUTHENTICATE_ENV_VAR, None) and None
+>>> www_authenticate_challenge()
+'Bearer'
 ```

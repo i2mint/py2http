@@ -133,13 +133,20 @@
 <p>A handler whose <code class="docutils literal notranslate"><span class="pre">endpoint</span></code> is not a function names the attributes clients may call
 with <code class="docutils literal notranslate"><span class="pre">attr_names</span></code> (see <code class="docutils literal notranslate"><span class="pre">public_attr</span></code> for <code class="docutils literal notranslate"><span class="pre">'*'</span></code>):</p>
 <ul class="simple">
-<li><p>a <strong>module</strong>: its functions are called by name;</p></li>
+<li><p>a <strong>module</strong>: its functions are called by name. They are function endpoints like
+any other: no object is kept, so there is no size bound, and a function that mutates
+module globals does so for every client, exactly as a plain function endpoint (or a
+bound method passed into an app spec) would. Authenticate with the auth middleware
+(<code class="docutils literal notranslate"><span class="pre">mk_jwt_middleware</span></code>, <code class="docutils literal notranslate"><span class="pre">JWTPlugin</span></code>), or pass an optional <code class="docutils literal notranslate"><span class="pre">obj_owner</span></code> to refuse
+requests it does not identify;</p></li>
 <li><p>an <strong>instance</strong> (one object every client shares): <code class="docutils literal notranslate"><span class="pre">_instance_endpoint_dispatcher</span></code>;</p></li>
 <li><p>a <strong>class</strong> (each client creates and uses its own objects):
 <code class="docutils literal notranslate"><span class="pre">_class_endpoint_dispatcher</span></code>.</p></li>
 </ul>
 <p>Instances and classes need an <code class="docutils literal notranslate"><span class="pre">obj_owner</span></code>, a <code class="docutils literal notranslate"><span class="pre">(request)</span> <span class="pre">-&gt;</span> <span class="pre">owner</span></code> hook reading
-<code class="docutils literal notranslate"><span class="pre">current_request</span></code>, and are bounded in size (<code class="docutils literal notranslate"><span class="pre">py2http.sizeof</span></code>).</p>
+<code class="docutils literal notranslate"><span class="pre">current_request</span></code>, and are bounded in size (<code class="docutils literal notranslate"><span class="pre">py2http.sizeof</span></code>), measured after each
+call except those to <code class="docutils literal notranslate"><span class="pre">obj_readers</span></code>. A call returning a generator, coroutine or async
+generator is measured when it is returned and again when that result finishes.</p>
 <p class="rubric">Module Attributes</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
@@ -322,7 +329,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=d80f5ebb"></script>
+<script src="../_static/documentation_options.js?v=3b2b39e9"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

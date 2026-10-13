@@ -5,13 +5,20 @@ Dispatching HTTP requests to the attributes of objects, classes and modules.
 A handler whose `endpoint` is not a function names the attributes clients may call
 with `attr_names` (see `public_attr` for `'*'`):
 
-- a **module**: its functions are called by name;
+- a **module**: its functions are called by name. They are function endpoints like
+  any other: no object is kept, so there is no size bound, and a function that mutates
+  module globals does so for every client, exactly as a plain function endpoint (or a
+  bound method passed into an app spec) would. Authenticate with the auth middleware
+  (`mk_jwt_middleware`, `JWTPlugin`), or pass an optional `obj_owner` to refuse
+  requests it does not identify;
 - an **instance** (one object every client shares): `_instance_endpoint_dispatcher`;
 - a **class** (each client creates and uses its own objects):
   `_class_endpoint_dispatcher`.
 
 Instances and classes need an `obj_owner`, a `(request) -> owner` hook reading
-`current_request`, and are bounded in size (`py2http.sizeof`).
+`current_request`, and are bounded in size (`py2http.sizeof`), measured after each
+call except those to `obj_readers`. A call returning a generator, coroutine or async
+generator is measured when it is returned and again when that result finishes.
 
 ### Module Attributes
 

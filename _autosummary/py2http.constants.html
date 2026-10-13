@@ -130,8 +130,28 @@
 <section id="module-py2http.constants">
 <span id="py2http-constants"></span><h1>py2http.constants<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#module-py2http.constants">¶</a></h1>
 <p>This module provides functionality for dispatching Python functions as HTTP services. It allows users to create a basic HTTP server from a list of functions or instance methods, customize input and output mapping, handle errors, generate client code from an OpenAPI specification, and configure various aspects of the server setup. The module includes features for transforming class methods, mapping input and output data, handling errors, and generating client code. It also supports configuration options for the HTTP framework, input and output mappers, error handlers, openAPI specifications, logging, middleware, plugins, CORS, SSL certificates, and more.</p>
+<p class="rubric">Module Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#py2http.constants.WWW_AUTHENTICATE_ENV_VAR" title="py2http.constants.WWW_AUTHENTICATE_ENV_VAR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WWW_AUTHENTICATE_ENV_VAR</span></code></a></p></td>
+<td><p>Environment variable naming the challenge for a 401 a dispatched function raised (<code class="docutils literal notranslate"><span class="pre">AuthorizationError</span></code>); the deployment's auth decides it.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py data">
+<dt class="sig sig-object py" id="py2http.constants.WWW_AUTHENTICATE_ENV_VAR">
+<span class="sig-prename descclassname"><span class="pre">py2http.constants.</span></span><span class="sig-name descname"><span class="pre">WWW_AUTHENTICATE_ENV_VAR</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'PY2HTTP_WWW_AUTHENTICATE'</span></span><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.constants.WWW_AUTHENTICATE_ENV_VAR" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.constants.WWW_AUTHENTICATE_ENV_VAR'">¶</a></dt>
+<dd><p>Environment variable naming the challenge for a 401 a dispatched function raised
+(<code class="docutils literal notranslate"><span class="pre">AuthorizationError</span></code>); the deployment’s auth decides it. Default: Bearer.</p>
+</dd></dl>
 </section>
-</div></div>
+</div></div><aside class="hidden text-sm xl:block" id="right-sidebar">
+<div class="sticky top-16 -mt-10 max-h-[calc(100vh-5rem)] h-full overflow-y-auto pt-6 space-y-2"><p class="font-medium">On this page</p>
+<ul>
+<li><a :data-current="activeSection === '#py2http.constants.WWW_AUTHENTICATE_ENV_VAR'" class="reference internal" href="#py2http.constants.WWW_AUTHENTICATE_ENV_VAR"><code class="docutils literal notranslate"><span class="pre">WWW_AUTHENTICATE_ENV_VAR</span></code></a></li>
+</ul>
+</div>
+</aside>
 </main>
 </div>
 </div><footer class="py-6 border-t border-border md:py-0">
@@ -144,7 +164,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=d80f5ebb"></script>
+<script src="../_static/documentation_options.js?v=3b2b39e9"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

@@ -1,4 +1,4 @@
-> built 2026-10-13 06:41 UTC from 76f661f (master) · py2http 0.1.69. Details: build_info.json
+> built 2026-10-13 09:06 UTC from 59d12fb (master) · py2http 0.1.70. Details: build_info.json
 
 # index.html.md
 
@@ -455,6 +455,16 @@ then the configs, then the defaults.
 # py2http.constants
 
 This module provides functionality for dispatching Python functions as HTTP services. It allows users to create a basic HTTP server from a list of functions or instance methods, customize input and output mapping, handle errors, generate client code from an OpenAPI specification, and configure various aspects of the server setup. The module includes features for transforming class methods, mapping input and output data, handling errors, and generating client code. It also supports configuration options for the HTTP framework, input and output mappers, error handlers, openAPI specifications, logging, middleware, plugins, CORS, SSL certificates, and more.
+
+### Module Attributes
+
+| [`WWW_AUTHENTICATE_ENV_VAR`](_autosummary/py2http.constants.html.md#py2http.constants.WWW_AUTHENTICATE_ENV_VAR)   | Environment variable naming the challenge for a 401 a dispatched function raised (`AuthorizationError`); the deployment's auth decides it.   |
+|-----------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+
+### py2http.constants.WWW_AUTHENTICATE_ENV_VAR *= 'PY2HTTP_WWW_AUTHENTICATE'*
+
+Environment variable naming the challenge for a 401 a dispatched function raised
+(`AuthorizationError`); the deployment’s auth decides it. Default: Bearer.
 
 
 # _autosummary/py2http.decorators.html.md
@@ -1141,15 +1151,16 @@ up an HTTP service in Python using the py2http library.
 
 ### Functions
 
-| `aiohttp_error_handler`(error)                                       |                                                                                |
-|----------------------------------------------------------------------|--------------------------------------------------------------------------------|
-| `bottle_error_handler`(error)                                        |                                                                                |
-| `bottle_output_mapper`(output, \*\*inputs)                           |                                                                                |
-| `default_error_handler`(error)                                       |                                                                                |
-| `default_input_mapper`(\*\*inputs)                                   |                                                                                |
-| [`error_status`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.error_status)(error) | The HTTP status for an error a handler raised (500 when it is not a client's). |
-| `flask_error_handler`(error)                                         |                                                                                |
-| `flask_output_mapper`(output, \*\*inputs)                            |                                                                                |
+| `aiohttp_error_handler`(error)                                                |                                                                                                                                                                                                                              |
+|-------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `bottle_error_handler`(error)                                                 |                                                                                                                                                                                                                              |
+| `bottle_output_mapper`(output, \*\*inputs)                                    |                                                                                                                                                                                                                              |
+| `default_error_handler`(error)                                                |                                                                                                                                                                                                                              |
+| `default_input_mapper`(\*\*inputs)                                            |                                                                                                                                                                                                                              |
+| [`error_status`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.error_status)(error)          | The HTTP status for an error a handler raised (500 when it is not a client's).                                                                                                                                               |
+| `flask_error_handler`(error)                                                  |                                                                                                                                                                                                                              |
+| `flask_output_mapper`(output, \*\*inputs)                                     |                                                                                                                                                                                                                              |
+| [`www_authenticate_challenge`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.www_authenticate_challenge)() | The `WWW-Authenticate` value of a 401 a dispatched function raised: the `PY2HTTP_WWW_AUTHENTICATE` environment variable, else `Bearer` (also when the variable holds a line break, which would make every 401 fail to send). |
 
 ### py2http.default_configs.error_status(error)
 
@@ -1163,6 +1174,21 @@ The HTTP status for an error a handler raised (500 when it is not a client’s).
 (401, 403)
 >>> error_status(InputError()), error_status(KeyError())
 (400, 500)
+```
+
+### py2http.default_configs.www_authenticate_challenge()
+
+The `WWW-Authenticate` value of a 401 a dispatched function raised: the
+`PY2HTTP_WWW_AUTHENTICATE` environment variable, else `Bearer` (also when the
+variable holds a line break, which would make every 401 fail to send).
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+```pycon
+>>> os.environ.pop(WWW_AUTHENTICATE_ENV_VAR, None) and None
+>>> www_authenticate_challenge()
+'Bearer'
 ```
 
 
@@ -1273,13 +1299,20 @@ Dispatching HTTP requests to the attributes of objects, classes and modules.
 A handler whose `endpoint` is not a function names the attributes clients may call
 with `attr_names` (see `public_attr` for `'*'`):
 
-- a **module**: its functions are called by name;
+- a **module**: its functions are called by name. They are function endpoints like
+  any other: no object is kept, so there is no size bound, and a function that mutates
+  module globals does so for every client, exactly as a plain function endpoint (or a
+  bound method passed into an app spec) would. Authenticate with the auth middleware
+  (`mk_jwt_middleware`, `JWTPlugin`), or pass an optional `obj_owner` to refuse
+  requests it does not identify;
 - an **instance** (one object every client shares): `_instance_endpoint_dispatcher`;
 - a **class** (each client creates and uses its own objects):
   `_class_endpoint_dispatcher`.
 
 Instances and classes need an `obj_owner`, a `(request) -> owner` hook reading
-`current_request`, and are bounded in size (`py2http.sizeof`).
+`current_request`, and are bounded in size (`py2http.sizeof`), measured after each
+call except those to `obj_readers`. A call returning a generator, coroutine or async
+generator is measured when it is returned and again when that result finishes.
 
 ### Module Attributes
 
@@ -2120,7 +2153,7 @@ so that it can be jsonizable.
 
 # About this build
 
-This documentation was built on **2026-10-13 06:41 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/76f661f67c33dd8afaa074b65ae98bf2a592c603"><code>76f661f</code></a> on branch <code>master</code>, for **py2http 0.1.69** (from <code>setup.cfg</code>).
+This documentation was built on **2026-10-13 09:06 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/59d12fb19d8e926793634e5d14661323f660b6d5"><code>59d12fb</code></a> on branch <code>master</code>, for **py2http 0.1.70** (from <code>setup.cfg</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -2129,9 +2162,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                       |
 |---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2http/commit/76f661f67c33dd8afaa074b65ae98bf2a592c603"><code>76f661f67c33dd8afaa074b65ae98bf2a592c603</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2http/commit/59d12fb19d8e926793634e5d14661323f660b6d5"><code>59d12fb19d8e926793634e5d14661323f660b6d5</code></a> |
 | Branch              | <code>master</code>                                                                                                                                   |
-| Tags at this commit | <code>0.1.69</code>                                                                                                                                   |
+| Tags at this commit | <code>0.1.70</code>                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                 |
 | Remote              | <code>https://github.com/i2mint/py2http</code>                                                                                                        |
 
@@ -2140,15 +2173,15 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2http</code>                                                                |
-| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38357975435">38357975435</a>       |
+| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38373670290">38373670290</a>       |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>2b747078e5c71278a5724da99b9986ad75d25407</code> (in the history of the built commit) |
+| Event commit | <code>12e93ccd6581f56071d096b6a7e275d05b9560f8</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.14  |
+| epythet  | 0.2.15  |
 | Sphinx   | 9.1.0   |
 | docutils | 0.22.4  |
 | Python   | 3.12.15 |
@@ -2167,14 +2200,14 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2http/0.1.69/">0.1.69</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/py2http/0.1.70/">0.1.70</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2http && cd py2http
-git checkout 76f661f67c33dd8afaa074b65ae98bf2a592c603
-pip install "epythet==0.2.14"
+git checkout 59d12fb19d8e926793634e5d14661323f660b6d5
+pip install "epythet==0.2.15"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 
