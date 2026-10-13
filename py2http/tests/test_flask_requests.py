@@ -121,3 +121,16 @@ def test_bottle_bad_body_is_400():
     out = {}
     app(environ, lambda status, headers, *a: out.setdefault("status", status))
     assert out["status"].startswith("400")
+
+
+@pytest.mark.parametrize(
+    "body, content_type",
+    [
+        (b"\xef\xbb\xbf" + b'{"x": 2}', JSON_CONTENT_TYPE),  # UTF-8 with a BOM
+        ('{"x": 2}'.encode("utf-16"), JSON_CONTENT_TYPE),
+        (b'{"x": 2}', "Application/JSON"),  # media types are case-insensitive
+    ],
+)
+def test_json_encodings_and_content_type_case(body, content_type):
+    r = _client(add).post("/add", data=body, content_type=content_type)
+    assert (r.status_code, r.get_json()) == (200, 3)

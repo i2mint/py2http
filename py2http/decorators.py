@@ -1014,7 +1014,7 @@ def _handle_req(func, content_type, *, binary_loads=None):
 
     @wraps(func)
     def input_mapper(req):
-        if content_type not in (req.content_type or ""):
+        if content_type not in (req.content_type or "").lower():
             raise InputError(
                 f"The incoming request's content is of type "
                 f"{req.content_type}, when {content_type} is expected."
@@ -1245,7 +1245,7 @@ def _loads_mapping(data: bytes, what: str) -> dict:
     if not data or not data.strip():
         raise InputError(f"The request {what} is empty; expected a JSON object.")
     try:
-        inputs = json.loads(data.decode("utf-8"))
+        inputs = json.loads(data)  # bytes: json detects UTF-8/BOM, UTF-16, UTF-32
     except ValueError as error:  # includes UnicodeDecodeError and JSONDecodeError
         raise InputError(f"The request {what} is not valid JSON: {error}") from error
     if not isinstance(inputs, Mapping):
