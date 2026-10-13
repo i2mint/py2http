@@ -326,7 +326,9 @@ def mk_flask_app(funcs, **configs):
     from flask import Flask
 
     configs = dict(configs, framework=FLASK)  # Flask routes whatever the default
-    get_config = partial(mk_config, func=None, configs=configs, defaults=default_configs)
+    get_config = partial(
+        mk_config, func=None, configs=configs, defaults=default_configs
+    )
     plugins = check_flask_plugins(get_config("plugins"))
     routes, openapi_spec = mk_routes_and_openapi_specs(funcs, **configs)
     app = Flask(get_config("app_name"))
@@ -338,7 +340,9 @@ def mk_flask_app(funcs, **configs):
     openapi_view = lambda: openapi_spec  # noqa: E731
     if plugins:
         # the view functions, not their endpoint names: a user's `openapi` stays guarded
-        public = [ping_view] + ([openapi_view] if get_config("openapi_insecure") else [])
+        public = [ping_view] + (
+            [openapi_view] if get_config("openapi_insecure") else []
+        )
         app.before_request(
             mk_auth_hook(plugins, public_views=public, cors=bool(enable_cors))
         )
