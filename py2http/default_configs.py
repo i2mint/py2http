@@ -94,9 +94,7 @@ def error_status(error: Exception) -> int:
 def aiohttp_error_handler(error: Exception):
     status = error_status(error)
     if status == 500:
-        _raise_http_client_error(
-            web.HTTPInternalServerError, "Internal server error"
-        )
+        _raise_http_client_error(web.HTTPInternalServerError, "Internal server error")
     reason = type(error).__name__ if status == 400 else None
     _raise_http_client_error(_AIOHTTP_ERRORS[status], str(error), reason=reason)
 

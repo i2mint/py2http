@@ -38,7 +38,9 @@ def _instance(endpoint=None, **extras):
     extras.setdefault("obj_owner", lambda req: req)  # the "request" is the owner here
     extras.setdefault("attr_names", "*")
     endpoint = Store() if endpoint is None else endpoint
-    return _get_func_to_dispatch_handler(dict(endpoint=endpoint, name="store", **extras))
+    return _get_func_to_dispatch_handler(
+        dict(endpoint=endpoint, name="store", **extras)
+    )
 
 
 def _as(owner, func, **kwargs):
@@ -101,7 +103,9 @@ def test_growing_past_the_limit_refuses_until_back_under():
     with pytest.raises(InputError, match="size limit"):
         _as("ann", func, _attr_name="write", key="big", value="y" * 20_000)
     assert "big" in store  # the object is kept, not dropped: it is the endpoint
-    with pytest.raises(InputError, match="size limit"):  # even a read, the object is full
+    with pytest.raises(
+        InputError, match="size limit"
+    ):  # even a read, the object is full
         _as("bob", func, _attr_name="read", key="a")
     del store["big"]  # shrunk outside the service
     assert _as("bob", func, _attr_name="read", key="a") == "small"

@@ -1090,7 +1090,9 @@ def _instance_endpoint_dispatcher(obj, handler, name, is_dispatchable):
             "id) that refuses requests it does not identify, or obj_owner=shared_objects "
             "(from py2http.service) to let any client use it, as before."
         )
-    owner = (lambda: None) if owner_of is shared_objects else _request_owner(owner_of, name)
+    owner = (
+        (lambda: None) if owner_of is shared_objects else _request_owner(owner_of, name)
+    )
     max_obj_size = handler.get("max_obj_size", DFLT_MAX_OBJ_SIZE)
     sizeof = handler.get("obj_sizeof", bounded_deep_sizeof)
 
