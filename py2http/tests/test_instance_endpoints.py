@@ -26,6 +26,9 @@ class Store(dict):
     def read(self, key):
         return self[key]
 
+    def remove(self, key):
+        del self[key]
+
     def write_then_fail(self, key, value):
         self[key] = value
         raise ValueError("invalid")
@@ -33,9 +36,9 @@ class Store(dict):
 
 def _instance(endpoint=None, **extras):
     extras.setdefault("obj_owner", lambda req: req)  # the "request" is the owner here
-    return _get_func_to_dispatch_handler(
-        dict(endpoint=Store() if endpoint is None else endpoint, name="store", attr_names="*", **extras)
-    )
+    extras.setdefault("attr_names", "*")
+    endpoint = Store() if endpoint is None else endpoint
+    return _get_func_to_dispatch_handler(dict(endpoint=endpoint, name="store", **extras))
 
 
 def _as(owner, func, **kwargs):
@@ -159,3 +162,45 @@ def test_http_statuses():
     payload = {"_attr_name": "write", "key": "big", "value": "y" * 20_000}
     status, _ = _post(app, "/store", payload, "ann")
     assert status.startswith("400")
+
+
+def test_shrinkers_run_while_over_the_limit():
+    store = Store()
+    func = _instance(
+        store,
+        max_obj_size=10_000,
+        attr_names=["write", "read", "remove"],
+        obj_shrinkers=["remove"],
+    )
+    for key in ("a", "b"):
+        with pytest.raises(InputError) if key == "b" else _no_error():
+            _as("ann", func, _attr_name="write", key=key, value="y" * 6_000)
+    with pytest.raises(InputError, match="except remove"):
+        _as("ann", func, _attr_name="read", key="a")
+    assert _as("ann", func, _attr_name="remove", key="b") is None
+    assert _as("ann", func, _attr_name="read", key="a") == "y" * 6_000
+
+
+def _no_error():
+    from contextlib import nullcontext
+
+    return nullcontext()
+
+
+def test_state_behind_methods_partials_and_closures_is_measured():
+    from functools import partial
+
+    from py2http.service import bounded_deep_sizeof
+
+    big = [str(i) * 1000 for i in range(100)]  # distinct strings, not one constant
+
+    class Holder:
+        pass
+
+    def closure():
+        return big
+
+    for held in (big.append, partial(print, big), closure):
+        holder = Holder()
+        holder.held = held
+        assert bounded_deep_sizeof(holder) > 100_000, held

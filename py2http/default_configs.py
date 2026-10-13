@@ -60,9 +60,9 @@ def _raise_http_client_error(error, message, reason=None):
     )
 
 
-# HTTP status of each client error, most specific class first. ``AuthorizationError``
-# itself means the request did not say who it is (401); its subclasses mean it did and
-# may not do this (403).
+# HTTP status of each client error, most specific class first. ``ForbiddenError`` and
+# ``OverwritesNotAllowed`` mean the client may not do this (403); any other
+# ``AuthorizationError`` means the request did not say who it is (401).
 _CLIENT_ERROR_STATUSES = (
     ((ForbiddenError, OverwritesNotAllowed), 403),
     (AuthorizationError, 401),

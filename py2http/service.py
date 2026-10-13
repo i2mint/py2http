@@ -28,7 +28,7 @@ from functools import partial, wraps
 from inspect import isawaitable
 import json
 from typing import Any, Callable, Dict, Iterable, Optional, TypedDict, Union
-from types import FunctionType
+from types import BuiltinMethodType, FunctionType, MethodType, MethodWrapperType
 import logging
 import os
 import sys
@@ -230,14 +230,17 @@ class OwnedObjStore:
             return sum(self._sizes.get((owner, obj_id), 0) for obj_id in objects)
 
 
-_SHARED_SIZE_LEAVES = (type, ModuleType, FunctionType)
+_SHARED_SIZE_LEAVES = (type, ModuleType)
+_BOUND_METHODS = (MethodType, BuiltinMethodType, MethodWrapperType)
 
 
 def bounded_deep_sizeof(obj, limit: Optional[int] = None) -> int:
     """Approximate memory held by ``obj`` and everything it references (containers,
-    instance ``__dict__`` and ``__slots__``), counting each object once. Stops as soon
-    as the total exceeds ``limit``, so measuring costs at most about ``limit`` bytes'
-    worth of objects. Classes, modules and functions are shared, so not counted.
+    instance ``__dict__`` and ``__slots__``, what a bound method, a ``partial`` or a
+    closure holds), counting each object once. Stops as soon as the total exceeds
+    ``limit``, so measuring costs at most about ``limit`` bytes' worth of objects.
+    Classes, modules and functions themselves are shared, so not counted, and neither
+    is what they hold (class attributes, module globals).
 
     >>> small, big = bounded_deep_sizeof([1, 2]), bounded_deep_sizeof(list(range(1000)))
     >>> small < big
@@ -251,6 +254,14 @@ def bounded_deep_sizeof(obj, limit: Optional[int] = None) -> int:
         if id(o) in seen or isinstance(o, _SHARED_SIZE_LEAVES):
             continue
         seen.add(id(o))
+        if isinstance(o, FunctionType):  # shared code, but its closure is its own
+            todo.extend(cell.cell_contents for cell in o.__closure__ or ()
+                        if _cell_is_set(cell))
+            continue
+        if isinstance(o, _BOUND_METHODS):  # what it is bound to (a module is a leaf)
+            todo.append(o.__self__)
+        elif isinstance(o, partial):
+            todo.extend((o.func, o.args, o.keywords))
         total += sys.getsizeof(o, 0)
         if limit is not None and total > limit:
             break
@@ -267,6 +278,14 @@ def bounded_deep_sizeof(obj, limit: Optional[int] = None) -> int:
                 if slot not in ("__dict__", "__weakref__") and hasattr(o, slot):
                     todo.append(getattr(o, slot))
     return total
+
+
+def _cell_is_set(cell) -> bool:
+    try:
+        cell.cell_contents
+    except ValueError:  # an empty cell (a free variable not yet assigned)
+        return False
+    return True
 
 
 def public_attr(obj, attr_name: str) -> bool:
@@ -1019,12 +1038,20 @@ def _instance_endpoint_dispatcher(obj, handler, name, is_dispatchable):
       service is built (an object already over it is refused then) and after every
       dispatched call, failed ones included. The call that takes it over the limit has
       already run: its result is withheld, the object is kept, and every later call is
-      refused until it is back under (shrunk outside the service). So memory is bounded
-      by the limit plus what the calls running at that moment allocate. ``None``
-      disables the check. Raise ``max_obj_size``, or pass an ``obj_sizeof`` that
-      skips what is not request-driven (a loaded model, a database connection), for a
-      large object. Data the object keeps outside the process (files, a database) is
-      not measured.
+      refused until it is back under, except calls to ``obj_shrinkers``. So memory is
+      bounded by the limit plus what the calls running at that moment allocate.
+      ``None`` disables the check. Raise ``max_obj_size``, or pass an ``obj_sizeof``
+      that skips what is not request-driven (a loaded model, a database connection),
+      for a large object. Not measured: data the object keeps outside the process
+      (files, a database), and state held in its class or in module globals.
+      Measuring walks the object (up to ``max_obj_size`` bytes of it) after every
+      call, reads included, so a large limit costs time on every request. A method
+      returning a generator or coroutine does its work after the measure: what it
+      adds is caught by the next call.
+    - ``obj_shrinkers``: names of attributes that only ever remove (``__delitem__``,
+      ``pop``, ``clear``...), still callable while the object is over its limit so a
+      client can bring it back under. Empty by default: py2http cannot tell which
+      methods shrink an object.
     """
     owner_of = handler.get("obj_owner")
     if owner_of is None:
@@ -1047,26 +1074,35 @@ def _instance_endpoint_dispatcher(obj, handler, name, is_dispatchable):
             f"{max_obj_size} bytes (as measured by obj_sizeof): raise max_obj_size, pass "
             "an obj_sizeof that skips what clients cannot grow, or max_obj_size=None."
         )
+    shrinkers = frozenset(handler.get("obj_shrinkers", ()))
     over_limit = threading.Event()  # set while the object is known to be too big
 
     def refuse():
         over_limit.set()
+        allowed = f" (except {', '.join(sorted(shrinkers))})" if shrinkers else ""
         raise InputError(
-            f"{name} is over its size limit ({max_obj_size} bytes): calls are refused "
-            "until it is back under"
+            f"{name} is over its size limit ({max_obj_size} bytes): calls{allowed} "
+            "are refused until it is back under"
         )
 
     def func(_attr_name=None, **kwargs):
         owner()
+        shrinking = isinstance(_attr_name, str) and _attr_name in shrinkers
         if over_limit.is_set():
-            if is_too_big():
+            if not is_too_big():
+                over_limit.clear()
+            elif not shrinking:
                 refuse()
-            over_limit.clear()
         try:
             return _get_attr_value(obj, _attr_name, is_dispatchable, **kwargs)
         finally:  # a call that grows the object and then raises is measured too
             if is_too_big():
-                refuse()
+                if shrinking:  # it ran, and removed what it could: stay refused
+                    over_limit.set()
+                else:
+                    refuse()
+            else:
+                over_limit.clear()
 
     return func
 
