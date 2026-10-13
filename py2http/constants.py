@@ -5,3 +5,11 @@ BINARY_CONTENT_TYPE = "application/octet-stream"
 FORM_CONTENT_TYPE = "multipart/form-data"
 RAW_CONTENT_TYPE = "text/plain"
 HTML_CONTENT_TYPE = "text/html"
+
+# ``WWW-Authenticate`` challenges sent with every 401 (RFC 7235 requires one): a JWT is
+# sent as ``Authorization: Bearer <token>``; an API key as the bare header value.
+BEARER_CHALLENGE = "Bearer"
+API_KEY_CHALLENGE = "ApiKey"
+#: Environment variable naming the challenge for a 401 a dispatched function raised
+#: (``AuthorizationError``); the deployment's auth decides it. Default: Bearer.
+WWW_AUTHENTICATE_ENV_VAR = "PY2HTTP_WWW_AUTHENTICATE"

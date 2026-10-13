@@ -28,7 +28,11 @@ from i2.errors import (
 
 from py2http.decorators import handle_json_req, send_json_resp, JsonRespEncoder
 from py2http.config import AIOHTTP, BOTTLE, FLASK
-from py2http.constants import JSON_CONTENT_TYPE
+from py2http.constants import (
+    BEARER_CHALLENGE,
+    JSON_CONTENT_TYPE,
+    WWW_AUTHENTICATE_ENV_VAR,
+)
 
 DFLT_CONTENT_TYPE = JSON_CONTENT_TYPE
 
@@ -52,12 +56,23 @@ def bottle_output_mapper(output, **inputs):
     return json.dumps(output, cls=JsonRespEncoder)
 
 
-def _raise_http_client_error(error, message, reason=None):
+def _raise_http_client_error(error, message, reason=None, headers=None):
     raise error(
         text=json.dumps({"error": message}),
         content_type=JSON_CONTENT_TYPE,
         reason=reason,
+        headers=headers,
     )
+
+
+def www_authenticate_challenge() -> str:
+    """The ``WWW-Authenticate`` value of a 401 a dispatched function raised: the
+    ``PY2HTTP_WWW_AUTHENTICATE`` environment variable, else ``Bearer``."""
+    return os.getenv(WWW_AUTHENTICATE_ENV_VAR) or BEARER_CHALLENGE
+
+
+def _status_headers(status: int) -> dict:
+    return {"WWW-Authenticate": www_authenticate_challenge()} if status == 401 else {}
 
 
 # HTTP status of each client error, most specific class first. ``ForbiddenError`` and
@@ -96,13 +111,20 @@ def aiohttp_error_handler(error: Exception):
     if status == 500:
         _raise_http_client_error(web.HTTPInternalServerError, "Internal server error")
     reason = type(error).__name__ if status == 400 else None
-    _raise_http_client_error(_AIOHTTP_ERRORS[status], str(error), reason=reason)
+    _raise_http_client_error(
+        _AIOHTTP_ERRORS[status],
+        str(error),
+        reason=reason,
+        headers=_status_headers(status) or None,
+    )
 
 
 def bottle_error_handler(error: Exception):
     message = str(error)
     status = error_status(error)
     response.status = f"400 {type(error).__name__}" if status == 400 else status
+    for header, value in _status_headers(status).items():
+        response.set_header(header, value)
     if status == 500 and os.getenv("OPAQUE_ERRORS", None):
         message = "Internal server error"
     return {"error": message}

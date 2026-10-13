@@ -17,7 +17,7 @@ from py2http.auth import (
     key_matches,
     required_key,
 )
-from py2http.constants import JSON_CONTENT_TYPE
+from py2http.constants import API_KEY_CHALLENGE, BEARER_CHALLENGE, JSON_CONTENT_TYPE
 
 OPTIONS = "OPTIONS"
 
@@ -31,8 +31,9 @@ def _authorization_header() -> str:
         return ""
 
 
-def _unauthorized(message):
+def _unauthorized(message, challenge=BEARER_CHALLENGE):
     response.status = 401
+    response.set_header("WWW-Authenticate", challenge)
     response.content_type = JSON_CONTENT_TYPE
     return json.dumps({"error": message})
 
@@ -126,7 +127,7 @@ class ApiKeyAuthPlugin:
         def wrapped_handler(*args, **kwargs):
             if key_matches(_authorization_header(), self._api_key):
                 return handler(*args, **kwargs)
-            return _unauthorized("invalid API key")
+            return _unauthorized("invalid API key", API_KEY_CHALLENGE)
 
         return wrapped_handler
 
