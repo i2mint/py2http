@@ -12,7 +12,8 @@ Overall, this module provides a collection of useful tools for handling lazy pro
 """
 
 from typing import Optional, Callable, Union, Iterable, Any
-from inspect import Parameter, signature
+from collections.abc import MutableMapping, Sequence
+from inspect import Parameter, Signature, signature
 from multiprocessing.context import Process
 from multiprocessing import Queue, active_children
 from time import sleep, time
@@ -495,6 +496,32 @@ _MISSING = object()
 _REQUIRED = object()
 
 
+def _positional_only_sig(*names: str, optional: Iterable[str] = ()) -> Signature:
+    return Signature(
+        Parameter(
+            name,
+            Parameter.POSITIONAL_ONLY,
+            default=None if name in optional else Parameter.empty,
+        )
+        for name in names
+    )
+
+
+def _signature_or_none(func: Callable) -> Optional[Signature]:
+    """The signature of ``func``; for the few built-in container methods the Python
+    versions we support (3.10) can't read one, the one they have in later versions."""
+    try:
+        return signature(func)
+    except (ValueError, TypeError):
+        pass
+    owner = getattr(func, "__self__", None)
+    if getattr(func, "__name__", None) == "__getitem__":
+        return _positional_only_sig("index" if isinstance(owner, Sequence) else "key")
+    if getattr(func, "__name__", None) == "pop" and isinstance(owner, MutableMapping):
+        return _positional_only_sig("key", "default", optional=["default"])
+    return None
+
+
 def call_with_inputs(func: Callable, args: Iterable = (), kwargs: dict = None):
     """Call ``func(*args, **kwargs)``, passing the entries of ``kwargs`` that name
     positional-only parameters of ``func`` positionally, which JSON (a mapping) can
@@ -517,10 +544,10 @@ def call_with_inputs(func: Callable, args: Iterable = (), kwargs: dict = None):
     parameter is left in ``kwargs``; only required ones are bound by name.
     """
     args, kwargs = list(args), dict(kwargs or {})
-    try:
-        params = list(signature(func).parameters.values())
-    except (ValueError, TypeError):
+    sig = _signature_or_none(func)
+    if sig is None:
         return func(*args, **kwargs)
+    params = list(sig.parameters.values())
     takes_any_keyword = any(p.kind is Parameter.VAR_KEYWORD for p in params)
     values = []
     for param in params[len(args) :]:

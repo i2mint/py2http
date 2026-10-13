@@ -38,9 +38,30 @@ def test_missing_required_positional_only_is_an_input_error():
         call_with_inputs(lambda x, y, /: None, kwargs={"x": 1})
 
 
-def test_callable_without_a_signature_gets_kwargs_as_before():
-    with pytest.raises(TypeError):  # dict.pop has no readable signature
-        call_with_inputs({"a": 1}.pop, kwargs={"key": "a"})
+def test_callable_without_a_signature_gets_kwargs_as_before(monkeypatch):
+    import py2http.util
+
+    def no_signature(func):
+        raise ValueError("no signature found")
+
+    monkeypatch.setattr(py2http.util, "signature", no_signature)
+    assert call_with_inputs(lambda **kw: kw, kwargs={"x": 1}) == {"x": 1}
+
+
+def test_container_methods_without_a_readable_signature(monkeypatch):
+    """Python 3.10 can't read ``dict.__getitem__``'s or ``dict.pop``'s signature."""
+    import py2http.util
+
+    def no_signature(func):
+        raise ValueError("no signature found")
+
+    monkeypatch.setattr(py2http.util, "signature", no_signature)
+    d = {"a": 1, "b": 2}
+    assert call_with_inputs(d.__getitem__, kwargs={"key": "a"}) == 1
+    assert call_with_inputs([5, 6].__getitem__, kwargs={"index": 1}) == 6
+    assert call_with_inputs(d.pop, kwargs={"key": "a"}) == 1
+    assert call_with_inputs(d.pop, kwargs={"key": "zz", "default": 0}) == 0
+    assert d == {"b": 2}
 
 
 def _post(app, path, payload):
