@@ -56,7 +56,7 @@ from py2http.schema_tools import (
     mk_input_schema_from_func,
     mk_output_schema_from_func,
 )
-from py2http.util import TypeAsserter
+from py2http.util import TypeAsserter, call_with_inputs
 from py2http.constants import JSON_CONTENT_TYPE
 
 # Instance endpoints (``handler['endpoint']`` is an object) are one object every client
@@ -518,7 +518,7 @@ def mk_route(func, **configs):
         try:
             inputs = input_mapper(req)
             input_args, input_kwargs = get_input_args_and_kwargs(inputs)
-            raw_result = func(*input_args, **input_kwargs)
+            raw_result = call_with_inputs(func, input_args, input_kwargs)
             return output_mapper(raw_result, **inputs)
         finally:
             current_request.reset(token)
@@ -536,7 +536,7 @@ def mk_route(func, **configs):
         if isawaitable(inputs):  # Pattern: pass-on async property
             inputs = await inputs
         input_args, input_kwargs = get_input_args_and_kwargs(inputs)
-        raw_result = func(*input_args, **input_kwargs)
+        raw_result = call_with_inputs(func, input_args, input_kwargs)
         if isawaitable(raw_result):  # Pattern: pass-on async property
             raw_result = await raw_result
         final_result = output_mapper(raw_result, **inputs)
@@ -1262,5 +1262,5 @@ def _get_attr_value(obj, attr_name, is_dispatchable, /, **kwargs):
         )
     attr = getattr(obj, attr_name)
     if callable(attr):
-        return attr(**kwargs)
+        return call_with_inputs(attr, kwargs=kwargs)
     return attr

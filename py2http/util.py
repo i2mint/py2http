@@ -22,6 +22,7 @@ from contextlib import contextmanager
 from strand import run_process
 
 from glom import Spec  # NOTE: Third-party
+from i2.errors import InputError
 
 
 class lazyprop:
@@ -488,3 +489,48 @@ def obj_to_path(obj):
         return obj.__globals__[root_name], tuple(attr_path)
     else:
         return obj
+
+
+_MISSING = object()
+
+
+def call_with_inputs(func: Callable, args: Iterable = (), kwargs: dict = None):
+    """Call ``func(*args, **kwargs)``, passing the entries of ``kwargs`` that name
+    positional-only parameters of ``func`` positionally, which JSON (a mapping) can
+    only supply by name (i2mint/py2http#14).
+
+    >>> call_with_inputs({"a": 1}.__getitem__, kwargs={"key": "a"})
+    1
+    >>> d = {}
+    >>> call_with_inputs(d.__setitem__, kwargs={"key": "k", "value": 2}), d
+    (None, {'k': 2})
+    >>> call_with_inputs(lambda x, /, y=0: (x, y), kwargs={"x": 1, "y": 2})
+    (1, 2)
+
+    A positional-only argument that is neither required to be given nor given takes its
+    default; a missing required one is an ``InputError`` (a client error), not a
+    ``TypeError``. A callable whose signature can't be read gets ``**kwargs`` as is.
+    """
+    args, kwargs = list(args), dict(kwargs or {})
+    try:
+        params = list(signature(func).parameters.values())
+    except (ValueError, TypeError):
+        return func(*args, **kwargs)
+    values = []
+    for param in params[len(args) :]:
+        if param.kind is not Parameter.POSITIONAL_ONLY:
+            break
+        values.append(
+            kwargs.pop(
+                param.name, _MISSING if param.default is not param.empty else param
+            )
+        )
+    while values and values[-1] is _MISSING:  # trailing optionals: leave to the callee
+        values.pop()
+    params_by_position = params[len(args) :]
+    for i, value in enumerate(values):
+        if value is _MISSING:  # an optional one before a given one: its default
+            values[i] = params_by_position[i].default
+        elif isinstance(value, Parameter):
+            raise InputError(f"Missing argument: {value.name!r}")
+    return func(*args, *values, **kwargs)
