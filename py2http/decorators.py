@@ -29,7 +29,7 @@ from i2.signatures import (
     PK,
     KO,
 )
-from i2.errors import ModuleNotFoundIgnore
+from i2.errors import InputError, ModuleNotFoundIgnore
 
 from py2http.schema_tools import (
     mk_input_schema_from_func,
@@ -1012,12 +1012,13 @@ def _handle_req(func, content_type, *, binary_loads=None):
     func.request_schema = mk_input_schema_from_func(func)
     func.content_type = content_type
 
-    # TODO: make this work with Bottle
     @wraps(func)
     def input_mapper(req):
-        if content_type not in req.content_type:
-            raise RuntimeError(f"The incoming request's content is of type \
-{req.content_type}, when {content_type} is expected.")
+        if content_type not in (req.content_type or ""):
+            raise InputError(
+                f"The incoming request's content is of type "
+                f"{req.content_type}, when {content_type} is expected."
+            )
         inputs = _get_inputs_from_request(req, content_type, binary_loads=binary_loads)
         return _validate_and_invoke_mapper(func, inputs)
 
@@ -1216,30 +1217,65 @@ def mk_input_mapper(input_map):
     return decorator
 
 
+def _request_body(request) -> bytes:
+    """The raw body of a Bottle or Flask request (told apart by ``get_data``)."""
+    if hasattr(request, "get_data"):  # Flask (werkzeug)
+        return request.get_data()
+    return request.body.read()
+
+
+def _request_files(request) -> dict:
+    """``{field name: bytes}`` of the uploaded files of a Bottle or Flask request."""
+    if hasattr(request, "get_data"):  # Flask: werkzeug FileStorage
+        return {k: v.read() for k, v in request.files.items()}
+    return {k: v.file.read() for k, v in request.files.items()}
+
+
+def _loads_mapping(data: bytes, what: str) -> dict:
+    """Decode a JSON object from ``data``; an ``InputError`` (a 400) when it is empty,
+    not JSON or not an object.
+
+    >>> _loads_mapping(b'{"x": 1}', "body")
+    {'x': 1}
+    >>> _loads_mapping(b'', "body")
+    Traceback (most recent call last):
+      ...
+    i2.errors.InputError: The request body is empty; expected a JSON object.
+    """
+    if not data or not data.strip():
+        raise InputError(f"The request {what} is empty; expected a JSON object.")
+    try:
+        inputs = json.loads(data.decode("utf-8"))
+    except ValueError as error:  # includes UnicodeDecodeError and JSONDecodeError
+        raise InputError(f"The request {what} is not valid JSON: {error}") from error
+    if not isinstance(inputs, Mapping):
+        raise InputError(
+            f"The request {what} must be a JSON object, not a {type(inputs).__name__}."
+        )
+    return inputs
+
+
 def _get_inputs_from_request(request, content_type, *, binary_loads=None):
     defaults = getattr(request, "defaults", {})
     if request.method == "POST":
-        if content_type == JSON_CONTENT_TYPE:
-            inputs = request.json
-        elif content_type == RAW_CONTENT_TYPE:
-            data = request.body.read().decode("utf-8")
-            inputs = json.loads(data)
+        if content_type in (JSON_CONTENT_TYPE, RAW_CONTENT_TYPE):
+            inputs = _loads_mapping(_request_body(request), "body")
         elif content_type == BINARY_CONTENT_TYPE:
             if binary_loads is None:
                 raise TypeError(
                     "No decoder given for a binary request body; see handle_binary_req."
                 )
-            inputs = binary_loads(request.body.read())
+            inputs = binary_loads(_request_body(request))
             if not isinstance(inputs, Mapping):
                 raise TypeError(
                     f"The binary request body decoded to a {type(inputs).__name__}, "
                     "not a mapping of inputs."
                 )
         elif content_type == FORM_CONTENT_TYPE:
-            fields = json.loads(
-                request.files.pop("__fields").file.read().decode("utf-8")
-            )
-            binaries = {k: v.file.read() for k, v in request.files.items()}
+            binaries = _request_files(request)
+            if "__fields" not in binaries:
+                raise InputError("The form request has no '__fields' part.")
+            fields = _loads_mapping(binaries.pop("__fields"), "'__fields' part")
             inputs = dict(fields, **binaries)
         return dict(defaults, **inputs)
     else:

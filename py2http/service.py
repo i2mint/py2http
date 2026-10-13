@@ -317,9 +317,9 @@ _BOTTLE_ONLY_CONFIGS = ("plugins", "enable_cors", "publish_swagger", "openapi_in
 
 
 def mk_flask_app(funcs, **configs):
-    """A Flask app serving ``funcs``. JSON request bodies only (the raw, binary and
-    form input mappers read Bottle's request); ``middleware`` is a list of WSGI
-    wrappers; ``plugins``, ``enable_cors``, ``publish_swagger`` and
+    """A Flask app serving ``funcs``. The JSON, raw, binary and form input mappers and
+    the ``send_*_resp`` output mappers work as under Bottle; ``middleware`` is a list
+    of WSGI wrappers; ``plugins``, ``enable_cors``, ``publish_swagger`` and
     ``openapi_insecure`` are Bottle's, and raise ``NotImplementedError`` here."""
     from flask import Flask
 

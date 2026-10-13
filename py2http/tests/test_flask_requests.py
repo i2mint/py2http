@@ -1,0 +1,123 @@
+"""Under ``framework='flask'`` the non-JSON input mappers read Flask's request, the
+``send_*_resp`` mappers answer their content type, and a bad body is a 400."""
+
+import json
+import pickle
+
+import pytest
+
+from py2http import mk_app
+from py2http.constants import (
+    BINARY_CONTENT_TYPE,
+    FORM_CONTENT_TYPE,
+    JSON_CONTENT_TYPE,
+    RAW_CONTENT_TYPE,
+)
+from py2http.decorators import (
+    handle_binary_req,
+    handle_form_req,
+    handle_raw_req,
+    send_binary_resp,
+    send_json_resp,
+    send_raw_resp,
+    unsafe_pickle_loads,
+)
+
+pytest.importorskip("flask")
+
+
+def _client(func, **configs):
+    return mk_app([func], framework="flask", **configs).test_client()
+
+
+def add(x: int, y: int = 1):
+    return x + y
+
+
+def upload(name: str, data: bytes):
+    return f"{name}:{len(data)}"
+
+
+def test_raw_req():
+    r = _client(add, input_mapper=handle_raw_req(lambda x, y=1: dict(x=x, y=y))).post(
+        "/add", data=json.dumps({"x": 1}), content_type=RAW_CONTENT_TYPE
+    )
+    assert (r.status_code, r.get_json()) == (200, 2)
+
+
+def test_binary_req():
+    mapper = handle_binary_req(lambda x, y=1: dict(x=x, y=y), loads=unsafe_pickle_loads)
+    r = _client(add, input_mapper=mapper).post(
+        "/add", data=pickle.dumps({"x": 3, "y": 4}), content_type=BINARY_CONTENT_TYPE
+    )
+    assert (r.status_code, r.get_json()) == (200, 7)
+
+
+def test_form_req():
+    import io
+
+    mapper = handle_form_req(lambda name, data: dict(name=name, data=data))
+    r = _client(upload, input_mapper=mapper).post(
+        "/upload",
+        data={
+            "__fields": (io.BytesIO(b'{"name": "n"}'), "__fields"),
+            "data": (io.BytesIO(b"abc"), "data"),
+        },
+        content_type="multipart/form-data",
+    )
+    assert (r.status_code, r.get_json()) == (200, "n:3")
+
+
+@pytest.mark.parametrize(
+    "decorator, content_type, body, expected",
+    [
+        (send_raw_resp, RAW_CONTENT_TYPE, "hi", b"hi"),
+        (send_binary_resp, BINARY_CONTENT_TYPE, "hi", pickle.dumps("hi")),
+        (send_json_resp, JSON_CONTENT_TYPE, {"a": 1}, b'{"a": 1}'),
+    ],
+)
+def test_send_resp_content_type(decorator, content_type, body, expected):
+    mapper = decorator(lambda output, **_: body)
+    r = _client(add, output_mapper=mapper).post("/add", json={"x": 1})
+    assert r.status_code == 200
+    assert r.content_type.split(";")[0] == content_type
+    assert r.data == expected
+
+
+@pytest.mark.parametrize(
+    "body, content_type",
+    [
+        (b"", JSON_CONTENT_TYPE),
+        (b"   ", JSON_CONTENT_TYPE),
+        (b"{not json", JSON_CONTENT_TYPE),
+        (b"[1, 2]", JSON_CONTENT_TYPE),
+        (b"\xff\xfe", JSON_CONTENT_TYPE),
+        (b'{"x": 1}', "text/plain"),
+        (b'{"x": 1}', None),
+    ],
+)
+def test_bad_bodies_are_400(body, content_type):
+    kwargs = {"content_type": content_type} if content_type else {}
+    r = _client(add).post("/add", data=body, **kwargs)
+    assert r.status_code == 400
+    assert "Traceback" not in r.get_data(as_text=True)
+    assert r.get_json()["error"]
+
+
+def test_bottle_bad_body_is_400():
+    from wsgiref.util import setup_testing_defaults
+    import io
+
+    app = mk_app([add])
+    environ = {}
+    setup_testing_defaults(environ)
+    environ.update(
+        REQUEST_METHOD="POST",
+        PATH_INFO="/add",
+        CONTENT_TYPE=JSON_CONTENT_TYPE,
+        CONTENT_LENGTH="0",
+    )
+    environ["wsgi.input"] = io.BytesIO(b"")
+    out = {}
+    app(environ, lambda status, headers, *a: out.setdefault("status", status))
+    assert out["status"].startswith("400")
