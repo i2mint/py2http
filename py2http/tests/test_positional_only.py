@@ -1,14 +1,11 @@
 """Positional-only parameters (``dict.__getitem__``, ``def f(x, /)``) can be called over
 JSON, which supplies arguments by name (i2mint/py2http#13, #14)."""
 
-import io
-import json
-from wsgiref.util import setup_testing_defaults
-
 import pytest
 from i2.errors import InputError
 
 from py2http import mk_app
+from py2http.tests.utils_for_testing import call_wsgi
 from py2http.util import call_with_inputs
 
 
@@ -64,19 +61,7 @@ def test_container_methods_without_a_readable_signature(monkeypatch):
     assert d == {"b": 2}
 
 
-def _post(app, path, payload):
-    body = json.dumps(payload).encode()
-    environ = {
-        "REQUEST_METHOD": "POST",
-        "PATH_INFO": path,
-        "CONTENT_TYPE": "application/json",
-        "CONTENT_LENGTH": str(len(body)),
-        "wsgi.input": io.BytesIO(body),
-    }
-    setup_testing_defaults(environ)
-    statuses = []
-    out = b"".join(app(environ, lambda status, headers, *a: statuses.append(status)))
-    return statuses[0], json.loads(out)
+_post = call_wsgi
 
 
 def test_dict_dunders_over_http():

@@ -1,6 +1,13 @@
+"""Helpers shared by py2http's tests: calling a WSGI app in-process, and running a
+dispatched function as if a given request (or owner) were being handled."""
+
+import io
+import json
 from contextlib import contextmanager
 from multiprocessing.context import Process
 from time import sleep
+from wsgiref.util import setup_testing_defaults
+
 from py2http.util import conditional_logger, deprecate
 
 
@@ -8,7 +15,6 @@ from py2http.util import conditional_logger, deprecate
 @deprecate
 def run_server(launcher, wait_before_entering=0, verbose=False, **kwargs):
     """Context manager to launch server on entry, and shut it down on exit"""
-    from warnings import warn
 
     clog = conditional_logger(verbose)
     server = None
@@ -24,3 +30,40 @@ def run_server(launcher, wait_before_entering=0, verbose=False, **kwargs):
             clog(f"Terminating server...")
             server.terminate()
         clog(f"... server terminated")
+
+
+def call_wsgi(app, path, payload=None, *, method="POST", headers=()):
+    """Send one request to the WSGI ``app`` in-process; return ``(status, body)``, the
+    body decoded from JSON when it is JSON.
+
+    ``headers`` maps header names (``"Authorization"``) to values.
+    """
+    body = b"" if payload is None else json.dumps(payload).encode()
+    environ = {
+        "REQUEST_METHOD": method,
+        "PATH_INFO": path,
+        "CONTENT_TYPE": "application/json",
+        "CONTENT_LENGTH": str(len(body)),
+        "wsgi.input": io.BytesIO(body),
+    }
+    for name, value in dict(headers).items():
+        environ["HTTP_" + name.upper().replace("-", "_")] = value
+    setup_testing_defaults(environ)
+    statuses = []
+    out = b"".join(app(environ, lambda status, headers, *a: statuses.append(status)))
+    try:
+        return statuses[0], json.loads(out)
+    except ValueError:
+        return statuses[0], out.decode()
+
+
+def as_owner(owner, func, **kwargs):
+    """Call ``func(**kwargs)`` while ``owner`` is the request being handled, so an
+    ``obj_owner=lambda req: req`` hook sees ``owner``."""
+    from py2http.service import current_request
+
+    token = current_request.set(owner)
+    try:
+        return func(**kwargs)
+    finally:
+        current_request.reset(token)

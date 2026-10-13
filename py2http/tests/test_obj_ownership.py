@@ -1,9 +1,5 @@
 """Class-endpoint objects belong to their creator and are bounded in size (#22)."""
 
-import io
-import json
-from wsgiref.util import setup_testing_defaults
-
 import pytest
 from i2.errors import AuthorizationError, InputError
 
@@ -12,9 +8,9 @@ from py2http.service import (
     OwnedObjStore,
     _get_func_to_dispatch_handler,
     bounded_deep_sizeof,
-    current_request,
     shared_objects,
 )
+from py2http.tests.utils_for_testing import as_owner, call_wsgi
 
 
 class Bag:
@@ -33,12 +29,7 @@ def _owned(**extras):
     )
 
 
-def _as(owner, func, **kwargs):
-    token = current_request.set(owner)
-    try:
-        return func(**kwargs)
-    finally:
-        current_request.reset(token)
+_as = as_owner
 
 
 def test_class_endpoint_without_owner_is_refused_at_build():
@@ -129,20 +120,7 @@ def test_owned_store_rejects_bad_bounds():
 
 
 def _post(app, path, payload, user):
-    body = json.dumps(payload).encode()
-    environ = {}
-    setup_testing_defaults(environ)
-    environ.update(
-        REQUEST_METHOD="POST",
-        PATH_INFO=path,
-        CONTENT_TYPE="application/json",
-        CONTENT_LENGTH=str(len(body)),
-        HTTP_X_USER=user,
-    )
-    environ["wsgi.input"] = io.BytesIO(body)
-    statuses = []
-    out = b"".join(app(environ, lambda status, headers, *a: statuses.append(status)))
-    return statuses[0], json.loads(out)
+    return call_wsgi(app, path, payload, headers={"X-User": user})
 
 
 def test_owner_hook_reads_the_real_request():
@@ -251,3 +229,28 @@ def test_store_is_thread_safe():
     with ThreadPoolExecutor(8) as pool:
         list(pool.map(churn, range(8)))
     assert store.total_bytes == sum(store.owner_bytes(o) for o in range(9))
+
+
+@pytest.mark.parametrize(
+    "kwargs, match",
+    [
+        ({"_attr_name": "add"}, "_attr_name must be None"),
+        ({"_obj_id": "<created>"}, "_attr_name must be provided"),
+    ],
+)
+def test_misdirected_calls_are_input_errors(kwargs, match):
+    func = _owned()
+    if kwargs.get("_obj_id") == "<created>":
+        kwargs["_obj_id"] = _as("ann", func)
+    with pytest.raises(InputError, match=match):
+        _as("ann", func, **kwargs)
+
+
+def test_shared_mode_custom_store_drops_an_oversized_object():
+    store = {}
+    func = _owned(obj_owner=shared_objects, obj_store=store, max_obj_size=5_000)
+    bag = _as("ann", func)
+    assert list(store) == [bag]
+    with pytest.raises(InputError, match="size limit"):
+        _as("bob", func, _obj_id=bag, _attr_name="add", item="y" * 10_000)
+    assert store == {}

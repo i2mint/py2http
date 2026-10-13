@@ -1,19 +1,15 @@
 """Instance endpoints (one object every client shares) need an owner hook and are
 bounded in size (#30)."""
 
-import io
-import json
-from wsgiref.util import setup_testing_defaults
-
 import pytest
 from i2.errors import AuthorizationError, InputError
 
 from py2http import mk_app
 from py2http.service import (
     _get_func_to_dispatch_handler,
-    current_request,
     shared_objects,
 )
+from py2http.tests.utils_for_testing import as_owner, call_wsgi
 
 
 class Store(dict):
@@ -43,12 +39,7 @@ def _instance(endpoint=None, **extras):
     )
 
 
-def _as(owner, func, **kwargs):
-    token = current_request.set(owner)
-    try:
-        return func(**kwargs)
-    finally:
-        current_request.reset(token)
+_as = as_owner
 
 
 def test_instance_endpoint_without_owner_is_refused_at_build():
@@ -130,19 +121,7 @@ def test_custom_sizeof():
 
 
 def _post(app, path, payload, user):
-    body = json.dumps(payload).encode()
-    environ = {
-        "REQUEST_METHOD": "POST",
-        "PATH_INFO": path,
-        "CONTENT_TYPE": "application/json",
-        "CONTENT_LENGTH": str(len(body)),
-        "HTTP_X_USER": user,
-        "wsgi.input": io.BytesIO(body),
-    }
-    setup_testing_defaults(environ)
-    statuses = []
-    out = b"".join(app(environ, lambda status, headers, *a: statuses.append(status)))
-    return statuses[0], json.loads(out)
+    return call_wsgi(app, path, payload, headers={"X-User": user})
 
 
 def test_http_statuses():

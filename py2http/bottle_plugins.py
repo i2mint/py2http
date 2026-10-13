@@ -1,14 +1,40 @@
 """Plugins for adding middleware functionality to Bottle apps."""
 
-from bottle import request, response, abort
-from functools import wraps
 import json
-import jwt
+from functools import wraps
 from typing import Iterable
 from warnings import warn
+
+from bottle import request, response
+
+from py2http.auth import (
+    DFLT_JWT_ALGORITHMS,
+    CredentialsRejected,
+    bearer_token,
+    decode_jwt,
+    jwt_algorithms,
+    jwt_decode_kwargs,
+    key_matches,
+    required_key,
+)
 from py2http.constants import JSON_CONTENT_TYPE
 
 OPTIONS = "OPTIONS"
+
+
+def _authorization_header() -> str:
+    """The request's ``Authorization`` header; ``''`` if it is not valid UTF-8 (Bottle
+    raises when decoding it), which every check then refuses."""
+    try:
+        return request.headers.get("Authorization", "")
+    except UnicodeError:
+        return ""
+
+
+def _unauthorized(message):
+    response.status = 401
+    response.content_type = JSON_CONTENT_TYPE
+    return json.dumps({"error": message})
 
 
 class JWTPlugin:
@@ -25,70 +51,82 @@ class JWTPlugin:
         mapper: dict = None,
         ignore_methods: Iterable[str] = None,
         algorithms: Iterable[str] = None,
+        *,
+        allow_mixed_algorithm_families: bool = False,
+        decode_kwargs: dict = None,
     ):
         """Creates a new JWTPlugin instance.
 
-        :param secret: (Optional) The JWT public key (RS256) or synchronous secret (HS256) used to validate tokens.
+        :param secret: The JWT public key (RS256) or shared secret (HS256) used to
+            validate tokens. Required (non-empty) when ``verify`` is True.
         :param verify: (Optional) If True, will verify JWT signatures against the provided secret,
         and reject unverified requests.
         :param mapper: (Optional) A dict that specifies how to map JWT claim value names in the output.
         :param ignore_methods: (Optional) A list of method names for the plugin to ignore.
+        :param algorithms: (Optional) The algorithms a token may be signed with
+            (default ``("HS256",)``); validated as ``py2http.auth.jwt_algorithms``
+            describes, as is ``allow_mixed_algorithm_families``.
+        :param decode_kwargs: (Optional) Extra ``jwt.decode`` arguments, such as
+            ``audience``, ``issuer`` or ``leeway``.
         """
         self._secret = secret
         self._verify = verify
         self._mapper = mapper if mapper else {}
         self._ignore_methods = ignore_methods if ignore_methods else []
-        self._algorithms = algorithms if algorithms else ["HS256"]
+        self._algorithms = jwt_algorithms(
+            secret,
+            verify=verify,
+            algorithms=algorithms or DFLT_JWT_ALGORITHMS,
+            allow_mixed_algorithm_families=allow_mixed_algorithm_families,
+        )
+        self._decode_kwargs = jwt_decode_kwargs(decode_kwargs)
+
+    def _claims(self):
+        """The (renamed) claims of the request's token; raises ``CredentialsRejected``."""
+        decoded = decode_jwt(
+            bearer_token(_authorization_header()),
+            self._secret,
+            algorithms=self._algorithms,
+            verify=self._verify,
+            decode_kwargs=self._decode_kwargs,
+        )
+        for k, v in self._mapper.items():
+            if k in decoded:
+                decoded[v] = decoded.pop(k)
+        return decoded
 
     def __call__(self, handler):
-        if self._ignore_methods and handler.method_name in self._ignore_methods:
+        if getattr(handler, "method_name", None) in self._ignore_methods:
             return handler
 
         @wraps(handler)
         def wrapped_handler(*args, **kwargs):
             if request.method == OPTIONS:
-                return handler(*args, *kwargs)
-            auth_header = request.headers.get("Authorization", "")
-            token = auth_header[7:]
+                return handler(*args, **kwargs)
             try:
-                decoded = jwt.decode(
-                    token,
-                    self._secret,
-                    options={"verify_signature": self._verify},
-                    algorithms=self._algorithms,
-                )
-                for k, v in self._mapper.items():
-                    if k in decoded:
-                        decoded[v] = decoded.pop(k)
-                request.token = decoded
-                return handler(*args, **kwargs)
-            except jwt.DecodeError as error:
+                request.token = self._claims()
+            except CredentialsRejected as rejection:
                 if self._verify:
-                    response.status = 401
-                    response.content_type = JSON_CONTENT_TYPE
-                    return json.dumps(
-                        {
-                            "error": f'Invalid authentication token "{token}", {str(error)}'
-                        }
-                    )
-                warn(f"Invalid JWT: {token}")
-                return handler(*args, **kwargs)
+                    return _unauthorized(str(rejection))
+                warn(f"Invalid JWT: {rejection.__cause__}")
+            return handler(*args, **kwargs)
 
         return wrapped_handler
 
 
 class ApiKeyAuthPlugin:
+    """A plugin letting through only requests whose ``Authorization`` header is
+    exactly ``api_key`` (compared in constant time; an empty key is refused)."""
+
     def __init__(self, api_key: str):
-        self._api_key = api_key
+        self._api_key = required_key(api_key)
 
     def __call__(self, handler):
+        @wraps(handler)
         def wrapped_handler(*args, **kwargs):
-            auth_header = request.headers.get("Authorization", "")
-            if auth_header == self._api_key:
+            if key_matches(_authorization_header(), self._api_key):
                 return handler(*args, **kwargs)
-            response.status = 401
-            response.content_type = JSON_CONTENT_TYPE
-            return json.dumps({"error": "invalid API key"})
+            return _unauthorized("invalid API key")
 
         return wrapped_handler
 
@@ -100,6 +138,7 @@ class CorsPlugin:
         self._origins = origins
 
     def __call__(self, handler):
+        @wraps(handler)
         def wrapped_handler(*args, **kwargs):
             response.headers["Access-Control-Allow-Origin"] = self._origins
             response.headers["Access-Control-Allow-Methods"] = (
