@@ -138,6 +138,7 @@ def test_verify_false_skips_signature_check():
         ({"algorithms": ["hs256"]}, ValueError),
         ({"algorithms": ["none"]}, ValueError),
         ({"algorithms": ["RS256", "none"]}, ValueError),
+        ({"public_routes": "ping"}, TypeError),
     ],
 )
 def test_bad_algorithm_config_fails_at_construction(kwargs, error):
@@ -145,9 +146,9 @@ def test_bad_algorithm_config_fails_at_construction(kwargs, error):
         mk_jwt_middleware(SECRET, **kwargs)
 
 
-@pytest.mark.parametrize("secret", ["", b"", None])
-def test_empty_secret_fails_at_construction(secret):
-    with pytest.raises(ValueError):
+@pytest.mark.parametrize("secret", ["", b"", None, 12345])
+def test_empty_or_unusable_secret_fails_at_construction(secret):
+    with pytest.raises((ValueError, TypeError)):
         mk_jwt_middleware(secret)
 
 
@@ -169,7 +170,8 @@ def test_key_unfit_for_token_algorithm_is_401_not_500():
         allow_mixed_algorithm_families=True,
     )
     forged = _hs256_with_key({"sub": "mallory"}, public_pem)
-    assert _get(mw, "/me", forged)[0] == 401
+    status, body = _get(mw, "/me", forged)
+    assert status == 401 and "asymmetric" not in body.lower()
 
 
 def test_none_in_public_routes_does_not_open_unnamed_routes():

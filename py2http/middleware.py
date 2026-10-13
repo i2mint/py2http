@@ -75,8 +75,9 @@ def mk_jwt_middleware(
     import jwt
     from aiohttp import web
 
-    if isinstance(algorithms, str):
-        raise TypeError(f"algorithms must be a list of names, e.g. [{algorithms!r}]")
+    for name, value in [("algorithms", algorithms), ("public_routes", public_routes)]:
+        if isinstance(value, (str, bytes)):
+            raise TypeError(f"{name} must be a list of names, e.g. [{value!r}]")
     algorithms = list(algorithms)
     if not algorithms:
         raise ValueError("algorithms must name at least one JWT algorithm")
@@ -89,6 +90,8 @@ def mk_jwt_middleware(
     if verify and not secret:
         raise ValueError("secret must be a non-empty key when verify=True")
     families = {_algorithm_family(a) for a in algorithms}
+    if verify and "hmac" in families and not isinstance(secret, (str, bytes)):
+        raise TypeError(f"an HMAC secret must be str or bytes, got {type(secret)}")
     if len(families) > 1 and not allow_mixed_algorithm_families:
         raise ValueError(
             f"algorithms={algorithms} mixes HMAC and public-key algorithms with one "
@@ -119,7 +122,14 @@ def mk_jwt_middleware(
             )
         except jwt.PyJWTError as error:  # incl. a key unfit for the token's alg
             if verify:
-                raise _unauthorized(f"Invalid authentication token: {error}")
+                # InvalidTokenError texts describe the token ("Signature has
+                # expired"); other PyJWTErrors can describe the server's key
+                reason = (
+                    str(error)
+                    if isinstance(error, jwt.InvalidTokenError)
+                    else "not acceptable"
+                )
+                raise _unauthorized(f"Invalid authentication token: {reason}")
             warn(f"Invalid JWT: {error}")
             return await handler(req)
         req.token = decoded
