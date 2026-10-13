@@ -117,3 +117,132 @@ def test_falsy_object_is_still_found():
 def test_lru_obj_store_rejects_bad_size():
     with pytest.raises(ValueError):
         LRUObjStore(max_size=0)
+
+
+# --- shapes found by the adversarial review: instance state must stay private ---
+
+from dataclasses import dataclass
+from types import ModuleType
+from typing import NamedTuple
+
+
+class Slotted:
+    __slots__ = ("token",)
+
+    def __init__(self):
+        self.token = "TOK"
+
+    def ping(self):
+        return "pong"
+
+
+@dataclass
+class DC:
+    token: str = "default"
+
+    def ping(self):
+        return "pong"
+
+
+class NT(NamedTuple):
+    token: str
+
+    def ping(self):
+        return "pong"
+
+
+class Odd:
+    count = 0
+    opener = open
+    Nested = dict
+
+    def __init__(self):
+        self.count = 42
+        self.incr = lambda: "shadowed"
+
+    def incr(self):
+        return "real"
+
+    @staticmethod
+    def s():
+        return "static"
+
+    @classmethod
+    def c(cls):
+        return "class"
+
+    @property
+    def p(self):
+        return "prop"
+
+
+@pytest.mark.parametrize(
+    "obj", [Slotted(), DC(token="TOK"), NT(token="TOK")], ids=["slots", "dc", "nt"]
+)
+def test_star_refuses_fields(obj):
+    func = _dispatcher(obj, "*")
+    with pytest.raises(InputError):
+        func(_attr_name="token")
+    assert func(_attr_name="ping") == "pong"
+
+
+@pytest.mark.parametrize("attr_name", ["count", "opener", "Nested", "incr"])
+def test_star_refuses_data_shadowed_and_assigned_callables(attr_name):
+    func = _dispatcher(Odd(), "*")
+    with pytest.raises(InputError):
+        func(_attr_name=attr_name)
+
+
+def test_star_allows_static_class_methods_and_properties():
+    func = _dispatcher(Odd(), "*")
+    assert [func(_attr_name=n) for n in ("s", "c", "p")] == ["static", "class", "prop"]
+
+
+def test_star_refuses_builtin_mapping_mutators():
+    class Store(dict):
+        def keys_list(self):
+            return list(self)
+
+    d = Store(a=1)
+    func = _dispatcher(d, "*")
+    with pytest.raises(InputError):
+        func(_attr_name="clear")
+    assert func(_attr_name="keys_list") == ["a"] and d == {"a": 1}
+
+
+def _mk_module(name, *, all_=None):
+    mod = ModuleType(name)
+    exec(
+        "from os import listdir\nfrom json import dumps\nimport os\nAPI_KEY = 'k-123'\n"
+        "def hello():\n    return 'hi'\n",
+        vars(mod),
+    )
+    if all_ is not None:
+        mod.__all__ = all_
+    return mod
+
+
+@pytest.mark.parametrize("attr_name", ["listdir", "dumps", "os", "API_KEY"])
+def test_star_on_module_refuses_imports_and_data(attr_name):
+    func = _dispatcher(_mk_module("some_service"), "*")
+    with pytest.raises(InputError):
+        func(_attr_name=attr_name)
+    assert func(_attr_name="hello") == "hi"
+
+
+def test_star_on_module_honours_all():
+    mod = _mk_module("some_service", all_=["dumps", "listdir"])
+    assert public_attr(mod, "dumps")  # a re-export listed in __all__
+    assert not public_attr(mod, "listdir")  # listed, but not a Python function
+    assert not public_attr(mod, "hello")  # not listed
+
+
+@pytest.mark.parametrize("bad", [["x"], {"a": 1}, 3, None])
+def test_non_str_names_and_ids_are_input_errors(bad):
+    func = _dispatcher({"x": 1}, ["x", "__len__"])
+    if bad is not None:
+        with pytest.raises(InputError):
+            func(_attr_name=bad)
+    cls_func = _dispatcher(Counter, "*")
+    with pytest.raises(InputError):
+        cls_func(_obj_id=bad if bad is not None else [], _attr_name="incr")

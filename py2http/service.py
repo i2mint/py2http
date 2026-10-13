@@ -58,6 +58,8 @@ from py2http.constants import JSON_CONTENT_TYPE
 
 # Maximum number of objects a class endpoint keeps alive; the least recently used
 # one is evicted beyond that. Pass ``obj_store=...`` in a handler to change it.
+# Note: this bounds the number of objects, not their size, and object ids are the
+# only access control (any client holding an id can use the object).
 DFLT_OBJ_STORE_MAX_SIZE = 1000
 
 
@@ -104,27 +106,63 @@ class LRUObjStore(MutableMapping):
 
 
 def public_attr(obj, attr_name: str) -> bool:
-    """The attribute policy ``attr_names='*'`` stands for: a name is dispatchable if
-    it does not start with ``_`` and is defined on the object's class (or, for a
-    module, in the module itself).
+    """The attribute policy ``attr_names='*'`` stands for: only public methods.
 
-    This keeps private helpers and dunders (``__dict__``, ``__init__``, ...) and
-    per-instance state out of reach of HTTP clients.
+    A name is dispatchable if it does not start with ``_`` and
+
+    - for a module: it is a function that the module defines (or lists in its
+      ``__all__``), never something it merely imports, nor plain data;
+    - otherwise: it is a plain Python function, ``staticmethod``,
+      ``classmethod`` or ``property`` defined in the object's class (or a base
+      class), and the instance does not shadow it.
+
+    This keeps private helpers, dunders (``__dict__``, ``__init__``, ...),
+    per-instance state (``__dict__`` entries, ``__slots__``, dataclass and
+    namedtuple fields) and callables merely assigned as class attributes
+    (``opener = open``) out of reach of HTTP clients.
+
+    Note that every public method is exposed, inherited ones included (e.g. a
+    pydantic model's ``model_dump``). For anything holding secrets, or a mapping
+    whose mutators should stay private, list the names explicitly instead.
 
     >>> class A:
+    ...     data = 0
+    ...     opener = open
     ...     def f(self): ...
     ...     def _g(self): ...
     ...     def __init__(self): self.secret = 1
-    >>> [public_attr(A(), name) for name in ('f', '_g', '__init__', '__dict__', 'secret')]
-    [True, False, False, False, False]
+    >>> [public_attr(A(), name)
+    ...  for name in ('f', '_g', '__init__', '__dict__', 'secret', 'data', 'opener')]
+    [True, False, False, False, False, False, False]
     """
     if not isinstance(attr_name, str) or attr_name.startswith("_"):
         return False
     if isinstance(obj, ModuleType):
-        return attr_name in vars(obj)
-    # look in the class's MRO only: hasattr(type(obj), ...) would also find
-    # metaclass attributes (``mro``, ...) that the instance does not have
-    return any(attr_name in vars(klass) for klass in type(obj).__mro__)
+        return _is_public_module_function(obj, attr_name)
+    if attr_name in getattr(obj, "__dict__", {}):
+        return False  # instance state, or an instance attribute shadowing a method
+    # Look in the class's MRO dicts only (not the metaclass: ``mro``, ...), and at
+    # the raw class attribute, not what the instance would return for it
+    for klass in type(obj).__mro__:
+        if attr_name in vars(klass):
+            return _is_method_like(vars(klass)[attr_name])
+    return False
+
+
+def _is_method_like(class_attr) -> bool:
+    if isinstance(class_attr, (staticmethod, classmethod)):
+        class_attr = class_attr.__func__
+    return isinstance(class_attr, (FunctionType, property))
+
+
+def _is_public_module_function(module: ModuleType, attr_name: str) -> bool:
+    value = vars(module).get(attr_name)
+    if not inspect.isfunction(value):
+        return False
+    exported = getattr(module, "__all__", None)
+    if exported is not None:
+        return attr_name in exported
+    return value.__module__ == module.__name__
 
 
 def unsafe_any_attr(obj, attr_name: str) -> bool:
@@ -150,7 +188,9 @@ def _attr_name_policy(attr_names) -> Callable[[Any, str], bool]:
         allowed = {attr_names}
     else:
         allowed = set(attr_names)
-    return lambda obj, attr_name: attr_name in allowed and hasattr(obj, attr_name)
+    return lambda obj, attr_name: (
+        isinstance(attr_name, str) and attr_name in allowed and hasattr(obj, attr_name)
+    )
 
 
 def method_not_found(method_name):
@@ -729,7 +769,7 @@ def _get_func_to_dispatch_handler(handler):
                 new_id = str(uuid4())
                 obj_store[new_id] = new_obj
                 return new_id
-            obj = obj_store.get(_obj_id)
+            obj = obj_store.get(_obj_id) if isinstance(_obj_id, str) else None
             if obj is None:
                 raise InputError(f"No object found with id {_obj_id}")
             if _attr_name is None:
