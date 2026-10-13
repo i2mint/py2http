@@ -38,6 +38,7 @@ from py2http.default_configs import (
     default_configs,
     DFLT_CONTENT_TYPE,
     default_input_mapper,
+    framework_defaults,
 )
 from py2http.openapi_utils import (
     add_paths_to_spec,
@@ -127,8 +128,11 @@ def mk_route(func, **configs):
     )
     framework = _get_framework(configs, default_configs)
     input_mapper = config_for("input_mapper")
-    output_mapper = config_for("output_mapper")
-    error_handler = config_for("error_handler")
+    error_handler, output_mapper = framework_defaults(
+        framework,
+        error_handler=config_for("error_handler"),
+        output_mapper=config_for("output_mapper"),
+    )
     header_inputs = config_for("header_inputs", type=dict)
     logger = config_for("logger")
 
@@ -307,16 +311,29 @@ SubAppSpec = TypedDict(
 AppSpec = Union[Handlers, Dict[str, Union[Handlers, SubAppSpec]]]
 
 
+#: Configs only the Bottle app honours. A Flask app refuses them rather than ignore
+#: them: a silently dropped auth plugin would leave its routes open.
+_BOTTLE_ONLY_CONFIGS = ("plugins", "enable_cors", "publish_swagger", "openapi_insecure")
+
+
 def mk_flask_app(funcs, **configs):
+    """A Flask app serving ``funcs``. JSON request bodies only (the raw, binary and
+    form input mappers read Bottle's request); ``middleware`` is a list of WSGI
+    wrappers; ``plugins``, ``enable_cors``, ``publish_swagger`` and
+    ``openapi_insecure`` are Bottle's, and raise ``NotImplementedError`` here."""
     from flask import Flask
 
+    unsupported = [k for k in _BOTTLE_ONLY_CONFIGS if configs.get(k)]
+    if unsupported:
+        raise NotImplementedError(
+            f"The config {unsupported} is not supported for the framework 'flask'"
+        )
+    configs = dict(configs, framework=FLASK)  # Flask routes whatever the default
     routes, openapi_spec = mk_routes_and_openapi_specs(funcs, **configs)
     app_name = mk_config("app_name", None, configs, default_configs)
     app = Flask(app_name)
-    middleware = mk_config("middleware", None, configs, default_configs)
-    # publish_openapi = mk_config('publish_openapi', None, configs, default_configs)
-    if middleware:
-        app = middleware(app)
+    for wrap in mk_config("middleware", None, configs, default_configs) or ():
+        app.wsgi_app = wrap(app.wsgi_app)
     for route in routes:
         app.add_url_rule(
             route.path,
@@ -325,7 +342,8 @@ def mk_flask_app(funcs, **configs):
             methods=[route.http_method.upper()],
         )
     app.add_url_rule("/ping", "ping", lambda: {"ping": "pong"})
-    app.add_url_rule("/openapi", "openapi", lambda: openapi_spec)
+    if mk_config("publish_openapi", None, configs, default_configs):
+        app.add_url_rule("/openapi", "openapi", lambda: openapi_spec)
     app.openapi_spec = openapi_spec
     return app
 
@@ -333,6 +351,7 @@ def mk_flask_app(funcs, **configs):
 def mk_bottle_app(funcs, **configs):
     from bottle import Bottle
 
+    configs = dict(configs, framework=BOTTLE)
     routes, openapi_spec = mk_routes_and_openapi_specs(funcs, **configs)
     app = Bottle(catchall=False)
     enable_cors = mk_config("enable_cors", None, configs, default_configs)
@@ -524,7 +543,9 @@ def mk_app(app_spec: AppSpec, **configs):
             elif framework == AIOHTTP:
                 app = web.Application()
                 return app, app.add_subapp
-            return None
+            raise NotImplementedError(
+                f"A multi-api app is not supported for the framework {framework!r}"
+            )
 
         parent_app, add_subapp_meth = get_web_framework_objects()
         for route, route_spec in app_spec.items():
@@ -559,6 +580,14 @@ def mk_app(app_spec: AppSpec, **configs):
     return mk_single_api_app()
 
 
+def run_flask(app, *, host, port, certfile=None, keyfile=None, **_):
+    """Run a Flask app with Flask's own server (``server`` does not apply to it)."""
+    if bool(certfile) != bool(keyfile):
+        raise ValueError("Give both ssl_certfile and ssl_keyfile, or neither.")
+    ssl_context = (certfile, keyfile) if certfile else None
+    app.run(host=host, port=port, ssl_context=ssl_context)
+
+
 @Sig.add_optional_keywords(default_configs)
 def run_app(app_obj: Union[AppSpec, Any], **configs):
     """
@@ -582,6 +611,8 @@ def run_app(app_obj: Union[AppSpec, Any], **configs):
         framework = _get_framework(configs, default_configs)
         if framework == BOTTLE:
             return run_bottle
+        elif framework == FLASK:
+            return run_flask
         elif framework == AIOHTTP:
             return web.run_app
         raise NotImplementedError("")
@@ -611,11 +642,13 @@ def run_app(app_obj: Union[AppSpec, Any], **configs):
         )
 
 
+_SUPPORTED_FRAMEWORKS = (BOTTLE, FLASK)
+
+
 def _get_framework(configs, default_configs):
     framework = mk_config("framework", None, configs, default_configs)
-    # NOTE Only support Bottle until we redesign py2http using a reusable tool for routing
-    # if framework not in (FLASK, BOTTLE, AIOHTTP):
-    if framework != BOTTLE:
+    # NOTE Bottle and Flask only, until py2http is redesigned on a reusable routing tool
+    if framework not in _SUPPORTED_FRAMEWORKS:
         raise NotImplementedError(
             f'The Web Framework "{framework}" is not supported by py2http'
         )

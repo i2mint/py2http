@@ -54,6 +54,18 @@ def flask_output_mapper(output, **inputs):
     return output
 
 
+def flask_json_output_mapper(output, **inputs):
+    """The default output mapper of a Flask app: the output as a JSON response."""
+    from flask import Response
+
+    return Response(
+        json.dumps(output, cls=JsonRespEncoder), content_type=JSON_CONTENT_TYPE
+    )
+
+
+flask_json_output_mapper.content_type = JSON_CONTENT_TYPE
+
+
 def bottle_output_mapper(output, **inputs):
     response.content_type = JSON_CONTENT_TYPE
     return json.dumps(output, cls=JsonRespEncoder)
@@ -169,6 +181,31 @@ def default_error_handler(error: Exception):
     if framework == FLASK:
         return flask_error_handler(error)
     return bottle_error_handler(error)
+
+
+# What the default mappers become under each framework (a mapper a user gave is kept)
+_DEFAULT_ERROR_HANDLERS = {
+    AIOHTTP: aiohttp_error_handler,
+    BOTTLE: bottle_error_handler,
+    FLASK: flask_error_handler,
+}
+_DEFAULT_OUTPUT_MAPPERS = {FLASK: flask_json_output_mapper}
+
+
+def framework_defaults(framework, *, error_handler, output_mapper):
+    """The error handler and output mapper to use under ``framework``: the given ones,
+    except that the defaults (which only know of Bottle and AIOHTTP) are swapped for
+    the framework's own, so that no process-wide state decides how a response is made.
+
+    >>> framework_defaults(FLASK, error_handler=default_error_handler,
+    ...     output_mapper=default_output_mapper)[0] is flask_error_handler
+    True
+    """
+    if error_handler is default_error_handler:
+        error_handler = _DEFAULT_ERROR_HANDLERS.get(framework, error_handler)
+    if output_mapper is default_output_mapper:
+        output_mapper = _DEFAULT_OUTPUT_MAPPERS.get(framework, output_mapper)
+    return error_handler, output_mapper
 
 
 default_configs = {
