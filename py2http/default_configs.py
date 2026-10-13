@@ -17,6 +17,7 @@ from bottle import response
 import json
 import logging
 import os
+from functools import wraps
 
 from i2.errors import (
     AuthorizationError,
@@ -64,6 +65,34 @@ def flask_json_output_mapper(output, **inputs):
 
 
 flask_json_output_mapper.content_type = JSON_CONTENT_TYPE
+
+
+def flask_response_mapper(output_mapper):
+    """Make a Flask view's response of what an output mapper returns.
+
+    The ``send_*_resp`` decorators set Bottle's ``response.content_type`` and return
+    the body (``str`` or ``bytes``); Flask ignores that and would answer ``text/html``.
+    A mapper that declares a ``content_type`` and returns a ``str``/``bytes`` body gets
+    that content type; anything else (a ``Response``, a dict, a tuple) is kept as is.
+
+    >>> from py2http.decorators import send_raw_resp  # (needs flask)
+    >>> flask_response_mapper(send_raw_resp(lambda o: o))(b"x").content_type  # doctest: +SKIP
+    'text/plain'
+    """
+    content_type = getattr(output_mapper, "content_type", None)
+    if content_type is None:
+        return output_mapper
+
+    @wraps(output_mapper)
+    def mapper(output, **inputs):
+        result = output_mapper(output, **inputs)
+        if isinstance(result, (str, bytes)):
+            from flask import Response
+
+            return Response(result, content_type=content_type)
+        return result
+
+    return mapper
 
 
 def bottle_output_mapper(output, **inputs):
@@ -205,6 +234,8 @@ def framework_defaults(framework, *, error_handler, output_mapper):
         error_handler = _DEFAULT_ERROR_HANDLERS.get(framework, error_handler)
     if output_mapper is default_output_mapper:
         output_mapper = _DEFAULT_OUTPUT_MAPPERS.get(framework, output_mapper)
+    if framework == FLASK:
+        output_mapper = flask_response_mapper(output_mapper)
     return error_handler, output_mapper
 
 
