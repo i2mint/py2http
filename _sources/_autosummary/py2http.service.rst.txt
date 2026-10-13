@@ -16,11 +16,14 @@ py2http.service
       mk_flask_app
       mk_route
       mk_routes_and_openapi_specs
+      public_attr
       run_app
+      unsafe_any_attr
    
    .. rubric:: Classes
 
    .. autosummary::
    
+      LRUObjStore
       SubAppSpec
    

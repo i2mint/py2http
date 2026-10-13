@@ -1,4 +1,4 @@
-> built 2026-09-22 16:15 UTC from d6ede60 (master) · py2http 0.1.62. Details: build_info.json
+> built 2026-10-13 02:13 UTC from b44e931 (master) · py2http 0.1.63. Details: build_info.json
 
 # index.html.md
 
@@ -1307,12 +1307,34 @@ with minimal setup.
 | `mk_flask_app`(funcs, \*\*configs)                                                                |                                                                                                                   |
 | [`mk_route`](_autosummary/py2http.service.html.md#py2http.service.mk_route)(func, \*\*configs)                      | Generate a route object and an OpenAPI path specification for a function                                          |
 | `mk_routes_and_openapi_specs`(funcs, \*\*configs)                                                 |                                                                                                                   |
+| [`public_attr`](_autosummary/py2http.service.html.md#py2http.service.public_attr)(obj, attr_name)                      | The attribute policy `attr_names='*'` stands for: only public methods.                                            |
 | [`run_app`](_autosummary/py2http.service.html.md#py2http.service.run_app)(app_obj, \*[, app_name, framework, ...]) | Run an application which exposes web services created from the given python functions to remotely run them.       |
+| [`unsafe_any_attr`](_autosummary/py2http.service.html.md#py2http.service.unsafe_any_attr)(obj, attr_name)                  | Dispatch ANY attribute of the object, including private ones and dunders.                                         |
 
 ### Classes
 
-| [`SubAppSpec`](_autosummary/py2http.service.html.md#py2http.service.SubAppSpec)   |    |
-|---------------------------------------------------------------|----|
+| [`LRUObjStore`](_autosummary/py2http.service.html.md#py2http.service.LRUObjStore)(\*[, max_size])   | A mapping that keeps at most `max_size` items, evicting the least recently used one when a new key would exceed it.   |
+|--------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| [`SubAppSpec`](_autosummary/py2http.service.html.md#py2http.service.SubAppSpec)                    |                                                                                                                       |
+
+### *class* py2http.service.LRUObjStore(, max_size=1000)
+
+Bases: [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping)
+
+A mapping that keeps at most `max_size` items, evicting the least recently
+used one when a new key would exceed it.
+
+Used as the default store of objects created through a class endpoint, so that
+clients cannot grow server memory without bound by creating objects.
+
+```pycon
+>>> s = LRUObjStore(max_size=2)
+>>> s['a'], s['b'] = 1, 2
+>>> _ = s['a']  # 'a' is now the most recently used
+>>> s['c'] = 3
+>>> sorted(s)
+['a', 'c']
+```
 
 ### *class* py2http.service.SubAppSpec
 
@@ -1419,6 +1441,43 @@ Generate a route object and an OpenAPI path specification for a function
 * **Keyword Arguments:**
   The configuration settings
 
+### py2http.service.public_attr(obj, attr_name)
+
+The attribute policy `attr_names='*'` stands for: only public methods.
+
+A name is dispatchable if it does not start with `_` and
+
+- for a module: it is a function that the module defines (or lists in its
+  `__all__`), never something it merely imports, nor plain data;
+- otherwise: it is a plain Python function, `staticmethod`,
+  `classmethod` or `property` defined in the object’s class (or a base
+  class), and the instance does not shadow it.
+
+This keeps private helpers, dunders (`__dict__`, `__init__`, …),
+per-instance state (`__dict__` entries, `__slots__`, dataclass and
+namedtuple fields) and callables merely assigned as class attributes
+(`opener = open`) out of reach of HTTP clients.
+
+Note that every public method is exposed, inherited ones included (e.g. a
+pydantic model’s `model_dump`). For anything holding secrets, or a mapping
+whose mutators should stay private (`MutableMapping` mixins such as
+`clear` and `pop` are plain functions), list the names explicitly instead.
+
+```pycon
+>>> class A:
+...     data = 0
+...     opener = open
+...     def f(self): ...
+...     def _g(self): ...
+...     def __init__(self): self.secret = 1
+>>> [public_attr(A(), name)
+...  for name in ('f', '_g', '__init__', '__dict__', 'secret', 'data', 'opener')]
+[True, False, False, False, False, False, False]
+```
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
 ### py2http.service.run_app(app_obj, \*, app_name='HTTP Service', framework='bottle', input_mapper=<function default_input_mapper>, output_mapper=<function send_json_resp.<locals>.output_mapper>, error_handler=<function default_error_handler>, header_inputs={}, middleware=[], host='localhost', port=3030, server='gunicorn', http_method='post', openapi={}, logger=None, plugins=[], enable_cors=False, cors_allowed_origins='\*', publish_openapi=False, openapi_insecure=False, publish_swagger=False, swagger_url='/swagger', swagger_title='Swagger', ssl_certfile=None, ssl_keyfile=None, \*\*configs)
 
 Run an application which exposes web services created from the given python
@@ -1434,6 +1493,17 @@ You can also generate the application first, then run it using this function.
   * **\*\*configs** ([*dict*](https://docs.python.org/3/builtins/stdtypes.html#dict)) – The configuration for the application. See
     `py2http.default_configs:default_configs` for defaults and config.yaml for
     configuration documentation.
+
+### py2http.service.unsafe_any_attr(obj, attr_name)
+
+Dispatch ANY attribute of the object, including private ones and dunders.
+
+This was the behaviour of `attr_names='*'` before `public_attr`: it lets a
+client read `__dict__`, call `__init__` with arguments of its choosing, and so
+on. Use `attr_names=unsafe_any_attr` only when every client is trusted.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
 
 # _autosummary/py2http.types.html.md
@@ -1750,7 +1820,7 @@ so that it can be jsonizable.
 
 # About this build
 
-This documentation was built on **2026-09-22 16:15 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/d6ede60632225f9ff8127f47524d0ab75eff32bb"><code>d6ede60</code></a> on branch <code>master</code>, for **py2http 0.1.62** (from <code>setup.cfg</code>).
+This documentation was built on **2026-10-13 02:13 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/b44e93178e48b991f5a814380931c4963c4cb505"><code>b44e931</code></a> on branch <code>master</code>, for **py2http 0.1.63** (from <code>setup.cfg</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -1759,9 +1829,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                       |
 |---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2http/commit/d6ede60632225f9ff8127f47524d0ab75eff32bb"><code>d6ede60632225f9ff8127f47524d0ab75eff32bb</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2http/commit/b44e93178e48b991f5a814380931c4963c4cb505"><code>b44e93178e48b991f5a814380931c4963c4cb505</code></a> |
 | Branch              | <code>master</code>                                                                                                                                   |
-| Tags at this commit | <code>0.1.62</code>                                                                                                                                   |
+| Tags at this commit | <code>0.1.63</code>                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                 |
 | Remote              | <code>https://github.com/i2mint/py2http</code>                                                                                                        |
 
@@ -1770,9 +1840,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2http</code>                                                                |
-| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/35752641959">35752641959</a>       |
+| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38335682749">38335682749</a>       |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>899e3d016582f424a4ed3b2fbcd8e83645ccef25</code> (in the history of the built commit) |
+| Event commit | <code>fbbf0f2a4d284a15e910d10774ad4779036e1784</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -1781,7 +1851,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 | epythet  | 0.2.12  |
 | Sphinx   | 9.1.0   |
 | docutils | 0.22.4  |
-| Python   | 3.12.14 |
+| Python   | 3.12.15 |
 
 ## Configuration as resolved
 
@@ -1797,13 +1867,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2http/0.1.62/">0.1.62</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/py2http/0.1.63/">0.1.63</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2http && cd py2http
-git checkout d6ede60632225f9ff8127f47524d0ab75eff32bb
+git checkout b44e93178e48b991f5a814380931c4963c4cb505
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

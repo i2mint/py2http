@@ -28,12 +28,34 @@ with minimal setup.
 | `mk_flask_app`(funcs, \*\*configs)                                                                |                                                                                                                   |
 | [`mk_route`](#py2http.service.mk_route)(func, \*\*configs)                      | Generate a route object and an OpenAPI path specification for a function                                          |
 | `mk_routes_and_openapi_specs`(funcs, \*\*configs)                                                 |                                                                                                                   |
+| [`public_attr`](#py2http.service.public_attr)(obj, attr_name)                      | The attribute policy `attr_names='*'` stands for: only public methods.                                            |
 | [`run_app`](#py2http.service.run_app)(app_obj, \*[, app_name, framework, ...]) | Run an application which exposes web services created from the given python functions to remotely run them.       |
+| [`unsafe_any_attr`](#py2http.service.unsafe_any_attr)(obj, attr_name)                  | Dispatch ANY attribute of the object, including private ones and dunders.                                         |
 
 ### Classes
 
-| [`SubAppSpec`](#py2http.service.SubAppSpec)   |    |
-|---------------------------------------------------------------|----|
+| [`LRUObjStore`](#py2http.service.LRUObjStore)(\*[, max_size])   | A mapping that keeps at most `max_size` items, evicting the least recently used one when a new key would exceed it.   |
+|--------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| [`SubAppSpec`](#py2http.service.SubAppSpec)                    |                                                                                                                       |
+
+### *class* py2http.service.LRUObjStore(, max_size=1000)
+
+Bases: [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping)
+
+A mapping that keeps at most `max_size` items, evicting the least recently
+used one when a new key would exceed it.
+
+Used as the default store of objects created through a class endpoint, so that
+clients cannot grow server memory without bound by creating objects.
+
+```pycon
+>>> s = LRUObjStore(max_size=2)
+>>> s['a'], s['b'] = 1, 2
+>>> _ = s['a']  # 'a' is now the most recently used
+>>> s['c'] = 3
+>>> sorted(s)
+['a', 'c']
+```
 
 ### *class* py2http.service.SubAppSpec
 
@@ -140,6 +162,43 @@ Generate a route object and an OpenAPI path specification for a function
 * **Keyword Arguments:**
   The configuration settings
 
+### py2http.service.public_attr(obj, attr_name)
+
+The attribute policy `attr_names='*'` stands for: only public methods.
+
+A name is dispatchable if it does not start with `_` and
+
+- for a module: it is a function that the module defines (or lists in its
+  `__all__`), never something it merely imports, nor plain data;
+- otherwise: it is a plain Python function, `staticmethod`,
+  `classmethod` or `property` defined in the object’s class (or a base
+  class), and the instance does not shadow it.
+
+This keeps private helpers, dunders (`__dict__`, `__init__`, …),
+per-instance state (`__dict__` entries, `__slots__`, dataclass and
+namedtuple fields) and callables merely assigned as class attributes
+(`opener = open`) out of reach of HTTP clients.
+
+Note that every public method is exposed, inherited ones included (e.g. a
+pydantic model’s `model_dump`). For anything holding secrets, or a mapping
+whose mutators should stay private (`MutableMapping` mixins such as
+`clear` and `pop` are plain functions), list the names explicitly instead.
+
+```pycon
+>>> class A:
+...     data = 0
+...     opener = open
+...     def f(self): ...
+...     def _g(self): ...
+...     def __init__(self): self.secret = 1
+>>> [public_attr(A(), name)
+...  for name in ('f', '_g', '__init__', '__dict__', 'secret', 'data', 'opener')]
+[True, False, False, False, False, False, False]
+```
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
 ### py2http.service.run_app(app_obj, \*, app_name='HTTP Service', framework='bottle', input_mapper=<function default_input_mapper>, output_mapper=<function send_json_resp.<locals>.output_mapper>, error_handler=<function default_error_handler>, header_inputs={}, middleware=[], host='localhost', port=3030, server='gunicorn', http_method='post', openapi={}, logger=None, plugins=[], enable_cors=False, cors_allowed_origins='\*', publish_openapi=False, openapi_insecure=False, publish_swagger=False, swagger_url='/swagger', swagger_title='Swagger', ssl_certfile=None, ssl_keyfile=None, \*\*configs)
 
 Run an application which exposes web services created from the given python
@@ -155,3 +214,14 @@ You can also generate the application first, then run it using this function.
   * **\*\*configs** ([*dict*](https://docs.python.org/3/builtins/stdtypes.html#dict)) – The configuration for the application. See
     `py2http.default_configs:default_configs` for defaults and config.yaml for
     configuration documentation.
+
+### py2http.service.unsafe_any_attr(obj, attr_name)
+
+Dispatch ANY attribute of the object, including private ones and dunders.
+
+This was the behaviour of `attr_names='*'` before `public_attr`: it lets a
+client read `__dict__`, call `__init__` with arguments of its choosing, and so
+on. Use `attr_names=unsafe_any_attr` only when every client is trusted.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
