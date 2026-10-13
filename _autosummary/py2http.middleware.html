@@ -144,16 +144,55 @@ authentication and control access to web resources.</p>
 <p class="rubric">Functions</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_jwt_middleware</span></code>(secret[, verify])</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#py2http.middleware.mk_jwt_middleware" title="py2http.middleware.mk_jwt_middleware"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_jwt_middleware</span></code></a>(secret[, verify, ...])</p></td>
+<td><p>Make an aiohttp middleware that requires a valid <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span></code> JWT on every request, and puts the decoded claims on <code class="docutils literal notranslate"><span class="pre">request.token</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_superadmin_middleware</span></code>(secret)</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
 </table>
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.middleware.mk_jwt_middleware">
+<span class="sig-prename descclassname"><span class="pre">py2http.middleware.</span></span><span class="sig-name descname"><span class="pre">mk_jwt_middleware</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">secret</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('HS256',)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">public_routes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('ping',</span> <span class="pre">'openapi')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_mixed_algorithm_families</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/middleware.html#mk_jwt_middleware"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.middleware.mk_jwt_middleware" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.middleware.mk_jwt_middleware'">¶</a></dt>
+<dd><p>Make an aiohttp middleware that requires a valid <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span></code>
+JWT on every request, and puts the decoded claims on <code class="docutils literal notranslate"><span class="pre">request.token</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>secret</strong> – The key tokens are verified with (an HMAC secret for <code class="docutils literal notranslate"><span class="pre">HS*</span></code>
+algorithms, a public key for <code class="docutils literal notranslate"><span class="pre">RS*</span></code>/<code class="docutils literal notranslate"><span class="pre">ES*</span></code>/…).</p></li>
+<li><p><strong>verify</strong> – If False, signatures and claims (<code class="docutils literal notranslate"><span class="pre">exp</span></code>, …) are NOT checked:
+whatever a token says ends up on <code class="docutils literal notranslate"><span class="pre">request.token</span></code>, and an
+undecodable token only triggers a warning. For development only.
+(Before, PyJWT 2 ignored the legacy option this passed, so
+signatures were still checked even with <code class="docutils literal notranslate"><span class="pre">verify=False</span></code>.)</p></li>
+<li><p><strong>algorithms</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable" rel="nofollow noopener" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code><svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" rel="nofollow noopener" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code><svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a>]</span>) – The algorithms a token may be signed with (PyJWT names,
+case-sensitive; <code class="docutils literal notranslate"><span class="pre">"none"</span></code> is refused). Defaults to <code class="docutils literal notranslate"><span class="pre">("HS256",)</span></code>,
+as <code class="docutils literal notranslate"><span class="pre">py2http.bottle_plugins.JWTPlugin</span></code> does.</p></li>
+<li><p><strong>public_routes</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable" rel="nofollow noopener" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code><svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" rel="nofollow noopener" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code><svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a>]</span>) – Names of aiohttp routes (<code class="docutils literal notranslate"><span class="pre">name=</span></code> in <code class="docutils literal notranslate"><span class="pre">add_route</span></code>) that
+need no token. Matched on the route name, not the handler’s
+<code class="docutils literal notranslate"><span class="pre">__name__</span></code>, so a handler that happens to be called <code class="docutils literal notranslate"><span class="pre">ping</span></code> is not
+public by accident. Route names are matched in sub-applications
+too, so a sub-app route named <code class="docutils literal notranslate"><span class="pre">ping</span></code> is public as well.</p></li>
+<li><p><strong>allow_mixed_algorithm_families</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" rel="nofollow noopener" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code><svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a></span>) – Accepting an HMAC algorithm and a
+public-key algorithm with one <code class="docutils literal notranslate"><span class="pre">secret</span></code> is the classic
+algorithm-confusion setup (a token “signed” with HS256 using the
+public key as the HMAC secret), so it raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> unless
+this is True. The middleware used to accept <code class="docutils literal notranslate"><span class="pre">["HS256",</span> <span class="pre">"RS256"]</span></code>;
+pass that list with this flag to restore it.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 </section>
-</div></div>
+</div></div><aside class="hidden text-sm xl:block" id="right-sidebar">
+<div class="sticky top-16 -mt-10 max-h-[calc(100vh-5rem)] h-full overflow-y-auto pt-6 space-y-2"><p class="font-medium">On this page</p>
+<ul>
+<li><a :data-current="activeSection === '#py2http.middleware.mk_jwt_middleware'" class="reference internal" href="#py2http.middleware.mk_jwt_middleware"><code class="docutils literal notranslate"><span class="pre">mk_jwt_middleware()</span></code></a></li>
+</ul>
+</div>
+</aside>
 </main>
 </div>
 </div><footer class="py-6 border-t border-border md:py-0">
@@ -166,7 +205,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=681c63c7"></script>
+<script src="../_static/documentation_options.js?v=a395f30a"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

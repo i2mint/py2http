@@ -2,7 +2,7 @@
 
 # About this build
 
-This documentation was built on **2026-10-13 02:13 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/b44e93178e48b991f5a814380931c4963c4cb505"><code>b44e931</code></a> on branch <code>master</code>, for **py2http 0.1.63** (from <code>setup.cfg</code>).
+This documentation was built on **2026-10-13 02:42 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/f8f2ec26f6847de34fd298335ffc6e43ee65f2e1"><code>f8f2ec2</code></a> on branch <code>master</code>, for **py2http 0.1.64** (from <code>setup.cfg</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -11,9 +11,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                       |
 |---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2http/commit/b44e93178e48b991f5a814380931c4963c4cb505"><code>b44e93178e48b991f5a814380931c4963c4cb505</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2http/commit/f8f2ec26f6847de34fd298335ffc6e43ee65f2e1"><code>f8f2ec26f6847de34fd298335ffc6e43ee65f2e1</code></a> |
 | Branch              | <code>master</code>                                                                                                                                   |
-| Tags at this commit | <code>0.1.63</code>                                                                                                                                   |
+| Tags at this commit | <code>0.1.64</code>                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                 |
 | Remote              | <code>https://github.com/i2mint/py2http</code>                                                                                                        |
 
@@ -22,9 +22,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2http</code>                                                                |
-| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38335682749">38335682749</a>       |
+| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38337982501">38337982501</a>       |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>fbbf0f2a4d284a15e910d10774ad4779036e1784</code> (in the history of the built commit) |
+| Event commit | <code>968859c245aa755230e3940c2d1aa15d91fc3ab3</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -49,13 +49,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2http/0.1.63/">0.1.63</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/py2http/0.1.64/">0.1.64</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2http && cd py2http
-git checkout b44e93178e48b991f5a814380931c4963c4cb505
+git checkout f8f2ec26f6847de34fd298335ffc6e43ee65f2e1
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
