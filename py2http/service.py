@@ -33,6 +33,7 @@ from i2.errors import InputError, DataError, AuthorizationError
 from i2 import Sig
 
 from py2http.bottle_plugins import CorsPlugin, OPTIONS
+from py2http.flask_plugins import check_flask_plugins, mk_auth_hook, mk_cors_hook
 from py2http.config import mk_config, FLASK, AIOHTTP, BOTTLE
 from py2http.default_configs import (
     default_configs,
@@ -311,29 +312,38 @@ SubAppSpec = TypedDict(
 AppSpec = Union[Handlers, Dict[str, Union[Handlers, SubAppSpec]]]
 
 
-#: Configs only the Bottle app honours. A Flask app refuses them rather than ignore
-#: them: a silently dropped auth plugin would leave its routes open.
-_BOTTLE_ONLY_CONFIGS = ("plugins", "enable_cors", "publish_swagger", "openapi_insecure")
-
-
 def mk_flask_app(funcs, **configs):
     """A Flask app serving ``funcs``. The JSON, raw, binary and form input mappers and
     the ``send_*_resp`` output mappers work as under Bottle; ``middleware`` is a list
-    of WSGI wrappers; ``plugins``, ``enable_cors``, ``publish_swagger`` and
-    ``openapi_insecure`` are Bottle's, and raise ``NotImplementedError`` here."""
+    of WSGI wrappers.
+
+    As under Bottle, ``plugins`` guards every route (``JWTPlugin``, ``ApiKeyAuthPlugin``;
+    a Bottle-only plugin raises ``NotImplementedError``) except ``/ping``, and except
+    ``/openapi`` when ``openapi_insecure``; ``enable_cors`` adds the CORS headers
+    (``cors_allowed_origins``) to every response; ``publish_swagger`` serves the Swagger
+    UI at ``swagger_url``, guarded by ``plugins`` like any other route. See
+    ``py2http.flask_plugins``."""
     from flask import Flask
 
-    unsupported = [k for k in _BOTTLE_ONLY_CONFIGS if configs.get(k)]
-    if unsupported:
-        raise NotImplementedError(
-            f"The config {unsupported} is not supported for the framework 'flask'"
-        )
     configs = dict(configs, framework=FLASK)  # Flask routes whatever the default
+    get_config = partial(mk_config, func=None, configs=configs, defaults=default_configs)
+    plugins = check_flask_plugins(get_config("plugins"))
     routes, openapi_spec = mk_routes_and_openapi_specs(funcs, **configs)
-    app_name = mk_config("app_name", None, configs, default_configs)
-    app = Flask(app_name)
-    for wrap in mk_config("middleware", None, configs, default_configs) or ():
+    app = Flask(get_config("app_name"))
+    for wrap in get_config("middleware") or ():
         app.wsgi_app = wrap(app.wsgi_app)
+    enable_cors = get_config("enable_cors")
+    publish_openapi = get_config("publish_openapi")
+    ping_view = lambda: {"ping": "pong"}  # noqa: E731
+    openapi_view = lambda: openapi_spec  # noqa: E731
+    if plugins:
+        # the view functions, not their endpoint names: a user's `openapi` stays guarded
+        public = [ping_view] + ([openapi_view] if get_config("openapi_insecure") else [])
+        app.before_request(
+            mk_auth_hook(plugins, public_views=public, cors=bool(enable_cors))
+        )
+    if enable_cors:
+        app.after_request(mk_cors_hook(get_config("cors_allowed_origins")))
     for route in routes:
         app.add_url_rule(
             route.path,
@@ -341,10 +351,17 @@ def mk_flask_app(funcs, **configs):
             route,
             methods=[route.http_method.upper()],
         )
-    app.add_url_rule("/ping", "ping", lambda: {"ping": "pong"})
-    if mk_config("publish_openapi", None, configs, default_configs):
-        app.add_url_rule("/openapi", "openapi", lambda: openapi_spec)
+    app.add_url_rule("/ping", "ping", ping_view)
+    if publish_openapi:
+        app.add_url_rule("/openapi", "openapi", openapi_view)
     app.openapi_spec = openapi_spec
+    if get_config("publish_swagger"):
+        api_doc(
+            app,
+            config_spec=json.dumps(openapi_spec),
+            url_prefix=get_config("swagger_url"),
+            title=get_config("swagger_title"),
+        )
     return app
 
 

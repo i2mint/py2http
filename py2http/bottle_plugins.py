@@ -8,6 +8,7 @@ from warnings import warn
 from bottle import request, response
 
 from py2http.auth import (
+    AuthPlugin,
     DFLT_JWT_ALGORITHMS,
     CredentialsRejected,
     bearer_token,
@@ -38,7 +39,7 @@ def _unauthorized(message, challenge=BEARER_CHALLENGE):
     return json.dumps({"error": message})
 
 
-class JWTPlugin:
+class JWTPlugin(AuthPlugin):
     """A plugin for validating JWTs and extracting their payloads.
 
     After optionally validating a JWT found in the request header, will assign a dict with the JWT claims
@@ -82,10 +83,12 @@ class JWTPlugin:
         )
         self._decode_kwargs = jwt_decode_kwargs(decode_kwargs)
 
-    def _claims(self):
-        """The (renamed) claims of the request's token; raises ``CredentialsRejected``."""
+    challenge = BEARER_CHALLENGE
+
+    def _claims(self, authorization_header):
+        """The (renamed) claims of the token in the header; raises ``CredentialsRejected``."""
         decoded = decode_jwt(
-            bearer_token(_authorization_header()),
+            bearer_token(authorization_header),
             self._secret,
             algorithms=self._algorithms,
             verify=self._verify,
@@ -96,38 +99,66 @@ class JWTPlugin:
                 decoded[v] = decoded.pop(k)
         return decoded
 
+    def authenticate(self, authorization_header, *, method, endpoint):
+        """The claims to put on the request (``None`` when there are none to put), or
+        ``CredentialsRejected``. Framework-independent: the Bottle plugin and the Flask
+        ``before_request`` hook (``py2http.flask_plugins``) both call it."""
+        if method == OPTIONS or endpoint in self._ignore_methods:
+            return None
+        try:
+            return self._claims(authorization_header)
+        except CredentialsRejected as rejection:
+            if self._verify:
+                raise
+            warn(f"Invalid JWT: {rejection.__cause__}")
+            return None
+
     def __call__(self, handler):
         if getattr(handler, "method_name", None) in self._ignore_methods:
             return handler
 
         @wraps(handler)
         def wrapped_handler(*args, **kwargs):
-            if request.method == OPTIONS:
-                return handler(*args, **kwargs)
             try:
-                request.token = self._claims()
+                claims = self.authenticate(
+                    _authorization_header(),
+                    method=request.method,
+                    endpoint=getattr(handler, "method_name", None),
+                )
             except CredentialsRejected as rejection:
-                if self._verify:
-                    return _unauthorized(str(rejection))
-                warn(f"Invalid JWT: {rejection.__cause__}")
+                return _unauthorized(str(rejection))
+            if claims is not None:
+                request.token = claims
             return handler(*args, **kwargs)
 
         return wrapped_handler
 
 
-class ApiKeyAuthPlugin:
+class ApiKeyAuthPlugin(AuthPlugin):
     """A plugin letting through only requests whose ``Authorization`` header is
     exactly ``api_key`` (compared in constant time; an empty key is refused)."""
+
+    challenge = API_KEY_CHALLENGE
 
     def __init__(self, api_key: str):
         self._api_key = required_key(api_key)
 
+    def authenticate(self, authorization_header, *, method, endpoint):
+        """``None`` (the key sets nothing on the request) if the header is the key,
+        else ``CredentialsRejected``. Framework-independent, like ``JWTPlugin``'s."""
+        if not key_matches(authorization_header, self._api_key):
+            raise CredentialsRejected("invalid API key")
+
     def __call__(self, handler):
         @wraps(handler)
         def wrapped_handler(*args, **kwargs):
-            if key_matches(_authorization_header(), self._api_key):
-                return handler(*args, **kwargs)
-            return _unauthorized("invalid API key", API_KEY_CHALLENGE)
+            try:
+                self.authenticate(
+                    _authorization_header(), method=request.method, endpoint=None
+                )
+            except CredentialsRejected as rejection:
+                return _unauthorized(str(rejection), self.challenge)
+            return handler(*args, **kwargs)
 
         return wrapped_handler
 

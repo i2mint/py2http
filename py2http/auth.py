@@ -13,12 +13,29 @@ import logging
 from collections.abc import Iterable, Mapping
 from typing import Optional
 
+from py2http.constants import BEARER_CHALLENGE
+
 logger = logging.getLogger("py2http")
 
 DFLT_JWT_ALGORITHMS = ("HS256",)
 # ``jwt.decode`` arguments the verification setup owns, so ``decode_kwargs`` can't
 _RESERVED_DECODE_KWARGS = frozenset({"jwt", "key", "algorithms", "options"})
 _BEARER_PREFIX = "bearer "
+
+
+class AuthPlugin:
+    """What a plugin must be to guard a Flask app (see ``py2http.flask_plugins``): a
+    subclass with a ``challenge`` (the ``WWW-Authenticate`` value of a refusal) and an
+    ``authenticate`` that raises ``CredentialsRejected`` to refuse a request. It is a
+    marker class rather than a duck-typed method name, so that a plugin which merely has
+    some ``authenticate`` method (returning ``False`` to refuse, say) can't be mistaken
+    for one and let everything through."""
+
+    challenge: str = BEARER_CHALLENGE
+
+    def authenticate(self, authorization_header, *, method, endpoint):
+        """The claims to put on the request, or ``None``; ``CredentialsRejected`` refuses."""
+        raise NotImplementedError
 
 
 class CredentialsRejected(Exception):
