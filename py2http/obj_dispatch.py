@@ -16,7 +16,7 @@ with ``attr_names`` (see ``public_attr`` for ``'*'``):
 Instances and classes need an ``obj_owner``, a ``(request) -> owner`` hook reading
 ``current_request``, and are bounded in size (``py2http.sizeof``), measured after each
 call except those to ``obj_readers``. A call returning a generator, coroutine or async
-generator is measured when that result finishes, not when it is returned.
+generator is measured when it is returned and again when that result finishes.
 """
 
 import inspect
@@ -425,10 +425,10 @@ def _instance_endpoint_dispatcher(obj, handler, name, is_dispatchable):
       Measuring walks the object (up to ``max_obj_size`` bytes of it) after every
       call except those to ``obj_readers``, so a large limit costs time on each such
       request. A method returning a generator, coroutine or async generator is
-      measured when that result finishes.
+      measured when it returns and again when that result finishes.
     - ``obj_readers``: names of dispatched attributes that never add to the object
-      (``read``, ``__getitem__``, ``keys``...): calls to them are not measured, which
-      saves the walk on every read. Empty by default; the bound holds only if every
+      (``read``, ``keys``, ``get``...; not ``__getitem__`` of a ``defaultdict``, which
+      inserts): calls to them are not measured, which saves the walk on every read. Empty by default; the bound holds only if every
       name listed really never adds (what one does add is caught by the next measured
       call).
     - ``obj_shrinkers``: names of dispatched attributes that only ever remove
@@ -530,7 +530,7 @@ def _class_endpoint_dispatcher(cls, handler, name, is_dispatchable):
       referencing large shared data (a loaded model) counts that data: raise
       ``max_obj_size`` or pass an ``obj_sizeof`` that skips it. A single call can still
       allocate before it is measured. A method returning a generator, coroutine or
-      async generator is measured when that result finishes.
+      async generator is measured when it returns and again when that result finishes.
     - ``obj_readers``: names of methods that never add to an object; calls to them are
       not measured (see ``_instance_endpoint_dispatcher``).
     """
@@ -543,10 +543,10 @@ def _class_endpoint_dispatcher(cls, handler, name, is_dispatchable):
             "client holding an object id use the object, as before."
         )
     max_obj_size = handler.get("max_obj_size", DFLT_MAX_OBJ_SIZE)
-    readers = handler.get("obj_readers", ())
-    if isinstance(readers, str):
-        raise TypeError(f"obj_readers must be a collection of names: {readers!r}")
-    readers = frozenset(readers)
+    # the class's own attributes (no object yet for is_dispatchable): catches typos
+    readers = _names_option(
+        handler, "obj_readers", cls, name, lambda c, n: hasattr(c, n)
+    )
     max_owner_bytes = handler.get("max_owner_bytes", DFLT_MAX_OWNER_BYTES)
     max_total_bytes = handler.get("max_total_bytes", DFLT_MAX_TOTAL_BYTES)
     sizeof = handler.get("obj_sizeof", bounded_deep_sizeof)
@@ -634,9 +634,14 @@ def _names_option(handler, option, obj, name, is_dispatchable) -> frozenset:
 
 
 def _settled(result, settle: Callable[[], None]):
-    """``result``, with ``settle()`` run once its work is done: now for a plain value,
-    when it finishes for a generator, coroutine or async generator (which do their work
-    after being returned)."""
+    """``result``, after ``settle()``; for a generator, coroutine or async generator
+    (which do more work after being returned) ``settle()`` runs again when it finishes.
+
+    Settling at return is what bounds a call whose lazy result is never consumed (a
+    generator a JSON encoder refuses, a client that disconnects): whatever the method
+    did before returning is measured either way.
+    """
+    settle()
     if inspect.isgenerator(result):
 
         def settling_generator():
@@ -658,14 +663,29 @@ def _settled(result, settle: Callable[[], None]):
     if inspect.isasyncgen(result):
 
         async def settling_async_generator():
+            # driven by hand so asend()/athrow() reach the inner generator
+            value, error = None, None
             try:
-                async for item in result:
-                    yield item
+                while True:
+                    try:
+                        if error is None:
+                            item = await result.asend(value)
+                        else:
+                            item = await result.athrow(error)
+                    except StopAsyncIteration:
+                        return
+                    value, error = None, None
+                    try:
+                        value = yield item
+                    except GeneratorExit:
+                        await result.aclose()
+                        raise
+                    except BaseException as e:
+                        error = e
             finally:
                 settle()
 
         return settling_async_generator()
-    settle()
     return result
 
 

@@ -15,6 +15,7 @@ up an HTTP service in Python using the py2http library."""
 from aiohttp import web
 from bottle import response
 import json
+import logging
 import os
 
 from i2.errors import (
@@ -33,6 +34,8 @@ from py2http.constants import (
     JSON_CONTENT_TYPE,
     WWW_AUTHENTICATE_ENV_VAR,
 )
+
+logger = logging.getLogger(__name__)
 
 DFLT_CONTENT_TYPE = JSON_CONTENT_TYPE
 
@@ -67,8 +70,24 @@ def _raise_http_client_error(error, message, reason=None, headers=None):
 
 def www_authenticate_challenge() -> str:
     """The ``WWW-Authenticate`` value of a 401 a dispatched function raised: the
-    ``PY2HTTP_WWW_AUTHENTICATE`` environment variable, else ``Bearer``."""
-    return os.getenv(WWW_AUTHENTICATE_ENV_VAR) or BEARER_CHALLENGE
+    ``PY2HTTP_WWW_AUTHENTICATE`` environment variable, else ``Bearer`` (also when the
+    variable holds a line break, which would make every 401 fail to send).
+
+    >>> os.environ.pop(WWW_AUTHENTICATE_ENV_VAR, None) and None
+    >>> www_authenticate_challenge()
+    'Bearer'
+    """
+    challenge = os.getenv(WWW_AUTHENTICATE_ENV_VAR)
+    if not challenge:
+        return BEARER_CHALLENGE
+    if any(c in challenge for c in "\r\n\0"):
+        logger.warning(
+            "%s holds a control character; sending %r instead",
+            WWW_AUTHENTICATE_ENV_VAR,
+            BEARER_CHALLENGE,
+        )
+        return BEARER_CHALLENGE
+    return challenge
 
 
 def _status_headers(status: int) -> dict:

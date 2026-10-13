@@ -184,3 +184,78 @@ def test_aiohttp_middlewares_name_their_challenge():
 
     assert _unauthorized("x").headers["WWW-Authenticate"] == "Bearer"
     assert _unauthorized("x", "ApiKey").headers["WWW-Authenticate"] == "ApiKey"
+
+
+# ---------------------------------------------------------------------------
+# Adversarial-review regressions
+# ---------------------------------------------------------------------------
+
+
+class Eager(dict):
+    def add(self, key):
+        self[key] = "x" * 1_000
+        return (k for k in [key])  # grows first, then returns a lazy result
+
+    async def echo(self):
+        got = None
+        while True:
+            got = yield got
+
+
+def test_growth_before_returning_a_lazy_result_is_measured_at_return():
+    store = Eager()
+    func = _instance(store, max_obj_size=3, obj_sizeof=lambda obj, limit: len(obj))
+    for i in range(3):
+        as_owner("ann", func, _attr_name="add", key=i)  # never consumed
+    with pytest.raises(InputError, match="size limit"):
+        as_owner("ann", func, _attr_name="add", key=3)
+
+
+def test_class_endpoint_drops_an_object_grown_before_a_lazy_return():
+    func = _get_func_to_dispatch_handler(
+        dict(
+            endpoint=Eager,
+            name="bag",
+            attr_names="*",
+            obj_owner=lambda req: req,
+            max_obj_size=1,
+            obj_sizeof=lambda obj, limit: len(obj),
+        )
+    )
+    obj_id = as_owner("ann", func)
+    as_owner("ann", func, _obj_id=obj_id, _attr_name="add", key=0)
+    with pytest.raises(InputError, match="dropped"):
+        as_owner("ann", func, _obj_id=obj_id, _attr_name="add", key=1)
+
+
+def test_a_wrapped_async_generator_forwards_asend():
+    func = _instance(Eager(), max_obj_size=None)
+
+    async def drive():
+        gen = as_owner("ann", func, _attr_name="echo")
+        await gen.asend(None)
+        got = await gen.asend(42)
+        await gen.aclose()
+        return got
+
+    assert asyncio.run(drive()) == 42
+
+
+def test_class_endpoint_readers_are_validated():
+    with pytest.raises(ValueError, match="obj_readers"):
+        _get_func_to_dispatch_handler(
+            dict(
+                endpoint=Store,
+                name="bag",
+                attr_names="*",
+                obj_owner=lambda req: req,
+                obj_readers=["raed"],
+            )
+        )
+
+
+def test_a_challenge_with_a_line_break_falls_back_to_bearer(monkeypatch):
+    from py2http.default_configs import www_authenticate_challenge
+
+    monkeypatch.setenv("PY2HTTP_WWW_AUTHENTICATE", "Basic\r\nSet-Cookie: x=1")
+    assert www_authenticate_challenge() == "Bearer"
