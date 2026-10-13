@@ -154,7 +154,7 @@ with minimal setup.</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#py2http.service.bounded_deep_sizeof" title="py2http.service.bounded_deep_sizeof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bounded_deep_sizeof</span></code></a>(obj[, limit])</p></td>
-<td><p>Approximate memory held by <code class="docutils literal notranslate"><span class="pre">obj</span></code> and everything it references (containers, instance <code class="docutils literal notranslate"><span class="pre">__dict__</span></code> and <code class="docutils literal notranslate"><span class="pre">__slots__</span></code>), counting each object once.</p></td>
+<td><p>Approximate memory held by <code class="docutils literal notranslate"><span class="pre">obj</span></code> and everything it references (containers, instance <code class="docutils literal notranslate"><span class="pre">__dict__</span></code> and <code class="docutils literal notranslate"><span class="pre">__slots__</span></code>, what a bound method, a <code class="docutils literal notranslate"><span class="pre">partial</span></code> or a function's closure, attributes and defaults hold), counting each object once.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">func_copy</span></code>(func)</p></td>
 <td><p></p></td>
@@ -274,9 +274,13 @@ beyond it, never someone else’s;</p></li>
 <dt class="sig sig-object py" id="py2http.service.bounded_deep_sizeof">
 <span class="sig-prename descclassname"><span class="pre">py2http.service.</span></span><span class="sig-name descname"><span class="pre">bounded_deep_sizeof</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/service.html#bounded_deep_sizeof"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.service.bounded_deep_sizeof" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.service.bounded_deep_sizeof'">¶</a></dt>
 <dd><p>Approximate memory held by <code class="docutils literal notranslate"><span class="pre">obj</span></code> and everything it references (containers,
-instance <code class="docutils literal notranslate"><span class="pre">__dict__</span></code> and <code class="docutils literal notranslate"><span class="pre">__slots__</span></code>), counting each object once. Stops as soon
-as the total exceeds <code class="docutils literal notranslate"><span class="pre">limit</span></code>, so measuring costs at most about <code class="docutils literal notranslate"><span class="pre">limit</span></code> bytes’
-worth of objects. Classes, modules and functions are shared, so not counted.</p>
+instance <code class="docutils literal notranslate"><span class="pre">__dict__</span></code> and <code class="docutils literal notranslate"><span class="pre">__slots__</span></code>, what a bound method, a <code class="docutils literal notranslate"><span class="pre">partial</span></code> or a
+function’s closure, attributes and defaults hold), counting each object once. Stops
+as soon as the total exceeds <code class="docutils literal notranslate"><span class="pre">limit</span></code>, so measuring costs at most about <code class="docutils literal notranslate"><span class="pre">limit</span></code>
+bytes’ worth of objects. Classes, modules and the code of functions are shared, so
+not counted, and neither is what classes and modules hold (class attributes, module
+globals), nor caches kept in C (<code class="docutils literal notranslate"><span class="pre">lru_cache</span></code>). Holding a bound method of another
+object counts that whole object, as holding the object itself would.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" rel="nofollow noopener" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code><svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a></span></p>
@@ -495,7 +499,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=3015fd79"></script>
+<script src="../_static/documentation_options.js?v=946d7960"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

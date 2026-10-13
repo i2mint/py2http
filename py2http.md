@@ -1,4 +1,4 @@
-> built 2026-10-13 04:58 UTC from 9e55a23 (master) · py2http 0.1.66. Details: build_info.json
+> built 2026-10-13 05:19 UTC from b787f51 (master) · py2http 0.1.67. Details: build_info.json
 
 # index.html.md
 
@@ -1024,14 +1024,29 @@ up an HTTP service in Python using the py2http library.
 
 ### Functions
 
-| `aiohttp_error_handler`(error)             |    |
-|--------------------------------------------|----|
-| `bottle_error_handler`(error)              |    |
-| `bottle_output_mapper`(output, \*\*inputs) |    |
-| `default_error_handler`(error)             |    |
-| `default_input_mapper`(\*\*inputs)         |    |
-| `flask_error_handler`(error)               |    |
-| `flask_output_mapper`(output, \*\*inputs)  |    |
+| `aiohttp_error_handler`(error)                                       |                                                                                |
+|----------------------------------------------------------------------|--------------------------------------------------------------------------------|
+| `bottle_error_handler`(error)                                        |                                                                                |
+| `bottle_output_mapper`(output, \*\*inputs)                           |                                                                                |
+| `default_error_handler`(error)                                       |                                                                                |
+| `default_input_mapper`(\*\*inputs)                                   |                                                                                |
+| [`error_status`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.error_status)(error) | The HTTP status for an error a handler raised (500 when it is not a client's). |
+| `flask_error_handler`(error)                                         |                                                                                |
+| `flask_output_mapper`(output, \*\*inputs)                            |                                                                                |
+
+### py2http.default_configs.error_status(error)
+
+The HTTP status for an error a handler raised (500 when it is not a client’s).
+
+* **Return type:**
+  [`int`](https://docs.python.org/3/builtins/functions.html#int)
+
+```pycon
+>>> error_status(AuthorizationError()), error_status(ForbiddenError())
+(401, 403)
+>>> error_status(InputError()), error_status(KeyError())
+(400, 500)
+```
 
 
 # _autosummary/py2http.diagnosis.html.md
@@ -1332,19 +1347,19 @@ with minimal setup.
 
 ### Functions
 
-| [`bounded_deep_sizeof`](_autosummary/py2http.service.html.md#py2http.service.bounded_deep_sizeof)(obj[, limit])                | Approximate memory held by `obj` and everything it references (containers, instance `__dict__` and `__slots__`), counting each object once.   |
-|---------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
-| `func_copy`(func)                                                                                 |                                                                                                                                               |
-| `method_not_found`(method_name)                                                                   |                                                                                                                                               |
-| `mk_aiohttp_app`(funcs, \*\*configs)                                                              |                                                                                                                                               |
-| [`mk_app`](_autosummary/py2http.service.html.md#py2http.service.mk_app)(app_spec, \*[, app_name, framework, ...]) | Generates an application which exposes web services created from the given python functions to remotely run them.                             |
-| `mk_bottle_app`(funcs, \*\*configs)                                                               |                                                                                                                                               |
-| `mk_flask_app`(funcs, \*\*configs)                                                                |                                                                                                                                               |
-| [`mk_route`](_autosummary/py2http.service.html.md#py2http.service.mk_route)(func, \*\*configs)                      | Generate a route object and an OpenAPI path specification for a function                                                                      |
-| `mk_routes_and_openapi_specs`(funcs, \*\*configs)                                                 |                                                                                                                                               |
-| [`public_attr`](_autosummary/py2http.service.html.md#py2http.service.public_attr)(obj, attr_name)                      | The attribute policy `attr_names='*'` stands for: only public methods.                                                                        |
-| [`run_app`](_autosummary/py2http.service.html.md#py2http.service.run_app)(app_obj, \*[, app_name, framework, ...]) | Run an application which exposes web services created from the given python functions to remotely run them.                                   |
-| [`unsafe_any_attr`](_autosummary/py2http.service.html.md#py2http.service.unsafe_any_attr)(obj, attr_name)                  | Dispatch ANY attribute of the object, including private ones and dunders.                                                                     |
+| [`bounded_deep_sizeof`](_autosummary/py2http.service.html.md#py2http.service.bounded_deep_sizeof)(obj[, limit])                | Approximate memory held by `obj` and everything it references (containers, instance `__dict__` and `__slots__`, what a bound method, a `partial` or a function's closure, attributes and defaults hold), counting each object once.   |
+|---------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `func_copy`(func)                                                                                 |                                                                                                                                                                                                                                       |
+| `method_not_found`(method_name)                                                                   |                                                                                                                                                                                                                                       |
+| `mk_aiohttp_app`(funcs, \*\*configs)                                                              |                                                                                                                                                                                                                                       |
+| [`mk_app`](_autosummary/py2http.service.html.md#py2http.service.mk_app)(app_spec, \*[, app_name, framework, ...]) | Generates an application which exposes web services created from the given python functions to remotely run them.                                                                                                                     |
+| `mk_bottle_app`(funcs, \*\*configs)                                                               |                                                                                                                                                                                                                                       |
+| `mk_flask_app`(funcs, \*\*configs)                                                                |                                                                                                                                                                                                                                       |
+| [`mk_route`](_autosummary/py2http.service.html.md#py2http.service.mk_route)(func, \*\*configs)                      | Generate a route object and an OpenAPI path specification for a function                                                                                                                                                              |
+| `mk_routes_and_openapi_specs`(funcs, \*\*configs)                                                 |                                                                                                                                                                                                                                       |
+| [`public_attr`](_autosummary/py2http.service.html.md#py2http.service.public_attr)(obj, attr_name)                      | The attribute policy `attr_names='*'` stands for: only public methods.                                                                                                                                                                |
+| [`run_app`](_autosummary/py2http.service.html.md#py2http.service.run_app)(app_obj, \*[, app_name, framework, ...]) | Run an application which exposes web services created from the given python functions to remotely run them.                                                                                                                           |
+| [`unsafe_any_attr`](_autosummary/py2http.service.html.md#py2http.service.unsafe_any_attr)(obj, attr_name)                  | Dispatch ANY attribute of the object, including private ones and dunders.                                                                                                                                                             |
 
 ### Classes
 
@@ -1416,9 +1431,13 @@ Bases: [`TypedDict`](https://docs.python.org/3/library/typing.html#typing.TypedD
 ### py2http.service.bounded_deep_sizeof(obj, limit=None)
 
 Approximate memory held by `obj` and everything it references (containers,
-instance `__dict__` and `__slots__`), counting each object once. Stops as soon
-as the total exceeds `limit`, so measuring costs at most about `limit` bytes’
-worth of objects. Classes, modules and functions are shared, so not counted.
+instance `__dict__` and `__slots__`, what a bound method, a `partial` or a
+function’s closure, attributes and defaults hold), counting each object once. Stops
+as soon as the total exceeds `limit`, so measuring costs at most about `limit`
+bytes’ worth of objects. Classes, modules and the code of functions are shared, so
+not counted, and neither is what classes and modules hold (class attributes, module
+globals), nor caches kept in C (`lru_cache`). Holding a bound method of another
+object counts that whole object, as holding the object itself would.
 
 * **Return type:**
   [`int`](https://docs.python.org/3/builtins/functions.html#int)
@@ -1916,7 +1935,7 @@ so that it can be jsonizable.
 
 # About this build
 
-This documentation was built on **2026-10-13 04:58 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/9e55a23d1262c6e2e4db1f5f10fc428d3df19f90"><code>9e55a23</code></a> on branch <code>master</code>, for **py2http 0.1.66** (from <code>setup.cfg</code>).
+This documentation was built on **2026-10-13 05:19 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/b787f51ba2689fafffbfe7a087ca97246d337070"><code>b787f51</code></a> on branch <code>master</code>, for **py2http 0.1.67** (from <code>setup.cfg</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -1925,9 +1944,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                       |
 |---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2http/commit/9e55a23d1262c6e2e4db1f5f10fc428d3df19f90"><code>9e55a23d1262c6e2e4db1f5f10fc428d3df19f90</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2http/commit/b787f51ba2689fafffbfe7a087ca97246d337070"><code>b787f51ba2689fafffbfe7a087ca97246d337070</code></a> |
 | Branch              | <code>master</code>                                                                                                                                   |
-| Tags at this commit | <code>0.1.66</code>                                                                                                                                   |
+| Tags at this commit | <code>0.1.67</code>                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                 |
 | Remote              | <code>https://github.com/i2mint/py2http</code>                                                                                                        |
 
@@ -1936,9 +1955,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2http</code>                                                                |
-| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38348908841">38348908841</a>       |
+| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38350606364">38350606364</a>       |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>bd37ee7bc3e355880fd4f2f0474a365742db4d08</code> (in the history of the built commit) |
+| Event commit | <code>73e0df8ed03c5ab5531256594d07c5eb3cb9dd8e</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -1963,13 +1982,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2http/0.1.66/">0.1.66</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/py2http/0.1.67/">0.1.67</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2http && cd py2http
-git checkout 9e55a23d1262c6e2e4db1f5f10fc428d3df19f90
+git checkout b787f51ba2689fafffbfe7a087ca97246d337070
 pip install "epythet==0.2.13"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

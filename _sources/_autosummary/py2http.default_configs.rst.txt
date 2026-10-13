@@ -13,6 +13,7 @@ py2http.default\_configs
       bottle_output_mapper
       default_error_handler
       default_input_mapper
+      error_status
       flask_error_handler
       flask_output_mapper
    

@@ -25,19 +25,19 @@ with minimal setup.
 
 ### Functions
 
-| [`bounded_deep_sizeof`](#py2http.service.bounded_deep_sizeof)(obj[, limit])                | Approximate memory held by `obj` and everything it references (containers, instance `__dict__` and `__slots__`), counting each object once.   |
-|---------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
-| `func_copy`(func)                                                                                 |                                                                                                                                               |
-| `method_not_found`(method_name)                                                                   |                                                                                                                                               |
-| `mk_aiohttp_app`(funcs, \*\*configs)                                                              |                                                                                                                                               |
-| [`mk_app`](#py2http.service.mk_app)(app_spec, \*[, app_name, framework, ...]) | Generates an application which exposes web services created from the given python functions to remotely run them.                             |
-| `mk_bottle_app`(funcs, \*\*configs)                                                               |                                                                                                                                               |
-| `mk_flask_app`(funcs, \*\*configs)                                                                |                                                                                                                                               |
-| [`mk_route`](#py2http.service.mk_route)(func, \*\*configs)                      | Generate a route object and an OpenAPI path specification for a function                                                                      |
-| `mk_routes_and_openapi_specs`(funcs, \*\*configs)                                                 |                                                                                                                                               |
-| [`public_attr`](#py2http.service.public_attr)(obj, attr_name)                      | The attribute policy `attr_names='*'` stands for: only public methods.                                                                        |
-| [`run_app`](#py2http.service.run_app)(app_obj, \*[, app_name, framework, ...]) | Run an application which exposes web services created from the given python functions to remotely run them.                                   |
-| [`unsafe_any_attr`](#py2http.service.unsafe_any_attr)(obj, attr_name)                  | Dispatch ANY attribute of the object, including private ones and dunders.                                                                     |
+| [`bounded_deep_sizeof`](#py2http.service.bounded_deep_sizeof)(obj[, limit])                | Approximate memory held by `obj` and everything it references (containers, instance `__dict__` and `__slots__`, what a bound method, a `partial` or a function's closure, attributes and defaults hold), counting each object once.   |
+|---------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `func_copy`(func)                                                                                 |                                                                                                                                                                                                                                       |
+| `method_not_found`(method_name)                                                                   |                                                                                                                                                                                                                                       |
+| `mk_aiohttp_app`(funcs, \*\*configs)                                                              |                                                                                                                                                                                                                                       |
+| [`mk_app`](#py2http.service.mk_app)(app_spec, \*[, app_name, framework, ...]) | Generates an application which exposes web services created from the given python functions to remotely run them.                                                                                                                     |
+| `mk_bottle_app`(funcs, \*\*configs)                                                               |                                                                                                                                                                                                                                       |
+| `mk_flask_app`(funcs, \*\*configs)                                                                |                                                                                                                                                                                                                                       |
+| [`mk_route`](#py2http.service.mk_route)(func, \*\*configs)                      | Generate a route object and an OpenAPI path specification for a function                                                                                                                                                              |
+| `mk_routes_and_openapi_specs`(funcs, \*\*configs)                                                 |                                                                                                                                                                                                                                       |
+| [`public_attr`](#py2http.service.public_attr)(obj, attr_name)                      | The attribute policy `attr_names='*'` stands for: only public methods.                                                                                                                                                                |
+| [`run_app`](#py2http.service.run_app)(app_obj, \*[, app_name, framework, ...]) | Run an application which exposes web services created from the given python functions to remotely run them.                                                                                                                           |
+| [`unsafe_any_attr`](#py2http.service.unsafe_any_attr)(obj, attr_name)                  | Dispatch ANY attribute of the object, including private ones and dunders.                                                                                                                                                             |
 
 ### Classes
 
@@ -109,9 +109,13 @@ Bases: [`TypedDict`](https://docs.python.org/3/library/typing.html#typing.TypedD
 ### py2http.service.bounded_deep_sizeof(obj, limit=None)
 
 Approximate memory held by `obj` and everything it references (containers,
-instance `__dict__` and `__slots__`), counting each object once. Stops as soon
-as the total exceeds `limit`, so measuring costs at most about `limit` bytes’
-worth of objects. Classes, modules and functions are shared, so not counted.
+instance `__dict__` and `__slots__`, what a bound method, a `partial` or a
+function’s closure, attributes and defaults hold), counting each object once. Stops
+as soon as the total exceeds `limit`, so measuring costs at most about `limit`
+bytes’ worth of objects. Classes, modules and the code of functions are shared, so
+not counted, and neither is what classes and modules hold (class attributes, module
+globals), nor caches kept in C (`lru_cache`). Holding a bound method of another
+object counts that whole object, as holding the object itself would.
 
 * **Return type:**
   [`int`](https://docs.python.org/3/builtins/functions.html#int)

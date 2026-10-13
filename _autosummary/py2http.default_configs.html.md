@@ -16,11 +16,26 @@ up an HTTP service in Python using the py2http library.
 
 ### Functions
 
-| `aiohttp_error_handler`(error)             |    |
-|--------------------------------------------|----|
-| `bottle_error_handler`(error)              |    |
-| `bottle_output_mapper`(output, \*\*inputs) |    |
-| `default_error_handler`(error)             |    |
-| `default_input_mapper`(\*\*inputs)         |    |
-| `flask_error_handler`(error)               |    |
-| `flask_output_mapper`(output, \*\*inputs)  |    |
+| `aiohttp_error_handler`(error)                                       |                                                                                |
+|----------------------------------------------------------------------|--------------------------------------------------------------------------------|
+| `bottle_error_handler`(error)                                        |                                                                                |
+| `bottle_output_mapper`(output, \*\*inputs)                           |                                                                                |
+| `default_error_handler`(error)                                       |                                                                                |
+| `default_input_mapper`(\*\*inputs)                                   |                                                                                |
+| [`error_status`](#py2http.default_configs.error_status)(error) | The HTTP status for an error a handler raised (500 when it is not a client's). |
+| `flask_error_handler`(error)                                         |                                                                                |
+| `flask_output_mapper`(output, \*\*inputs)                            |                                                                                |
+
+### py2http.default_configs.error_status(error)
+
+The HTTP status for an error a handler raised (500 when it is not a client’s).
+
+* **Return type:**
+  [`int`](https://docs.python.org/3/builtins/functions.html#int)
+
+```pycon
+>>> error_status(AuthorizationError()), error_status(ForbiddenError())
+(401, 403)
+>>> error_status(InputError()), error_status(KeyError())
+(400, 500)
+```

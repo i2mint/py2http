@@ -155,16 +155,41 @@ up an HTTP service in Python using the py2http library.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_input_mapper</span></code>(**inputs)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">flask_error_handler</span></code>(error)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#py2http.default_configs.error_status" title="py2http.default_configs.error_status"><code class="xref py py-obj docutils literal notranslate"><span class="pre">error_status</span></code></a>(error)</p></td>
+<td><p>The HTTP status for an error a handler raised (500 when it is not a client's).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">flask_error_handler</span></code>(error)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">flask_output_mapper</span></code>(output, **inputs)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">flask_output_mapper</span></code>(output, **inputs)</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
 </table>
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.default_configs.error_status">
+<span class="sig-prename descclassname"><span class="pre">py2http.default_configs.</span></span><span class="sig-name descname"><span class="pre">error_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">error</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/default_configs.html#error_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.default_configs.error_status" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.default_configs.error_status'">¶</a></dt>
+<dd><p>The HTTP status for an error a handler raised (500 when it is not a client’s).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" rel="nofollow noopener" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code><svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a></span></p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="gp">&gt;&gt;&gt; </span><span class="n">error_status</span><span class="p">(</span><span class="n">AuthorizationError</span><span class="p">()),</span> <span class="n">error_status</span><span class="p">(</span><span class="n">ForbiddenError</span><span class="p">())</span>
+</span><span id="line-2"><span class="go">(401, 403)</span>
+</span><span id="line-3"><span class="gp">&gt;&gt;&gt; </span><span class="n">error_status</span><span class="p">(</span><span class="n">InputError</span><span class="p">()),</span> <span class="n">error_status</span><span class="p">(</span><span class="ne">KeyError</span><span class="p">())</span>
+</span><span id="line-4"><span class="go">(400, 500)</span>
+</span></code></pre></div>
+</div>
+</dd></dl>
 </section>
-</div></div>
+</div></div><aside class="hidden text-sm xl:block" id="right-sidebar">
+<div class="sticky top-16 -mt-10 max-h-[calc(100vh-5rem)] h-full overflow-y-auto pt-6 space-y-2"><p class="font-medium">On this page</p>
+<ul>
+<li><a :data-current="activeSection === '#py2http.default_configs.error_status'" class="reference internal" href="#py2http.default_configs.error_status"><code class="docutils literal notranslate"><span class="pre">error_status()</span></code></a></li>
+</ul>
+</div>
+</aside>
 </main>
 </div>
 </div><footer class="py-6 border-t border-border md:py-0">
@@ -177,7 +202,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=3015fd79"></script>
+<script src="../_static/documentation_options.js?v=946d7960"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
