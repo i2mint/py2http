@@ -52,14 +52,19 @@ def mk_jwt_middleware(
     Args:
         secret: The key tokens are verified with (an HMAC secret for ``HS*``
             algorithms, a public key for ``RS*``/``ES*``/...).
-        verify: If False, signatures are NOT checked and an invalid token only
-            triggers a warning; for development only.
-        algorithms: The algorithms a token may be signed with. Defaults to
-            ``("HS256",)``, as ``py2http.bottle_plugins.JWTPlugin`` does.
+        verify: If False, signatures and claims (``exp``, ...) are NOT checked:
+            whatever a token says ends up on ``request.token``, and an
+            undecodable token only triggers a warning. For development only.
+            (Before, PyJWT 2 ignored the legacy option this passed, so
+            signatures were still checked even with ``verify=False``.)
+        algorithms: The algorithms a token may be signed with (PyJWT names,
+            case-sensitive; ``"none"`` is refused). Defaults to ``("HS256",)``,
+            as ``py2http.bottle_plugins.JWTPlugin`` does.
         public_routes: Names of aiohttp routes (``name=`` in ``add_route``) that
             need no token. Matched on the route name, not the handler's
             ``__name__``, so a handler that happens to be called ``ping`` is not
-            public by accident.
+            public by accident. Route names are matched in sub-applications
+            too, so a sub-app route named ``ping`` is public as well.
         allow_mixed_algorithm_families: Accepting an HMAC algorithm and a
             public-key algorithm with one ``secret`` is the classic
             algorithm-confusion setup (a token "signed" with HS256 using the
@@ -70,9 +75,19 @@ def mk_jwt_middleware(
     import jwt
     from aiohttp import web
 
+    if isinstance(algorithms, str):
+        raise TypeError(f"algorithms must be a list of names, e.g. [{algorithms!r}]")
     algorithms = list(algorithms)
     if not algorithms:
         raise ValueError("algorithms must name at least one JWT algorithm")
+    known = set(jwt.algorithms.get_default_algorithms()) - {"none"}
+    if unknown := [a for a in algorithms if a not in known]:
+        raise ValueError(
+            f"Unknown or unsigned JWT algorithm(s) {unknown}; names are "
+            f"case-sensitive, choose from {sorted(known)}"
+        )
+    if verify and not secret:
+        raise ValueError("secret must be a non-empty key when verify=True")
     families = {_algorithm_family(a) for a in algorithms}
     if len(families) > 1 and not allow_mixed_algorithm_families:
         raise ValueError(
@@ -80,7 +95,7 @@ def mk_jwt_middleware(
             "secret, which allows algorithm-confusion forgeries; use one family, or "
             "pass allow_mixed_algorithm_families=True if you really mean it"
         )
-    public_routes = frozenset(public_routes)
+    public_routes = frozenset(name for name in public_routes if name is not None)
 
     def _unauthorized(message):
         return web.HTTPUnauthorized(
@@ -102,7 +117,7 @@ def mk_jwt_middleware(
                 options={"verify_signature": verify},
                 algorithms=algorithms,
             )
-        except jwt.InvalidTokenError as error:
+        except jwt.PyJWTError as error:  # incl. a key unfit for the token's alg
             if verify:
                 raise _unauthorized(f"Invalid authentication token: {error}")
             warn(f"Invalid JWT: {error}")

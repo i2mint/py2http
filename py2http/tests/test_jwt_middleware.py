@@ -129,3 +129,49 @@ def test_verify_false_skips_signature_check():
     assert status == 200
     status, body = _get(mk_jwt_middleware(SECRET, verify=False), "/me", token)
     assert status == 200 and json.loads(body) == {"sub": "alice"}
+
+
+@pytest.mark.parametrize(
+    "kwargs, error",
+    [
+        ({"algorithms": "HS256"}, TypeError),
+        ({"algorithms": ["hs256"]}, ValueError),
+        ({"algorithms": ["none"]}, ValueError),
+        ({"algorithms": ["RS256", "none"]}, ValueError),
+    ],
+)
+def test_bad_algorithm_config_fails_at_construction(kwargs, error):
+    with pytest.raises(error):
+        mk_jwt_middleware(SECRET, **kwargs)
+
+
+@pytest.mark.parametrize("secret", ["", b"", None])
+def test_empty_secret_fails_at_construction(secret):
+    with pytest.raises(ValueError):
+        mk_jwt_middleware(secret)
+
+
+def test_key_unfit_for_token_algorithm_is_401_not_500():
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+
+    public_pem = (
+        rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        .public_key()
+        .public_bytes(
+            serialization.Encoding.PEM,
+            serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+    )
+    mw = mk_jwt_middleware(
+        public_pem,
+        algorithms=["HS256", "RS256"],
+        allow_mixed_algorithm_families=True,
+    )
+    forged = _hs256_with_key({"sub": "mallory"}, public_pem)
+    assert _get(mw, "/me", forged)[0] == 401
+
+
+def test_none_in_public_routes_does_not_open_unnamed_routes():
+    mw = mk_jwt_middleware(SECRET, public_routes=["ping", None])
+    assert _get(mw, "/secret")[0] == 401
