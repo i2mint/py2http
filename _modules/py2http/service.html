@@ -499,9 +499,9 @@
 <div class="viewcode-block" id="mk_flask_app">
 <a class="viewcode-back" href="../../_autosummary/py2http.service.html#py2http.service.mk_flask_app">[docs]</a>
 </span><span id="line-319"><span class="k">def</span><span class="w"> </span><span class="nf">mk_flask_app</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span> <span class="o">**</span><span class="n">configs</span><span class="p">):</span>
-</span><span id="line-320"><span class="w">    </span><span class="sd">"""A Flask app serving ``funcs``. JSON request bodies only (the raw, binary and</span>
-</span><span id="line-321"><span class="sd">    form input mappers read Bottle's request); ``middleware`` is a list of WSGI</span>
-</span><span id="line-322"><span class="sd">    wrappers; ``plugins``, ``enable_cors``, ``publish_swagger`` and</span>
+</span><span id="line-320"><span class="w">    </span><span class="sd">"""A Flask app serving ``funcs``. The JSON, raw, binary and form input mappers and</span>
+</span><span id="line-321"><span class="sd">    the ``send_*_resp`` output mappers work as under Bottle; ``middleware`` is a list</span>
+</span><span id="line-322"><span class="sd">    of WSGI wrappers; ``plugins``, ``enable_cors``, ``publish_swagger`` and</span>
 </span><span id="line-323"><span class="sd">    ``openapi_insecure`` are Bottle's, and raise ``NotImplementedError`` here."""</span>
 </span><span id="line-324">    <span class="kn">from</span><span class="w"> </span><span class="nn">flask</span><span class="w"> </span><span class="kn">import</span> <span class="n">Flask</span>
 </span><span id="line-325">
@@ -861,7 +861,7 @@ Otosense&nbsp;</p>
 </footer>
     </div>
     
-    <script src="../../_static/documentation_options.js?v=a8ab379a"></script>
+    <script src="../../_static/documentation_options.js?v=0cd3b383"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

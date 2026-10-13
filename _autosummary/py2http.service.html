@@ -278,9 +278,9 @@ configuration documentation.</p></li>
 <dl class="py function">
 <dt class="sig sig-object py" id="py2http.service.mk_flask_app">
 <span class="sig-prename descclassname"><span class="pre">py2http.service.</span></span><span class="sig-name descname"><span class="pre">mk_flask_app</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">configs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/service.html#mk_flask_app"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.service.mk_flask_app" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.service.mk_flask_app'">¶</a></dt>
-<dd><p>A Flask app serving <code class="docutils literal notranslate"><span class="pre">funcs</span></code>. JSON request bodies only (the raw, binary and
-form input mappers read Bottle’s request); <code class="docutils literal notranslate"><span class="pre">middleware</span></code> is a list of WSGI
-wrappers; <code class="docutils literal notranslate"><span class="pre">plugins</span></code>, <code class="docutils literal notranslate"><span class="pre">enable_cors</span></code>, <code class="docutils literal notranslate"><span class="pre">publish_swagger</span></code> and
+<dd><p>A Flask app serving <code class="docutils literal notranslate"><span class="pre">funcs</span></code>. The JSON, raw, binary and form input mappers and
+the <code class="docutils literal notranslate"><span class="pre">send_*_resp</span></code> output mappers work as under Bottle; <code class="docutils literal notranslate"><span class="pre">middleware</span></code> is a list
+of WSGI wrappers; <code class="docutils literal notranslate"><span class="pre">plugins</span></code>, <code class="docutils literal notranslate"><span class="pre">enable_cors</span></code>, <code class="docutils literal notranslate"><span class="pre">publish_swagger</span></code> and
 <code class="docutils literal notranslate"><span class="pre">openapi_insecure</span></code> are Bottle’s, and raise <code class="docutils literal notranslate"><span class="pre">NotImplementedError</span></code> here.</p>
 </dd></dl>
 <dl class="py function">
@@ -347,7 +347,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=a8ab379a"></script>
+<script src="../_static/documentation_options.js?v=0cd3b383"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

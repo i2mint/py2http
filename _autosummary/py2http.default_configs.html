@@ -170,10 +170,13 @@ up an HTTP service in Python using the py2http library.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">flask_output_mapper</span></code>(output, **inputs)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#py2http.default_configs.framework_defaults" title="py2http.default_configs.framework_defaults"><code class="xref py py-obj docutils literal notranslate"><span class="pre">framework_defaults</span></code></a>(framework, *, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#py2http.default_configs.flask_response_mapper" title="py2http.default_configs.flask_response_mapper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">flask_response_mapper</span></code></a>(output_mapper)</p></td>
+<td><p>Make a Flask view's response of what an output mapper returns.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#py2http.default_configs.framework_defaults" title="py2http.default_configs.framework_defaults"><code class="xref py py-obj docutils literal notranslate"><span class="pre">framework_defaults</span></code></a>(framework, *, ...)</p></td>
 <td><p>The error handler and output mapper to use under <code class="docutils literal notranslate"><span class="pre">framework</span></code>: the given ones, except that the defaults (which only know of Bottle and AIOHTTP) are swapped for the framework's own, so that no process-wide state decides how a response is made.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#py2http.default_configs.www_authenticate_challenge" title="py2http.default_configs.www_authenticate_challenge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">www_authenticate_challenge</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#py2http.default_configs.www_authenticate_challenge" title="py2http.default_configs.www_authenticate_challenge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">www_authenticate_challenge</span></code></a>()</p></td>
 <td><p>The <code class="docutils literal notranslate"><span class="pre">WWW-Authenticate</span></code> value of a 401 a dispatched function raised: the <code class="docutils literal notranslate"><span class="pre">PY2HTTP_WWW_AUTHENTICATE</span></code> environment variable, else <code class="docutils literal notranslate"><span class="pre">Bearer</span></code> (also when the variable holds a line break, which would make every 401 fail to send).</p></td>
 </tr>
 </tbody>
@@ -206,6 +209,20 @@ the bottle handler (<code class="docutils literal notranslate"><span class="pre"
 <dt class="sig sig-object py" id="py2http.default_configs.flask_json_output_mapper">
 <span class="sig-prename descclassname"><span class="pre">py2http.default_configs.</span></span><span class="sig-name descname"><span class="pre">flask_json_output_mapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">inputs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/default_configs.html#flask_json_output_mapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.default_configs.flask_json_output_mapper" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.default_configs.flask_json_output_mapper'">¶</a></dt>
 <dd><p>The default output mapper of a Flask app: the output as a JSON response.</p>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.default_configs.flask_response_mapper">
+<span class="sig-prename descclassname"><span class="pre">py2http.default_configs.</span></span><span class="sig-name descname"><span class="pre">flask_response_mapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_mapper</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/default_configs.html#flask_response_mapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.default_configs.flask_response_mapper" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.default_configs.flask_response_mapper'">¶</a></dt>
+<dd><p>Make a Flask view’s response of what an output mapper returns.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">send_*_resp</span></code> decorators set Bottle’s <code class="docutils literal notranslate"><span class="pre">response.content_type</span></code> and return
+the body (<code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">bytes</span></code>); Flask ignores that and would answer <code class="docutils literal notranslate"><span class="pre">text/html</span></code>.
+A mapper that declares a <code class="docutils literal notranslate"><span class="pre">content_type</span></code> and returns a <code class="docutils literal notranslate"><span class="pre">str</span></code>/<code class="docutils literal notranslate"><span class="pre">bytes</span></code> body gets
+that content type; anything else (a <code class="docutils literal notranslate"><span class="pre">Response</span></code>, a dict, a tuple) is kept as is.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">py2http.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">send_raw_resp</span>  <span class="c1"># (needs flask)</span>
+</span><span id="line-2"><span class="gp">&gt;&gt;&gt; </span><span class="n">flask_response_mapper</span><span class="p">(</span><span class="n">send_raw_resp</span><span class="p">(</span><span class="k">lambda</span> <span class="n">o</span><span class="p">:</span> <span class="n">o</span><span class="p">))(</span><span class="sa">b</span><span class="s2">"x"</span><span class="p">)</span><span class="o">.</span><span class="n">content_type</span>
+</span><span id="line-3"><span class="go">'text/plain'</span>
+</span></code></pre></div>
+</div>
 </dd></dl>
 <dl class="py function">
 <dt class="sig sig-object py" id="py2http.default_configs.framework_defaults">
@@ -243,6 +260,7 @@ variable holds a line break, which would make every 401 fail to send).</p>
 <li><a :data-current="activeSection === '#py2http.default_configs.error_status'" class="reference internal" href="#py2http.default_configs.error_status"><code class="docutils literal notranslate"><span class="pre">error_status()</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.default_configs.flask_error_handler'" class="reference internal" href="#py2http.default_configs.flask_error_handler"><code class="docutils literal notranslate"><span class="pre">flask_error_handler()</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.default_configs.flask_json_output_mapper'" class="reference internal" href="#py2http.default_configs.flask_json_output_mapper"><code class="docutils literal notranslate"><span class="pre">flask_json_output_mapper()</span></code></a></li>
+<li><a :data-current="activeSection === '#py2http.default_configs.flask_response_mapper'" class="reference internal" href="#py2http.default_configs.flask_response_mapper"><code class="docutils literal notranslate"><span class="pre">flask_response_mapper()</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.default_configs.framework_defaults'" class="reference internal" href="#py2http.default_configs.framework_defaults"><code class="docutils literal notranslate"><span class="pre">framework_defaults()</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.default_configs.www_authenticate_challenge'" class="reference internal" href="#py2http.default_configs.www_authenticate_challenge"><code class="docutils literal notranslate"><span class="pre">www_authenticate_challenge()</span></code></a></li>
 </ul>
@@ -260,7 +278,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=a8ab379a"></script>
+<script src="../_static/documentation_options.js?v=0cd3b383"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

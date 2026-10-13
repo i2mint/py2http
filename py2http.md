@@ -1,4 +1,4 @@
-> built 2026-10-13 12:44 UTC from f57d3c4 (master) · py2http 0.1.72. Details: build_info.json
+> built 2026-10-13 14:30 UTC from 1a53505 (master) · py2http 0.1.73. Details: build_info.json
 
 # index.html.md
 
@@ -1161,6 +1161,7 @@ up an HTTP service in Python using the py2http library.
 | [`flask_error_handler`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.flask_error_handler)(error)                   | The `(body, status, headers)` a Flask view returns for an error, mapped like the bottle handler (`OPAQUE_ERRORS` hides the text of a 500).                                                                                                        |
 | [`flask_json_output_mapper`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.flask_json_output_mapper)(output, \*\*inputs) | The default output mapper of a Flask app: the output as a JSON response.                                                                                                                                                                          |
 | `flask_output_mapper`(output, \*\*inputs)                                                     |                                                                                                                                                                                                                                                   |
+| [`flask_response_mapper`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.flask_response_mapper)(output_mapper)         | Make a Flask view's response of what an output mapper returns.                                                                                                                                                                                    |
 | [`framework_defaults`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.framework_defaults)(framework, \*, ...)       | The error handler and output mapper to use under `framework`: the given ones, except that the defaults (which only know of Bottle and AIOHTTP) are swapped for the framework's own, so that no process-wide state decides how a response is made. |
 | [`www_authenticate_challenge`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.www_authenticate_challenge)()                 | The `WWW-Authenticate` value of a 401 a dispatched function raised: the `PY2HTTP_WWW_AUTHENTICATE` environment variable, else `Bearer` (also when the variable holds a line break, which would make every 401 fail to send).                      |
 
@@ -1186,6 +1187,21 @@ the bottle handler (`OPAQUE_ERRORS` hides the text of a 500).
 ### py2http.default_configs.flask_json_output_mapper(output, \*\*inputs)
 
 The default output mapper of a Flask app: the output as a JSON response.
+
+### py2http.default_configs.flask_response_mapper(output_mapper)
+
+Make a Flask view’s response of what an output mapper returns.
+
+The `send_*_resp` decorators set Bottle’s `response.content_type` and return
+the body (`str` or `bytes`); Flask ignores that and would answer `text/html`.
+A mapper that declares a `content_type` and returns a `str`/`bytes` body gets
+that content type; anything else (a `Response`, a dict, a tuple) is kept as is.
+
+```pycon
+>>> from py2http.decorators import send_raw_resp  # (needs flask)
+>>> flask_response_mapper(send_raw_resp(lambda o: o))(b"x").content_type
+'text/plain'
+```
 
 ### py2http.default_configs.framework_defaults(framework, , error_handler, output_mapper)
 
@@ -1777,9 +1793,9 @@ API with a list of handlers for each API.
 
 ### py2http.service.mk_flask_app(funcs, \*\*configs)
 
-A Flask app serving `funcs`. JSON request bodies only (the raw, binary and
-form input mappers read Bottle’s request); `middleware` is a list of WSGI
-wrappers; `plugins`, `enable_cors`, `publish_swagger` and
+A Flask app serving `funcs`. The JSON, raw, binary and form input mappers and
+the `send_*_resp` output mappers work as under Bottle; `middleware` is a list
+of WSGI wrappers; `plugins`, `enable_cors`, `publish_swagger` and
 `openapi_insecure` are Bottle’s, and raise `NotImplementedError` here.
 
 ### py2http.service.mk_route(func, \*\*configs)
@@ -2188,7 +2204,7 @@ so that it can be jsonizable.
 
 # About this build
 
-This documentation was built on **2026-10-13 12:44 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/f57d3c4c8b33ae8e9e7e075eaf082552a632fb45"><code>f57d3c4</code></a> on branch <code>master</code>, for **py2http 0.1.72** (from <code>setup.cfg</code>).
+This documentation was built on **2026-10-13 14:30 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/1a53505875077adabb54722ef5522719ce259c1d"><code>1a53505</code></a> on branch <code>master</code>, for **py2http 0.1.73** (from <code>setup.cfg</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -2197,9 +2213,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                       |
 |---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2http/commit/f57d3c4c8b33ae8e9e7e075eaf082552a632fb45"><code>f57d3c4c8b33ae8e9e7e075eaf082552a632fb45</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2http/commit/1a53505875077adabb54722ef5522719ce259c1d"><code>1a53505875077adabb54722ef5522719ce259c1d</code></a> |
 | Branch              | <code>master</code>                                                                                                                                   |
-| Tags at this commit | <code>0.1.72</code>                                                                                                                                   |
+| Tags at this commit | <code>0.1.73</code>                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                 |
 | Remote              | <code>https://github.com/i2mint/py2http</code>                                                                                                        |
 
@@ -2208,9 +2224,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2http</code>                                                                |
-| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38399231975">38399231975</a>       |
+| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38413615373">38413615373</a>       |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>72383a26bc3a1f5ba53cfca168df20e045d33375</code> (in the history of the built commit) |
+| Event commit | <code>9e72f89d582c4fe620764ea99ef7aecb9fd14f92</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -2235,13 +2251,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2http/0.1.72/">0.1.72</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/py2http/0.1.73/">0.1.73</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2http && cd py2http
-git checkout f57d3c4c8b33ae8e9e7e075eaf082552a632fb45
+git checkout 1a53505875077adabb54722ef5522719ce259c1d
 pip install "epythet==0.2.15"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

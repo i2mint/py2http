@@ -26,6 +26,7 @@ up an HTTP service in Python using the py2http library.
 | [`flask_error_handler`](#py2http.default_configs.flask_error_handler)(error)                   | The `(body, status, headers)` a Flask view returns for an error, mapped like the bottle handler (`OPAQUE_ERRORS` hides the text of a 500).                                                                                                        |
 | [`flask_json_output_mapper`](#py2http.default_configs.flask_json_output_mapper)(output, \*\*inputs) | The default output mapper of a Flask app: the output as a JSON response.                                                                                                                                                                          |
 | `flask_output_mapper`(output, \*\*inputs)                                                     |                                                                                                                                                                                                                                                   |
+| [`flask_response_mapper`](#py2http.default_configs.flask_response_mapper)(output_mapper)         | Make a Flask view's response of what an output mapper returns.                                                                                                                                                                                    |
 | [`framework_defaults`](#py2http.default_configs.framework_defaults)(framework, \*, ...)       | The error handler and output mapper to use under `framework`: the given ones, except that the defaults (which only know of Bottle and AIOHTTP) are swapped for the framework's own, so that no process-wide state decides how a response is made. |
 | [`www_authenticate_challenge`](#py2http.default_configs.www_authenticate_challenge)()                 | The `WWW-Authenticate` value of a 401 a dispatched function raised: the `PY2HTTP_WWW_AUTHENTICATE` environment variable, else `Bearer` (also when the variable holds a line break, which would make every 401 fail to send).                      |
 
@@ -51,6 +52,21 @@ the bottle handler (`OPAQUE_ERRORS` hides the text of a 500).
 ### py2http.default_configs.flask_json_output_mapper(output, \*\*inputs)
 
 The default output mapper of a Flask app: the output as a JSON response.
+
+### py2http.default_configs.flask_response_mapper(output_mapper)
+
+Make a Flask view’s response of what an output mapper returns.
+
+The `send_*_resp` decorators set Bottle’s `response.content_type` and return
+the body (`str` or `bytes`); Flask ignores that and would answer `text/html`.
+A mapper that declares a `content_type` and returns a `str`/`bytes` body gets
+that content type; anything else (a `Response`, a dict, a tuple) is kept as is.
+
+```pycon
+>>> from py2http.decorators import send_raw_resp  # (needs flask)
+>>> flask_response_mapper(send_raw_resp(lambda o: o))(b"x").content_type
+'text/plain'
+```
 
 ### py2http.default_configs.framework_defaults(framework, , error_handler, output_mapper)
 
