@@ -23,6 +23,7 @@ from i2.errors import (
     InputError,
     NotFoundError,
     DuplicateRecordError,
+    OverwritesNotAllowed,
 )
 
 from py2http.decorators import handle_json_req, send_json_resp, JsonRespEncoder
@@ -59,34 +60,53 @@ def _raise_http_client_error(error, message, reason=None):
     )
 
 
+# HTTP status of each client error, most specific class first. ``ForbiddenError`` and
+# ``OverwritesNotAllowed`` mean the client may not do this (403); any other
+# ``AuthorizationError`` means the request did not say who it is (401).
+_CLIENT_ERROR_STATUSES = (
+    ((ForbiddenError, OverwritesNotAllowed), 403),
+    (AuthorizationError, 401),
+    ((InputError, DuplicateRecordError), 400),
+    (NotFoundError, 404),
+)
+_AIOHTTP_ERRORS = {
+    400: web.HTTPBadRequest,
+    401: web.HTTPUnauthorized,
+    403: web.HTTPForbidden,
+    404: web.HTTPNotFound,
+}
+
+
+def error_status(error: Exception) -> int:
+    """The HTTP status for an error a handler raised (500 when it is not a client's).
+
+    >>> error_status(AuthorizationError()), error_status(ForbiddenError())
+    (401, 403)
+    >>> error_status(InputError()), error_status(KeyError())
+    (400, 500)
+    """
+    for error_types, status in _CLIENT_ERROR_STATUSES:
+        if isinstance(error, error_types):
+            return status
+    return 500
+
+
 def aiohttp_error_handler(error: Exception):
-    message = str(error)
-    if isinstance(error, (AuthorizationError, InputError, DuplicateRecordError)):
+    status = error_status(error)
+    if status == 500:
         _raise_http_client_error(
-            web.HTTPBadRequest, message, reason=type(error).__name__
+            web.HTTPInternalServerError, "Internal server error"
         )
-    elif isinstance(error, ForbiddenError):
-        _raise_http_client_error(web.HTTPForbidden, message)
-    elif isinstance(error, NotFoundError):
-        _raise_http_client_error(web.HTTPNotFound, message)
-    else:
-        message = "Internal server error"
-        _raise_http_client_error(web.HTTPInternalServerError, message)
+    reason = type(error).__name__ if status == 400 else None
+    _raise_http_client_error(_AIOHTTP_ERRORS[status], str(error), reason=reason)
 
 
 def bottle_error_handler(error: Exception):
     message = str(error)
-    if isinstance(error, (AuthorizationError, InputError, DuplicateRecordError)):
-        response.status = f"400 {type(error).__name__}"
-        # response.reason = type(error).__name__
-    elif isinstance(error, ForbiddenError):
-        response.status = 403
-    elif isinstance(error, NotFoundError):
-        response.status = 404
-    else:
-        response.status = 500
-        if os.getenv("OPAQUE_ERRORS", None):
-            message = "Internal server error"
+    status = error_status(error)
+    response.status = f"400 {type(error).__name__}" if status == 400 else status
+    if status == 500 and os.getenv("OPAQUE_ERRORS", None):
+        message = "Internal server error"
     return {"error": message}
 
 

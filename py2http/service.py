@@ -28,7 +28,7 @@ from functools import partial, wraps
 from inspect import isawaitable
 import json
 from typing import Any, Callable, Dict, Iterable, Optional, TypedDict, Union
-from types import FunctionType
+from types import BuiltinMethodType, FunctionType, MethodType, MethodWrapperType
 import logging
 import os
 import sys
@@ -59,6 +59,10 @@ from py2http.schema_tools import (
 from py2http.util import TypeAsserter
 from py2http.constants import JSON_CONTENT_TYPE
 
+# Instance endpoints (``handler['endpoint']`` is an object) are one object every client
+# shares; they too need an ``obj_owner`` and are bounded by ``max_obj_size`` (see
+# ``_instance_endpoint_dispatcher``).
+#
 # Class endpoints (``handler['endpoint']`` is a class) keep the objects clients create.
 # Who may use an object is the handler's ``obj_owner`` (see ``ObjOwner``); how many
 # objects an owner may keep is ``obj_quota``; how many bytes each object, each owner and
@@ -226,14 +230,19 @@ class OwnedObjStore:
             return sum(self._sizes.get((owner, obj_id), 0) for obj_id in objects)
 
 
-_SHARED_SIZE_LEAVES = (type, ModuleType, FunctionType)
+_SHARED_SIZE_LEAVES = (type, ModuleType)
+_BOUND_METHODS = (MethodType, BuiltinMethodType, MethodWrapperType)
 
 
 def bounded_deep_sizeof(obj, limit: Optional[int] = None) -> int:
     """Approximate memory held by ``obj`` and everything it references (containers,
-    instance ``__dict__`` and ``__slots__``), counting each object once. Stops as soon
-    as the total exceeds ``limit``, so measuring costs at most about ``limit`` bytes'
-    worth of objects. Classes, modules and functions are shared, so not counted.
+    instance ``__dict__`` and ``__slots__``, what a bound method, a ``partial`` or a
+    function's closure, attributes and defaults hold), counting each object once. Stops
+    as soon as the total exceeds ``limit``, so measuring costs at most about ``limit``
+    bytes' worth of objects. Classes, modules and the code of functions are shared, so
+    not counted, and neither is what classes and modules hold (class attributes, module
+    globals), nor caches kept in C (``lru_cache``). Holding a bound method of another
+    object counts that whole object, as holding the object itself would.
 
     >>> small, big = bounded_deep_sizeof([1, 2]), bounded_deep_sizeof(list(range(1000)))
     >>> small < big
@@ -247,6 +256,14 @@ def bounded_deep_sizeof(obj, limit: Optional[int] = None) -> int:
         if id(o) in seen or isinstance(o, _SHARED_SIZE_LEAVES):
             continue
         seen.add(id(o))
+        try:
+            held = _held_by_callable(o)
+        except Exception:  # an exotic object (a mock, a proxy): measure it plainly
+            held = None
+        if isinstance(o, FunctionType):  # the code is shared; only what it holds counts
+            todo.extend(held or ())
+            continue
+        todo.extend(held or ())
         total += sys.getsizeof(o, 0)
         if limit is not None and total > limit:
             break
@@ -255,14 +272,47 @@ def bounded_deep_sizeof(obj, limit: Optional[int] = None) -> int:
             todo.extend(o.values())
         elif isinstance(o, (list, tuple, set, frozenset, deque)):
             todo.extend(o)
-        if hasattr(o, "__dict__") and isinstance(vars(o), dict):
-            todo.append(vars(o))
-        for klass in type(o).__mro__:
-            slots = getattr(klass, "__slots__", ())
-            for slot in (slots,) if isinstance(slots, str) else slots:
-                if slot not in ("__dict__", "__weakref__") and hasattr(o, slot):
-                    todo.append(getattr(o, slot))
+        try:  # a __getattr__ may raise anything
+            todo.extend(_instance_state(o))
+        except Exception:
+            pass
     return total
+
+
+def _instance_state(o):
+    """An object's ``__dict__`` and the values of its ``__slots__``."""
+    if hasattr(o, "__dict__") and isinstance(vars(o), dict):
+        yield vars(o)
+    for klass in type(o).__mro__:
+        slots = getattr(klass, "__slots__", ())
+        for slot in (slots,) if isinstance(slots, str) else slots:
+            if slot not in ("__dict__", "__weakref__") and hasattr(o, slot):
+                yield getattr(o, slot)
+
+
+def _held_by_callable(o) -> Optional[list]:
+    """What a function (closure, attributes, defaults), bound method, static or class
+    method, or ``partial`` holds; ``None`` for anything else."""
+    if isinstance(o, FunctionType):
+        cells = [c.cell_contents for c in o.__closure__ or () if _cell_is_set(c)]
+        return [*cells, o.__dict__, o.__defaults__, o.__kwdefaults__]
+    if isinstance(o, MethodType):
+        return [o.__self__, o.__func__]
+    if isinstance(o, _BOUND_METHODS):  # a builtin's: what it is bound to
+        return [o.__self__]
+    if isinstance(o, (staticmethod, classmethod)):
+        return [o.__func__]
+    if isinstance(o, partial):
+        return [o.func, o.args, o.keywords]
+    return None
+
+
+def _cell_is_set(cell) -> bool:
+    try:
+        cell.cell_contents
+    except ValueError:  # an empty cell (a free variable not yet assigned)
+        return False
+    return True
 
 
 def public_attr(obj, attr_name: str) -> bool:
@@ -475,7 +525,13 @@ def mk_route(func, **configs):
 
     @handle_error
     async def aiohttp_handle_request(req):
-        current_request.set(req)  # each aiohttp request runs in its own task context
+        token = current_request.set(req)
+        try:
+            return await _aiohttp_handle(req)
+        finally:
+            current_request.reset(token)
+
+    async def _aiohttp_handle(req):
         inputs = input_mapper(req)
         if isawaitable(inputs):  # Pattern: pass-on async property
             inputs = await inputs
@@ -928,10 +984,13 @@ def _get_func_to_dispatch_handler(handler):
     if inspect.isclass(endpoint):
         func = _class_endpoint_dispatcher(endpoint, handler, name, is_dispatchable)
 
-    else:
+    elif isinstance(endpoint, ModuleType):  # a module's functions: no shared object
 
         def func(_attr_name=None, **kwargs):
             return _get_attr_value(endpoint, _attr_name, is_dispatchable, **kwargs)
+
+    else:
+        func = _instance_endpoint_dispatcher(endpoint, handler, name, is_dispatchable)
 
     func.__name__ = name
     return func
@@ -966,6 +1025,127 @@ class _MappingObjStore:
 
 
 _SHARED_OWNER = "<shared>"
+
+
+def _request_owner(owner_of: ObjOwner, name: str) -> Callable[[], Any]:
+    """A zero-argument function giving the owner of the request being handled, as
+    ``owner_of(current_request)`` says, refusing requests it does not identify."""
+    if not callable(owner_of):
+        raise TypeError(f"obj_owner must be callable or shared_objects: {owner_of!r}")
+
+    def owner():
+        who = owner_of(current_request.get())
+        if who is None or who == "":
+            raise AuthorizationError(f"{name}: no owner for this request")
+        try:
+            hash(who)
+        except TypeError:
+            raise TypeError(
+                f"obj_owner of {name!r} must return a hashable, got {type(who)}"
+            ) from None
+        return who
+
+    return owner
+
+
+def _instance_endpoint_dispatcher(obj, handler, name, is_dispatchable):
+    """The function behind an instance endpoint (``handler['endpoint']`` is an object,
+    not a class or module): it dispatches ``_attr_name`` on that one object, which every
+    client allowed in shares. A method that mutates it (``__setitem__``, ``write``...)
+    lets each of them change what the others see.
+
+    Handler options:
+
+    - ``obj_owner`` (required): ``(request) -> owner`` (see ``ObjOwner``); a request it
+      does not identify is refused, the others share the object. Or ``shared_objects``
+      to let any client use it. An instance endpoint without one is refused at build
+      time.
+    - ``max_obj_size`` (``DFLT_MAX_OBJ_SIZE``) and ``obj_sizeof``
+      (``bounded_deep_sizeof``): the bytes the object may hold, measured when the
+      service is built (an object already over it is refused then) and after every
+      dispatched call, failed ones included. The call that takes it over the limit has
+      already run: its result is withheld, the object is kept, and every later call is
+      refused until it is back under, except calls to ``obj_shrinkers``. So memory is
+      bounded by the limit plus what the calls running at that moment allocate.
+      ``None`` disables the check. Raise ``max_obj_size``, or pass an ``obj_sizeof``
+      that skips what is not request-driven (a loaded model, a database connection),
+      for a large object. Not measured: data the object keeps outside the process
+      (files, a database), and state held in its class or in module globals.
+      Measuring walks the object (up to ``max_obj_size`` bytes of it) after every
+      call, reads included, so a large limit costs time on every request. A method
+      returning a generator or coroutine does its work after the measure: what it
+      adds is caught by the next call.
+    - ``obj_shrinkers``: names of dispatched attributes that only ever remove
+      (``pop``, ``clear``, ``__delitem__`` if ``attr_names`` lists it...), still
+      callable while the object is over its limit so a client can bring it back under.
+      Empty by default: py2http cannot tell which methods shrink an object, and the
+      bound holds only if every name listed really only removes (one that also adds is
+      never refused).
+    """
+    owner_of = handler.get("obj_owner")
+    if owner_of is None:
+        raise ValueError(
+            f"Instance endpoint {name!r} is one object shared by every client: give it "
+            "an obj_owner, a callable (request) -> owner (e.g. the authenticated user "
+            "id) that refuses requests it does not identify, or obj_owner=shared_objects "
+            "(from py2http.service) to let any client use it, as before."
+        )
+    owner = (lambda: None) if owner_of is shared_objects else _request_owner(owner_of, name)
+    max_obj_size = handler.get("max_obj_size", DFLT_MAX_OBJ_SIZE)
+    sizeof = handler.get("obj_sizeof", bounded_deep_sizeof)
+
+    def is_too_big():
+        return max_obj_size is not None and sizeof(obj, max_obj_size) > max_obj_size
+
+    if is_too_big():
+        raise ValueError(
+            f"Instance endpoint {name!r} already holds more than max_obj_size="
+            f"{max_obj_size} bytes (as measured by obj_sizeof): raise max_obj_size, pass "
+            "an obj_sizeof that skips what clients cannot grow, or max_obj_size=None."
+        )
+    shrinkers = handler.get("obj_shrinkers", ())
+    if isinstance(shrinkers, str):
+        raise TypeError(f"obj_shrinkers must be a collection of names: {shrinkers!r}")
+    shrinkers = frozenset(shrinkers)
+    for attr_name in shrinkers:
+        if not is_dispatchable(obj, attr_name):
+            raise ValueError(
+                f"obj_shrinkers of {name!r}: {attr_name!r} is not dispatched "
+                "(see attr_names)"
+            )
+    over_limit = threading.Event()  # set while the object is known to be too big
+    measuring = threading.Lock()  # so a stale measure cannot clear a newer one's flag
+
+    def measure() -> bool:
+        """Whether the object is over its limit, recorded in ``over_limit``."""
+        with measuring:
+            too_big = is_too_big()
+            if too_big:
+                over_limit.set()
+            else:
+                over_limit.clear()
+            return too_big
+
+    def refuse():
+        allowed = f" (except {', '.join(sorted(shrinkers))})" if shrinkers else ""
+        raise InputError(
+            f"{name} is over its size limit ({max_obj_size} bytes): calls{allowed} "
+            "are refused until it is back under"
+        )
+
+    def func(_attr_name=None, **kwargs):
+        owner()
+        shrinking = isinstance(_attr_name, str) and _attr_name in shrinkers
+        if over_limit.is_set() and measure() and not shrinking:
+            refuse()
+        try:
+            return _get_attr_value(obj, _attr_name, is_dispatchable, **kwargs)
+        finally:  # a call that grows the object and then raises is measured too
+            # a shrinker that ran but left it over the limit keeps its result
+            if measure() and not shrinking:
+                refuse()
+
+    return func
 
 
 def _class_endpoint_dispatcher(cls, handler, name, is_dispatchable):
@@ -1019,10 +1199,7 @@ def _class_endpoint_dispatcher(cls, handler, name, is_dispatchable):
             return _SHARED_OWNER
 
     else:
-        if not callable(owner_of):
-            raise TypeError(
-                f"obj_owner must be callable or shared_objects: {owner_of!r}"
-            )
+        owner = _request_owner(owner_of, name)
         if handler.get("obj_store") is not None:
             raise ValueError(
                 "obj_store applies to obj_owner=shared_objects only; with an obj_owner "
@@ -1032,18 +1209,6 @@ def _class_endpoint_dispatcher(cls, handler, name, is_dispatchable):
             quota=handler.get("obj_quota", DFLT_OBJ_QUOTA),
             max_owners=handler.get("max_owners", DFLT_MAX_OWNERS),
         )
-
-        def owner():
-            who = owner_of(current_request.get())
-            if who is None or who == "":
-                raise AuthorizationError(f"{name}: no owner for this request")
-            try:
-                hash(who)
-            except TypeError:
-                raise TypeError(
-                    f"obj_owner of {name!r} must return a hashable, got {type(who)}"
-                ) from None
-            return who
 
     def over_budget(who, obj_id, obj):
         """Why the object must go, or None. Records its size when it may stay."""

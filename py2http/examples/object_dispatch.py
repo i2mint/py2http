@@ -11,6 +11,8 @@ and its ecosystem (mongodol, s3dol, etc.).
 
 from typing import MutableMapping
 
+from py2http.service import shared_objects
+
 
 class BackendStore(MutableMapping):
     """MutableMapping wrapper that assumes that values are given as strings,
@@ -47,6 +49,9 @@ handlers = [
         endpoint=backend_store,
         name="backend_store",
         attr_names=["__iter__", "__getitem__", "__setitem__"],
+        # One store every client shares and may write to: fine for a demo. A real
+        # service passes obj_owner=<(request) -> authenticated user id> instead.
+        obj_owner=shared_objects,
     ),
 ]
 
