@@ -19,38 +19,121 @@ authentication and control access to web resources.
 """
 
 import json
+from collections.abc import Iterable
 from warnings import warn
+
 from py2http.constants import JSON_CONTENT_TYPE
 
+DFLT_JWT_ALGORITHMS = ("HS256",)
+DFLT_PUBLIC_ROUTES = ("ping", "openapi")
 
-def mk_jwt_middleware(secret, verify=True):
-    from aiohttp import web
+
+def _algorithm_family(algorithm: str) -> str:
+    """The key family an algorithm verifies with: a shared secret for ``HS*``, a
+    public key otherwise.
+
+    >>> _algorithm_family('HS512'), _algorithm_family('RS256'), _algorithm_family('ES256')
+    ('hmac', 'public-key', 'public-key')
+    """
+    return "hmac" if algorithm.upper().startswith("HS") else "public-key"
+
+
+def mk_jwt_middleware(
+    secret,
+    verify=True,
+    *,
+    algorithms: Iterable[str] = DFLT_JWT_ALGORITHMS,
+    public_routes: Iterable[str] = DFLT_PUBLIC_ROUTES,
+    allow_mixed_algorithm_families: bool = False,
+):
+    """Make an aiohttp middleware that requires a valid ``Authorization: Bearer``
+    JWT on every request, and puts the decoded claims on ``request.token``.
+
+    Args:
+        secret: The key tokens are verified with (an HMAC secret for ``HS*``
+            algorithms, a public key for ``RS*``/``ES*``/...).
+        verify: If False, signatures and claims (``exp``, ...) are NOT checked:
+            whatever a token says ends up on ``request.token``, and an
+            undecodable token only triggers a warning. For development only.
+            (Before, PyJWT 2 ignored the legacy option this passed, so
+            signatures were still checked even with ``verify=False``.)
+        algorithms: The algorithms a token may be signed with (PyJWT names,
+            case-sensitive; ``"none"`` is refused). Defaults to ``("HS256",)``,
+            as ``py2http.bottle_plugins.JWTPlugin`` does.
+        public_routes: Names of aiohttp routes (``name=`` in ``add_route``) that
+            need no token. Matched on the route name, not the handler's
+            ``__name__``, so a handler that happens to be called ``ping`` is not
+            public by accident. Route names are matched in sub-applications
+            too, so a sub-app route named ``ping`` is public as well.
+        allow_mixed_algorithm_families: Accepting an HMAC algorithm and a
+            public-key algorithm with one ``secret`` is the classic
+            algorithm-confusion setup (a token "signed" with HS256 using the
+            public key as the HMAC secret), so it raises ``ValueError`` unless
+            this is True. The middleware used to accept ``["HS256", "RS256"]``;
+            pass that list with this flag to restore it.
+    """
     import jwt
+    from aiohttp import web
+
+    for name, value in [("algorithms", algorithms), ("public_routes", public_routes)]:
+        if isinstance(value, (str, bytes)):
+            raise TypeError(f"{name} must be a list of names, e.g. [{value!r}]")
+    algorithms = list(algorithms)
+    if not algorithms:
+        raise ValueError("algorithms must name at least one JWT algorithm")
+    known = set(jwt.algorithms.get_default_algorithms()) - {"none"}
+    if unknown := [a for a in algorithms if a not in known]:
+        raise ValueError(
+            f"Unknown or unsigned JWT algorithm(s) {unknown}; names are "
+            f"case-sensitive, choose from {sorted(known)}"
+        )
+    if verify and not secret:
+        raise ValueError("secret must be a non-empty key when verify=True")
+    families = {_algorithm_family(a) for a in algorithms}
+    if verify and "hmac" in families and not isinstance(secret, (str, bytes)):
+        raise TypeError(f"an HMAC secret must be str or bytes, got {type(secret)}")
+    if len(families) > 1 and not allow_mixed_algorithm_families:
+        raise ValueError(
+            f"algorithms={algorithms} mixes HMAC and public-key algorithms with one "
+            "secret, which allows algorithm-confusion forgeries; use one family, or "
+            "pass allow_mixed_algorithm_families=True if you really mean it"
+        )
+    public_routes = frozenset(name for name in public_routes if name is not None)
+
+    def _unauthorized(message):
+        return web.HTTPUnauthorized(
+            text=json.dumps({"error": message}),
+            content_type=JSON_CONTENT_TYPE,
+        )
 
     @web.middleware
     async def middleware(req, handler):
-        if handler.__name__ == "ping" or handler.__name__ == "openapi":
+        route = req.match_info.route
+        if getattr(route, "name", None) in public_routes:
             return await handler(req)
         auth_header = req.headers.get("Authorization", "")
-        token = auth_header[7:]
+        token = auth_header[7:] if auth_header[:7].lower() == "bearer " else ""
         try:
             decoded = jwt.decode(
-                token, secret, options={"verify": verify}, algorithms=["HS256", "RS256"]
+                token,
+                secret,
+                options={"verify_signature": verify},
+                algorithms=algorithms,
             )
-            req.token = decoded
-            return await handler(req)
-        except jwt.DecodeError as error:
+        except jwt.PyJWTError as error:  # incl. a key unfit for the token's alg
             if verify:
-                return web.HTTPUnauthorized(
-                    text=json.dumps(
-                        {
-                            "error": f'Invalid authentication token "{token}", {str(error)}'
-                        }
-                    ),
-                    content_type=JSON_CONTENT_TYPE,
+                # InvalidTokenError texts describe the token ("Signature has
+                # expired"); other PyJWTErrors can describe the server's key
+                reason = (
+                    str(error)
+                    if isinstance(error, jwt.InvalidTokenError)
+                    else "not acceptable"
                 )
-            warn(f"Invalid JWT: {token}")
+                raise _unauthorized(f"Invalid authentication token: {reason}")
+            warn(f"Invalid JWT: {error}")
             return await handler(req)
+        req.token = decoded
+        return await handler(req)
 
     return middleware
 
