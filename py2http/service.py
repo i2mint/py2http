@@ -16,7 +16,8 @@ Python functions, enabling developers to easily expose their functions as remote
 with minimal setup."""
 
 import inspect
-from collections import OrderedDict
+from collections import OrderedDict, deque
+from contextvars import ContextVar
 from collections.abc import MutableMapping
 from types import ModuleType
 from uuid import uuid4
@@ -30,6 +31,8 @@ from typing import Any, Callable, Dict, Iterable, Optional, TypedDict, Union
 from types import FunctionType
 import logging
 import os
+import sys
+import threading
 from bottle import Bottle, run as run_bottle
 import traceback
 from swagger_ui import api_doc
@@ -56,16 +59,29 @@ from py2http.schema_tools import (
 from py2http.util import TypeAsserter
 from py2http.constants import JSON_CONTENT_TYPE
 
-# Maximum number of objects a class endpoint keeps alive; the least recently used
-# one is evicted beyond that. Pass ``obj_store=...`` in a handler to change it.
-# Note: this bounds the number of objects, not their size, and object ids are the
-# only access control (any client holding an id can use the object).
+# Class endpoints (``handler['endpoint']`` is a class) keep the objects clients create.
+# Who may use an object is the handler's ``obj_owner`` (see ``ObjOwner``); how many
+# objects an owner may keep is ``obj_quota``; how many bytes each object, each owner and
+# the whole endpoint may hold are ``max_obj_size``, ``max_owner_bytes`` and
+# ``max_total_bytes`` (see ``_class_endpoint_dispatcher``).
+#
+# Maximum number of objects a class endpoint keeps alive in ``shared_objects`` mode; the
+# least recently used one is evicted beyond that. Pass ``obj_store=...`` to change it.
 DFLT_OBJ_STORE_MAX_SIZE = 1000
+DFLT_OBJ_QUOTA = 100  # objects per owner
+DFLT_MAX_OWNERS = 1000  # owners holding objects at once (least recently active evicted)
+DFLT_MAX_OBJ_SIZE = 1_000_000  # bytes per object, as measured by ``obj_sizeof``
+DFLT_MAX_OWNER_BYTES = 20_000_000  # bytes per owner (all their objects)
+DFLT_MAX_TOTAL_BYTES = 256_000_000  # bytes per endpoint (every object of every owner)
+
+#: The request being handled (set around every handler call), so per-request hooks such
+#: as ``obj_owner`` can read it without the dispatched function taking it.
+current_request: ContextVar = ContextVar("py2http_current_request", default=None)
 
 
 class LRUObjStore(MutableMapping):
     """A mapping that keeps at most ``max_size`` items, evicting the least recently
-    used one when a new key would exceed it.
+    used one when a new key would exceed it (``on_evict(k, v)`` is told).
 
     Used as the default store of objects created through a class endpoint, so that
     clients cannot grow server memory without bound by creating objects.
@@ -78,10 +94,16 @@ class LRUObjStore(MutableMapping):
     ['a', 'c']
     """
 
-    def __init__(self, *, max_size: int = DFLT_OBJ_STORE_MAX_SIZE):
+    def __init__(
+        self,
+        *,
+        max_size: int = DFLT_OBJ_STORE_MAX_SIZE,
+        on_evict: Optional[Callable[[Any, Any], None]] = None,
+    ):
         if max_size < 1:
             raise ValueError(f"max_size must be at least 1, got {max_size}")
         self.max_size = max_size
+        self.on_evict = on_evict
         self._data = OrderedDict()
 
     def __getitem__(self, k):
@@ -93,7 +115,9 @@ class LRUObjStore(MutableMapping):
         self._data[k] = v
         self._data.move_to_end(k)
         while len(self._data) > self.max_size:
-            self._data.popitem(last=False)
+            evicted_k, evicted_v = self._data.popitem(last=False)
+            if self.on_evict is not None:
+                self.on_evict(evicted_k, evicted_v)
 
     def __delitem__(self, k):
         del self._data[k]
@@ -103,6 +127,142 @@ class LRUObjStore(MutableMapping):
 
     def __len__(self):
         return len(self._data)
+
+
+class _SharedObjects:
+    """``obj_owner=shared_objects``: objects belong to no one. Any client holding an
+    object id may use it, and every client's objects share one LRU store, so a client
+    creating objects evicts everyone else's. Only for trusted clients."""
+
+    def __repr__(self):
+        return "shared_objects"
+
+
+shared_objects = _SharedObjects()
+
+#: ``obj_owner`` hook: ``(request) -> owner``, a hashable that identifies an
+#: *authenticated* client (e.g. a user id from a verified token). ``None`` and ``""``
+#: mean "not identified" and are refused. A client-chosen value (a session cookie the
+#: client mints, an IP) lets one client create owners until others are evicted.
+ObjOwner = Callable[[Any], Optional[Any]]
+
+
+class OwnedObjStore:
+    """Objects kept per owner, with object and byte budgets. Thread-safe.
+
+    - ``quota`` objects per owner: an owner's own least recently used object is evicted
+      beyond it, never someone else's;
+    - ``max_owners`` owners at once: the least recently active owner's objects go;
+    - byte accounting: :meth:`record` the size of an object; :meth:`owner_bytes` and
+      :attr:`total_bytes` sum what is currently stored.
+
+    >>> s = OwnedObjStore(quota=2, max_owners=2)
+    >>> s.put('ann', 'a1', 1); s.put('ann', 'a2', 2); s.put('bob', 'b1', 3)
+    >>> s.put('ann', 'a3', 4)  # ann's quota: her least recently used object goes
+    >>> s.get('ann', 'a1') is None, s.get('ann', 'a3'), s.get('bob', 'b1')
+    (True, 4, 3)
+    >>> s.get('bob', 'a3') is None  # another owner's id is simply not found
+    True
+    >>> s.record('ann', 'a3', 100); s.record('bob', 'b1', 5)
+    >>> s.owner_bytes('ann'), s.total_bytes
+    (100, 105)
+    """
+
+    def __init__(
+        self, *, quota: int = DFLT_OBJ_QUOTA, max_owners: int = DFLT_MAX_OWNERS
+    ):
+        if max_owners < 1:
+            raise ValueError(f"max_owners must be at least 1, got {max_owners}")
+        LRUObjStore(max_size=quota)  # validates quota now, not on first use
+        self._quota = quota
+        self._lock = threading.RLock()
+        self._sizes: dict = {}  # (owner, obj_id) -> bytes last recorded
+        self.total_bytes = 0
+        self._owners = LRUObjStore(max_size=max_owners, on_evict=self._forget_owner)
+
+    def _forget(self, owner, obj_id):
+        self.total_bytes -= self._sizes.pop((owner, obj_id), 0)
+
+    def _forget_owner(self, owner, objects):
+        for obj_id in list(objects):
+            self._forget(owner, obj_id)
+
+    def _objects_of(self, owner, *, create: bool):
+        objects = self._owners.get(owner)
+        if objects is None and create:
+            objects = LRUObjStore(
+                max_size=self._quota,
+                on_evict=lambda obj_id, _obj: self._forget(owner, obj_id),
+            )
+            self._owners[owner] = objects
+        return objects
+
+    def put(self, owner, obj_id: str, obj) -> None:
+        with self._lock:
+            self._objects_of(owner, create=True)[obj_id] = obj
+
+    def get(self, owner, obj_id: str):
+        with self._lock:
+            objects = self._objects_of(owner, create=False)
+            return None if objects is None else objects.get(obj_id)
+
+    def drop(self, owner, obj_id: str) -> None:
+        with self._lock:
+            objects = self._objects_of(owner, create=False)
+            if objects is not None:
+                objects.pop(obj_id, None)
+            self._forget(owner, obj_id)
+
+    def record(self, owner, obj_id: str, size: int) -> None:
+        with self._lock:
+            if self.get(owner, obj_id) is None:
+                return  # evicted meanwhile
+            self.total_bytes += size - self._sizes.get((owner, obj_id), 0)
+            self._sizes[(owner, obj_id)] = size
+
+    def owner_bytes(self, owner) -> int:
+        with self._lock:
+            objects = self._owners._data.get(owner) or {}
+            return sum(self._sizes.get((owner, obj_id), 0) for obj_id in objects)
+
+
+_SHARED_SIZE_LEAVES = (type, ModuleType, FunctionType)
+
+
+def bounded_deep_sizeof(obj, limit: Optional[int] = None) -> int:
+    """Approximate memory held by ``obj`` and everything it references (containers,
+    instance ``__dict__`` and ``__slots__``), counting each object once. Stops as soon
+    as the total exceeds ``limit``, so measuring costs at most about ``limit`` bytes'
+    worth of objects. Classes, modules and functions are shared, so not counted.
+
+    >>> small, big = bounded_deep_sizeof([1, 2]), bounded_deep_sizeof(list(range(1000)))
+    >>> small < big
+    True
+    >>> bounded_deep_sizeof(list(range(10**6)), limit=1000) > 1000
+    True
+    """
+    seen, total, todo = set(), 0, deque([obj])
+    while todo:
+        o = todo.pop()
+        if id(o) in seen or isinstance(o, _SHARED_SIZE_LEAVES):
+            continue
+        seen.add(id(o))
+        total += sys.getsizeof(o, 0)
+        if limit is not None and total > limit:
+            break
+        if isinstance(o, dict):
+            todo.extend(o.keys())
+            todo.extend(o.values())
+        elif isinstance(o, (list, tuple, set, frozenset, deque)):
+            todo.extend(o)
+        if hasattr(o, "__dict__") and isinstance(vars(o), dict):
+            todo.append(vars(o))
+        for klass in type(o).__mro__:
+            slots = getattr(klass, "__slots__", ())
+            for slot in (slots,) if isinstance(slots, str) else slots:
+                if slot not in ("__dict__", "__weakref__") and hasattr(o, slot):
+                    todo.append(getattr(o, slot))
+    return total
 
 
 def public_attr(obj, attr_name: str) -> bool:
@@ -304,13 +464,18 @@ def mk_route(func, **configs):
 
     @handle_error
     def sync_handle_request(req):
-        inputs = input_mapper(req)
-        input_args, input_kwargs = get_input_args_and_kwargs(inputs)
-        raw_result = func(*input_args, **input_kwargs)
-        return output_mapper(raw_result, **inputs)
+        token = current_request.set(req)
+        try:
+            inputs = input_mapper(req)
+            input_args, input_kwargs = get_input_args_and_kwargs(inputs)
+            raw_result = func(*input_args, **input_kwargs)
+            return output_mapper(raw_result, **inputs)
+        finally:
+            current_request.reset(token)
 
     @handle_error
     async def aiohttp_handle_request(req):
+        current_request.set(req)  # each aiohttp request runs in its own task context
         inputs = input_mapper(req)
         if isawaitable(inputs):  # Pattern: pass-on async property
             inputs = await inputs
@@ -761,25 +926,7 @@ def _get_func_to_dispatch_handler(handler):
         # func = endpoint
     is_dispatchable = _attr_name_policy(attr_names)
     if inspect.isclass(endpoint):
-        cls = endpoint
-        obj_store = handler.get("obj_store")
-        if obj_store is None:
-            obj_store = LRUObjStore()
-
-        def func(_obj_id=None, _attr_name=None, **kwargs):
-            if _obj_id is None:
-                if _attr_name is not None:
-                    raise InputError("_attr_name must be None when _obj_id is None")
-                new_obj = cls(**kwargs)
-                new_id = str(uuid4())
-                obj_store[new_id] = new_obj
-                return new_id
-            obj = obj_store.get(_obj_id) if isinstance(_obj_id, str) else None
-            if obj is None:
-                raise InputError(f"No object found with id {_obj_id}")
-            if _attr_name is None:
-                raise InputError("_attr_name must be provided when _obj_id is not None")
-            return _get_attr_value(obj, _attr_name, is_dispatchable, **kwargs)
+        func = _class_endpoint_dispatcher(endpoint, handler, name, is_dispatchable)
 
     else:
 
@@ -787,6 +934,155 @@ def _get_func_to_dispatch_handler(handler):
             return _get_attr_value(endpoint, _attr_name, is_dispatchable, **kwargs)
 
     func.__name__ = name
+    return func
+
+
+class _MappingObjStore:
+    """``OwnedObjStore``'s interface over a user-given ``obj_store`` mapping
+    (``shared_objects`` mode): one owner, no byte accounting, a lock around access."""
+
+    total_bytes = 0
+
+    def __init__(self, mapping: MutableMapping):
+        self._mapping, self._lock = mapping, threading.RLock()
+
+    def put(self, owner, obj_id, obj):
+        with self._lock:
+            self._mapping[obj_id] = obj
+
+    def get(self, owner, obj_id):
+        with self._lock:
+            return self._mapping.get(obj_id)
+
+    def drop(self, owner, obj_id):
+        with self._lock:
+            self._mapping.pop(obj_id, None)
+
+    def record(self, owner, obj_id, size):
+        pass
+
+    def owner_bytes(self, owner):
+        return 0
+
+
+_SHARED_OWNER = "<shared>"
+
+
+def _class_endpoint_dispatcher(cls, handler, name, is_dispatchable):
+    """The function behind a class endpoint: called without ``_obj_id`` it creates an
+    object and returns its id; with one, it dispatches ``_attr_name`` on that object.
+
+    Handler options:
+
+    - ``obj_owner`` (required): ``(request) -> owner`` (see ``ObjOwner``), binding each
+      object to the client that created it (another owner's id is simply not found), or
+      ``shared_objects`` to let anyone holding an id use it. A class endpoint without
+      one is refused at build time.
+    - ``obj_quota``: objects kept per owner (``DFLT_OBJ_QUOTA``); an owner's least
+      recently used object is evicted beyond it. ``max_owners`` bounds the owners.
+    - ``obj_store``: ``shared_objects`` mode only, an id -> object mapping replacing the
+      default store (``DFLT_OBJ_STORE_MAX_SIZE`` objects); byte budgets other than
+      ``max_obj_size`` are then not tracked.
+    - ``max_obj_size`` (``DFLT_MAX_OBJ_SIZE``), ``max_owner_bytes``
+      (``DFLT_MAX_OWNER_BYTES``) and ``max_total_bytes`` (``DFLT_MAX_TOTAL_BYTES``):
+      bytes one object, all of one owner's objects, and all objects of the endpoint may
+      hold. Sizes come from ``obj_sizeof`` (default ``bounded_deep_sizeof``, which
+      stops at ``max_obj_size``, so measuring costs at most about that much), measured
+      after creation and after every dispatched call, failed ones included. The object
+      that takes a budget over it is dropped. ``None`` disables a budget. An object
+      referencing large shared data (a loaded model) counts that data: raise
+      ``max_obj_size`` or pass an ``obj_sizeof`` that skips it. A single call can still
+      allocate before it is measured.
+    """
+    owner_of = handler.get("obj_owner")
+    if owner_of is None:
+        raise ValueError(
+            f"Class endpoint {name!r} needs an obj_owner: a callable (request) -> owner "
+            "(e.g. the authenticated user id), so a client can only use the objects it "
+            "created. Pass obj_owner=shared_objects (from py2http.service) to let any "
+            "client holding an object id use the object, as before."
+        )
+    max_obj_size = handler.get("max_obj_size", DFLT_MAX_OBJ_SIZE)
+    max_owner_bytes = handler.get("max_owner_bytes", DFLT_MAX_OWNER_BYTES)
+    max_total_bytes = handler.get("max_total_bytes", DFLT_MAX_TOTAL_BYTES)
+    sizeof = handler.get("obj_sizeof", bounded_deep_sizeof)
+
+    if owner_of is shared_objects:
+        custom = handler.get("obj_store")
+        store = (
+            OwnedObjStore(quota=DFLT_OBJ_STORE_MAX_SIZE, max_owners=1)
+            if custom is None
+            else _MappingObjStore(custom)
+        )
+
+        def owner():
+            return _SHARED_OWNER
+
+    else:
+        if not callable(owner_of):
+            raise TypeError(f"obj_owner must be callable or shared_objects: {owner_of!r}")
+        if handler.get("obj_store") is not None:
+            raise ValueError(
+                "obj_store applies to obj_owner=shared_objects only; with an obj_owner "
+                "use obj_quota and max_owners."
+            )
+        store = OwnedObjStore(
+            quota=handler.get("obj_quota", DFLT_OBJ_QUOTA),
+            max_owners=handler.get("max_owners", DFLT_MAX_OWNERS),
+        )
+
+        def owner():
+            who = owner_of(current_request.get())
+            if who is None or who == "":
+                raise AuthorizationError(f"{name}: no owner for this request")
+            try:
+                hash(who)
+            except TypeError:
+                raise TypeError(
+                    f"obj_owner of {name!r} must return a hashable, got {type(who)}"
+                ) from None
+            return who
+
+    def over_budget(who, obj_id, obj):
+        """Why the object must go, or None. Records its size when it may stay."""
+        limit = max_obj_size
+        size = sizeof(obj, limit) if limit is not None else sizeof(obj, None)
+        if limit is not None and size > limit:
+            return f"grew past the size limit ({limit} bytes)"
+        store.record(who, obj_id, size)
+        if max_owner_bytes is not None and store.owner_bytes(who) > max_owner_bytes:
+            return f"takes its owner past {max_owner_bytes} bytes"
+        if max_total_bytes is not None and store.total_bytes > max_total_bytes:
+            return f"takes the endpoint past {max_total_bytes} bytes"
+        return None
+
+    def check_size(who, obj_id, obj):
+        no_budget = max_obj_size is max_owner_bytes is max_total_bytes is None
+        reason = None if no_budget else over_budget(who, obj_id, obj)
+        if reason is not None:
+            store.drop(who, obj_id)
+            raise InputError(f"Object {obj_id} {reason} and was dropped")
+
+    def func(_obj_id=None, _attr_name=None, **kwargs):
+        who = owner()
+        if _obj_id is None:
+            if _attr_name is not None:
+                raise InputError("_attr_name must be None when _obj_id is None")
+            new_obj = cls(**kwargs)
+            new_id = str(uuid4())
+            store.put(who, new_id, new_obj)
+            check_size(who, new_id, new_obj)
+            return new_id
+        obj = store.get(who, _obj_id) if isinstance(_obj_id, str) else None
+        if obj is None:
+            raise InputError(f"No object found with id {_obj_id}")
+        if _attr_name is None:
+            raise InputError("_attr_name must be provided when _obj_id is not None")
+        try:
+            return _get_attr_value(obj, _attr_name, is_dispatchable, **kwargs)
+        finally:  # a call that grows the object and then raises is measured too
+            check_size(who, _obj_id, obj)
+
     return func
 
 
