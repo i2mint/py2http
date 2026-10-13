@@ -168,7 +168,9 @@ def test_flask_openapi_only_when_published():
     def f():
         return 1
 
-    assert mk_app([f], framework="flask").test_client().get("/openapi").status_code == 404
+    assert (
+        mk_app([f], framework="flask").test_client().get("/openapi").status_code == 404
+    )
     published = mk_app([f], framework="flask", publish_openapi=True)
     assert published.test_client().get("/openapi").status_code == 200
 
