@@ -90,6 +90,7 @@
 <li class="toctree-l3"><a class="reference internal" href="py2http.decorators.html">py2http.decorators</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.default_configs.html">py2http.default_configs</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.diagnosis.html">py2http.diagnosis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="py2http.flask_plugins.html">py2http.flask_plugins</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.middleware.html">py2http.middleware</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.obj_dispatch.html">py2http.obj_dispatch</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.openapi_utils.html">py2http.openapi_utils</a></li>
@@ -280,8 +281,13 @@ configuration documentation.</p></li>
 <span class="sig-prename descclassname"><span class="pre">py2http.service.</span></span><span class="sig-name descname"><span class="pre">mk_flask_app</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">configs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/service.html#mk_flask_app"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.service.mk_flask_app" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.service.mk_flask_app'">¶</a></dt>
 <dd><p>A Flask app serving <code class="docutils literal notranslate"><span class="pre">funcs</span></code>. The JSON, raw, binary and form input mappers and
 the <code class="docutils literal notranslate"><span class="pre">send_*_resp</span></code> output mappers work as under Bottle; <code class="docutils literal notranslate"><span class="pre">middleware</span></code> is a list
-of WSGI wrappers; <code class="docutils literal notranslate"><span class="pre">plugins</span></code>, <code class="docutils literal notranslate"><span class="pre">enable_cors</span></code>, <code class="docutils literal notranslate"><span class="pre">publish_swagger</span></code> and
-<code class="docutils literal notranslate"><span class="pre">openapi_insecure</span></code> are Bottle’s, and raise <code class="docutils literal notranslate"><span class="pre">NotImplementedError</span></code> here.</p>
+of WSGI wrappers.</p>
+<p>As under Bottle, <code class="docutils literal notranslate"><span class="pre">plugins</span></code> guards every route (<code class="docutils literal notranslate"><span class="pre">JWTPlugin</span></code>, <code class="docutils literal notranslate"><span class="pre">ApiKeyAuthPlugin</span></code>;
+a Bottle-only plugin raises <code class="docutils literal notranslate"><span class="pre">NotImplementedError</span></code>) except <code class="docutils literal notranslate"><span class="pre">/ping</span></code>, and except
+<code class="docutils literal notranslate"><span class="pre">/openapi</span></code> when <code class="docutils literal notranslate"><span class="pre">openapi_insecure</span></code>; <code class="docutils literal notranslate"><span class="pre">enable_cors</span></code> adds the CORS headers
+(<code class="docutils literal notranslate"><span class="pre">cors_allowed_origins</span></code>) to every response; <code class="docutils literal notranslate"><span class="pre">publish_swagger</span></code> serves the Swagger
+UI at <code class="docutils literal notranslate"><span class="pre">swagger_url</span></code>, guarded by <code class="docutils literal notranslate"><span class="pre">plugins</span></code> like any other route. See
+<code class="docutils literal notranslate"><span class="pre">py2http.flask_plugins</span></code>.</p>
 </dd></dl>
 <dl class="py function">
 <dt class="sig sig-object py" id="py2http.service.mk_route">
@@ -347,7 +353,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=0cd3b383"></script>
+<script src="../_static/documentation_options.js?v=c75a234e"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

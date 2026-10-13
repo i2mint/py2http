@@ -136,8 +136,14 @@ API with a list of handlers for each API.
 
 A Flask app serving `funcs`. The JSON, raw, binary and form input mappers and
 the `send_*_resp` output mappers work as under Bottle; `middleware` is a list
-of WSGI wrappers; `plugins`, `enable_cors`, `publish_swagger` and
-`openapi_insecure` are Bottle’s, and raise `NotImplementedError` here.
+of WSGI wrappers.
+
+As under Bottle, `plugins` guards every route (`JWTPlugin`, `ApiKeyAuthPlugin`;
+a Bottle-only plugin raises `NotImplementedError`) except `/ping`, and except
+`/openapi` when `openapi_insecure`; `enable_cors` adds the CORS headers
+(`cors_allowed_origins`) to every response; `publish_swagger` serves the Swagger
+UI at `swagger_url`, guarded by `plugins` like any other route. See
+`py2http.flask_plugins`.
 
 ### py2http.service.mk_route(func, \*\*configs)
 

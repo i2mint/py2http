@@ -17,6 +17,7 @@
    decorators
    default_configs
    diagnosis
+   flask_plugins
    middleware
    obj_dispatch
    openapi_utils

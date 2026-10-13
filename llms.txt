@@ -19,6 +19,7 @@ Otosense
 - [py2http.decorators](_autosummary/py2http.decorators.html.md): Decorator tools for py2http.
 - [py2http.default_configs](_autosummary/py2http.default_configs.html.md): This module provides default configurations, input mappers, output mappers,
 - [py2http.diagnosis](_autosummary/py2http.diagnosis.html.md): This module is meant to contain diagnosis and validation tools.
+- [py2http.flask_plugins](_autosummary/py2http.flask_plugins.html.md): Flask counterparts of the Bottle plugins: auth as a &#96;before_request&#96; hook, CORS as an
 - [py2http.middleware](_autosummary/py2http.middleware.html.md): aiohttp middleware that guards every route of an app: &#96;mk_jwt_middleware&#96;
 - [py2http.obj_dispatch](_autosummary/py2http.obj_dispatch.html.md): Dispatching HTTP requests to the attributes of objects, classes and modules.
 - [py2http.openapi_utils](_autosummary/py2http.openapi_utils.html.md): This module is designed to generate OpenAPI specifications based on Python functions.
@@ -28,7 +29,7 @@ Otosense
 - [py2http.sizeof](_autosummary/py2http.sizeof.html.md): Approximate the memory an object holds, without walking more of it than a budget.
 - [py2http.types](_autosummary/py2http.types.html.md): This module defines several type aliases and constants related to function parameters and signatures...
 - [py2http.util](_autosummary/py2http.util.html.md): This module contains various utilities including a &#96;lazyprop&#96; descriptor for lazy loading properties...
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-13 14:30 UTC&#42;&#42; from commit &lt;a href="https://github.com/i2m...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-13 16:33 UTC&#42;&#42; from commit &lt;a href="https://github.com/i2m...
 
 ## Optional
 

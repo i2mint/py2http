@@ -120,6 +120,7 @@
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.decorators.html">py2http.decorators</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.default_configs.html">py2http.default_configs</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.diagnosis.html">py2http.diagnosis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.flask_plugins.html">py2http.flask_plugins</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.middleware.html">py2http.middleware</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.obj_dispatch.html">py2http.obj_dispatch</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.openapi_utils.html">py2http.openapi_utils</a></li>
@@ -178,9 +179,19 @@
   <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
       <li><a href="_autosummary/py2http.decorators.html#py2http.decorators.add_attrs">add_attrs() (in module py2http.decorators)</a>
 </li>
+      <li><a href="_autosummary/py2http.bottle_plugins.html#py2http.bottle_plugins.ApiKeyAuthPlugin">ApiKeyAuthPlugin (class in py2http.bottle_plugins)</a>
+</li>
+      <li><a href="_autosummary/py2http.auth.html#py2http.auth.AuthPlugin.authenticate">authenticate() (py2http.auth.AuthPlugin method)</a>
+
+      <ul style="list-style-type:none">
+        <li><a href="_autosummary/py2http.bottle_plugins.html#py2http.bottle_plugins.ApiKeyAuthPlugin.authenticate">(py2http.bottle_plugins.ApiKeyAuthPlugin method)</a>
+</li>
+        <li><a href="_autosummary/py2http.bottle_plugins.html#py2http.bottle_plugins.JWTPlugin.authenticate">(py2http.bottle_plugins.JWTPlugin method)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
-      <li><a href="_autosummary/py2http.bottle_plugins.html#py2http.bottle_plugins.ApiKeyAuthPlugin">ApiKeyAuthPlugin (class in py2http.bottle_plugins)</a>
+      <li><a href="_autosummary/py2http.auth.html#py2http.auth.AuthPlugin">AuthPlugin (class in py2http.auth)</a>
 </li>
   </ul></td>
   </tr>
@@ -204,10 +215,12 @@
   <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
       <li><a href="_autosummary/py2http.util.html#py2http.util.call_with_inputs">call_with_inputs() (in module py2http.util)</a>
 </li>
-      <li><a href="_autosummary/py2http.util.html#py2http.util.CreateProcess">CreateProcess (class in py2http.util)</a>
+      <li><a href="_autosummary/py2http.flask_plugins.html#py2http.flask_plugins.check_flask_plugins">check_flask_plugins() (in module py2http.flask_plugins)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
+      <li><a href="_autosummary/py2http.util.html#py2http.util.CreateProcess">CreateProcess (class in py2http.util)</a>
+</li>
       <li><a href="_autosummary/py2http.auth.html#py2http.auth.CredentialsRejected">CredentialsRejected</a>
 </li>
       <li><a href="_autosummary/py2http.obj_dispatch.html#py2http.obj_dispatch.current_request">current_request (in module py2http.obj_dispatch)</a>
@@ -350,7 +363,11 @@
 </li>
       <li><a href="_autosummary/py2http.service.html#py2http.service.mk_app">mk_app() (in module py2http.service)</a>
 </li>
+      <li><a href="_autosummary/py2http.flask_plugins.html#py2http.flask_plugins.mk_auth_hook">mk_auth_hook() (in module py2http.flask_plugins)</a>
+</li>
       <li><a href="_autosummary/py2http.config.html#py2http.config.mk_config">mk_config() (in module py2http.config)</a>
+</li>
+      <li><a href="_autosummary/py2http.flask_plugins.html#py2http.flask_plugins.mk_cors_hook">mk_cors_hook() (in module py2http.flask_plugins)</a>
 </li>
       <li><a href="_autosummary/py2http.service.html#py2http.service.mk_flask_app">mk_flask_app() (in module py2http.service)</a>
 </li>
@@ -383,6 +400,8 @@
         <li><a href="_autosummary/py2http.default_configs.html#module-py2http.default_configs">py2http.default_configs</a>
 </li>
         <li><a href="_autosummary/py2http.diagnosis.html#module-py2http.diagnosis">py2http.diagnosis</a>
+</li>
+        <li><a href="_autosummary/py2http.flask_plugins.html#module-py2http.flask_plugins">py2http.flask_plugins</a>
 </li>
         <li><a href="_autosummary/py2http.middleware.html#module-py2http.middleware">py2http.middleware</a>
 </li>
@@ -494,13 +513,20 @@
         <li><a href="_autosummary/py2http.default_configs.html#module-py2http.default_configs">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
       <li>
     py2http.diagnosis
 
       <ul style="list-style-type:none">
         <li><a href="_autosummary/py2http.diagnosis.html#module-py2http.diagnosis">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
+      <li>
+    py2http.flask_plugins
+
+      <ul style="list-style-type:none">
+        <li><a href="_autosummary/py2http.flask_plugins.html#module-py2http.flask_plugins">module</a>
 </li>
       </ul></li>
       <li>
@@ -661,7 +687,7 @@ Otosense&nbsp;</p>
 </footer>
     </div>
     
-    <script src="_static/documentation_options.js?v=0cd3b383"></script>
+    <script src="_static/documentation_options.js?v=c75a234e"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/clipboard.min.js?v=a7894cd8"></script>

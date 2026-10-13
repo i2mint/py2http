@@ -90,6 +90,7 @@
 <li class="toctree-l3"><a class="reference internal" href="py2http.decorators.html">py2http.decorators</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.default_configs.html">py2http.default_configs</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.diagnosis.html">py2http.diagnosis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="py2http.flask_plugins.html">py2http.flask_plugins</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.middleware.html">py2http.middleware</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.obj_dispatch.html">py2http.obj_dispatch</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.openapi_utils.html">py2http.openapi_utils</a></li>
@@ -161,6 +162,14 @@ both refuse the same tokens and keys for the same reasons.</p>
 </tr>
 </tbody>
 </table>
+<p class="rubric">Classes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#py2http.auth.AuthPlugin" title="py2http.auth.AuthPlugin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AuthPlugin</span></code></a>()</p></td>
+<td><p>What a plugin must be to guard a Flask app (see <code class="docutils literal notranslate"><span class="pre">py2http.flask_plugins</span></code>): a subclass with a <code class="docutils literal notranslate"><span class="pre">challenge</span></code> (the <code class="docutils literal notranslate"><span class="pre">WWW-Authenticate</span></code> value of a refusal) and an <code class="docutils literal notranslate"><span class="pre">authenticate</span></code> that raises <code class="docutils literal notranslate"><span class="pre">CredentialsRejected</span></code> to refuse a request.</p></td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Exceptions</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
@@ -169,6 +178,22 @@ both refuse the same tokens and keys for the same reasons.</p>
 </tr>
 </tbody>
 </table>
+<dl class="py class">
+<dt class="sig sig-object py" id="py2http.auth.AuthPlugin">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2http.auth.</span></span><span class="sig-name descname"><span class="pre">AuthPlugin</span></span><a class="reference internal" href="../_modules/py2http/auth.html#AuthPlugin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.auth.AuthPlugin" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.auth.AuthPlugin'">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" rel="nofollow noopener" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code><svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a></p>
+<p>What a plugin must be to guard a Flask app (see <code class="docutils literal notranslate"><span class="pre">py2http.flask_plugins</span></code>): a
+subclass with a <code class="docutils literal notranslate"><span class="pre">challenge</span></code> (the <code class="docutils literal notranslate"><span class="pre">WWW-Authenticate</span></code> value of a refusal) and an
+<code class="docutils literal notranslate"><span class="pre">authenticate</span></code> that raises <code class="docutils literal notranslate"><span class="pre">CredentialsRejected</span></code> to refuse a request. It is a
+marker class rather than a duck-typed method name, so that a plugin which merely has
+some <code class="docutils literal notranslate"><span class="pre">authenticate</span></code> method (returning <code class="docutils literal notranslate"><span class="pre">False</span></code> to refuse, say) can’t be mistaken
+for one and let everything through.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="py2http.auth.AuthPlugin.authenticate">
+<span class="sig-name descname"><span class="pre">authenticate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">authorization_header</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endpoint</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/auth.html#AuthPlugin.authenticate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.auth.AuthPlugin.authenticate" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.auth.AuthPlugin.authenticate'">¶</a></dt>
+<dd><p>The claims to put on the request, or <code class="docutils literal notranslate"><span class="pre">None</span></code>; <code class="docutils literal notranslate"><span class="pre">CredentialsRejected</span></code> refuses.</p>
+</dd></dl>
+</dd></dl>
 <dl class="py exception">
 <dt class="sig sig-object py" id="py2http.auth.CredentialsRejected">
 <span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2http.auth.</span></span><span class="sig-name descname"><span class="pre">CredentialsRejected</span></span><a class="reference internal" href="../_modules/py2http/auth.html#CredentialsRejected"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.auth.CredentialsRejected" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.auth.CredentialsRejected'">¶</a></dt>
@@ -267,6 +292,10 @@ tokens), or an HMAC algorithm is asked for with a non-<code class="docutils lite
 </div></div><aside class="hidden text-sm xl:block" id="right-sidebar">
 <div class="sticky top-16 -mt-10 max-h-[calc(100vh-5rem)] h-full overflow-y-auto pt-6 space-y-2"><p class="font-medium">On this page</p>
 <ul>
+<li><a :data-current="activeSection === '#py2http.auth.AuthPlugin'" class="reference internal" href="#py2http.auth.AuthPlugin"><code class="docutils literal notranslate"><span class="pre">AuthPlugin</span></code></a><ul>
+<li><a :data-current="activeSection === '#py2http.auth.AuthPlugin.authenticate'" class="reference internal" href="#py2http.auth.AuthPlugin.authenticate"><code class="docutils literal notranslate"><span class="pre">AuthPlugin.authenticate()</span></code></a></li>
+</ul>
+</li>
 <li><a :data-current="activeSection === '#py2http.auth.CredentialsRejected'" class="reference internal" href="#py2http.auth.CredentialsRejected"><code class="docutils literal notranslate"><span class="pre">CredentialsRejected</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.auth.bearer_token'" class="reference internal" href="#py2http.auth.bearer_token"><code class="docutils literal notranslate"><span class="pre">bearer_token()</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.auth.decode_jwt'" class="reference internal" href="#py2http.auth.decode_jwt"><code class="docutils literal notranslate"><span class="pre">decode_jwt()</span></code></a></li>
@@ -289,7 +318,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=0cd3b383"></script>
+<script src="../_static/documentation_options.js?v=c75a234e"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

@@ -15,6 +15,12 @@ py2http.auth
       key_matches
       required_key
    
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      AuthPlugin
+   
    .. rubric:: Exceptions
 
    .. autosummary::

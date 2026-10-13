@@ -17,6 +17,7 @@ Otosense
 - [py2http.decorators](py2http.decorators.html.md): Decorator tools for py2http.
 - [py2http.default_configs](py2http.default_configs.html.md): This module provides default configurations, input mappers, output mappers,
 - [py2http.diagnosis](py2http.diagnosis.html.md): This module is meant to contain diagnosis and validation tools.
+- [py2http.flask_plugins](py2http.flask_plugins.html.md): Flask counterparts of the Bottle plugins: auth as a &#96;before_request&#96; hook, CORS as an
 - [py2http.middleware](py2http.middleware.html.md): aiohttp middleware that guards every route of an app: &#96;mk_jwt_middleware&#96;
 - [py2http.obj_dispatch](py2http.obj_dispatch.html.md): Dispatching HTTP requests to the attributes of objects, classes and modules.
 - [py2http.openapi_utils](py2http.openapi_utils.html.md): This module is designed to generate OpenAPI specifications based on Python functions.

@@ -1,4 +1,4 @@
-> built 2026-10-13 14:30 UTC from 1a53505 (master) · py2http 0.1.73. Details: build_info.json
+> built 2026-10-13 16:33 UTC from fd0bbc0 (master) · py2http 0.1.74. Details: build_info.json
 
 # index.html.md
 
@@ -277,10 +277,30 @@ both refuse the same tokens and keys for the same reasons.
 | [`key_matches`](_autosummary/py2http.auth.html.md#py2http.auth.key_matches)(given, expected)                     | Whether the `given` credential equals `expected`, in constant time.                                                    |
 | [`required_key`](_autosummary/py2http.auth.html.md#py2http.auth.required_key)(key, \*[, name])                    | `key`, refused when empty: an empty key would let a request with no `Authorization` header through.                    |
 
+### Classes
+
+| [`AuthPlugin`](_autosummary/py2http.auth.html.md#py2http.auth.AuthPlugin)()   | What a plugin must be to guard a Flask app (see `py2http.flask_plugins`): a subclass with a `challenge` (the `WWW-Authenticate` value of a refusal) and an `authenticate` that raises `CredentialsRejected` to refuse a request.   |
+|-----------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+
 ### Exceptions
 
 | [`CredentialsRejected`](_autosummary/py2http.auth.html.md#py2http.auth.CredentialsRejected)   | A request's credentials were refused.   |
 |------------------------------------------------------------------------|-----------------------------------------|
+
+### *class* py2http.auth.AuthPlugin
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+What a plugin must be to guard a Flask app (see `py2http.flask_plugins`): a
+subclass with a `challenge` (the `WWW-Authenticate` value of a refusal) and an
+`authenticate` that raises `CredentialsRejected` to refuse a request. It is a
+marker class rather than a duck-typed method name, so that a plugin which merely has
+some `authenticate` method (returning `False` to refuse, say) can’t be mistaken
+for one and let everything through.
+
+#### authenticate(authorization_header, , method, endpoint)
+
+The claims to put on the request, or `None`; `CredentialsRejected` refuses.
 
 ### *exception* py2http.auth.CredentialsRejected
 
@@ -377,19 +397,30 @@ Plugins for adding middleware functionality to Bottle apps.
 
 ### *class* py2http.bottle_plugins.ApiKeyAuthPlugin(api_key)
 
-Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+Bases: [`AuthPlugin`](_autosummary/py2http.auth.html.md#py2http.auth.AuthPlugin)
 
 A plugin letting through only requests whose `Authorization` header is
 exactly `api_key` (compared in constant time; an empty key is refused).
 
+#### authenticate(authorization_header, , method, endpoint)
+
+`None` (the key sets nothing on the request) if the header is the key,
+else `CredentialsRejected`. Framework-independent, like `JWTPlugin`’s.
+
 ### *class* py2http.bottle_plugins.JWTPlugin(secret='', verify=True, mapper=None, ignore_methods=None, algorithms=None, , allow_mixed_algorithm_families=False, decode_kwargs=None)
 
-Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+Bases: [`AuthPlugin`](_autosummary/py2http.auth.html.md#py2http.auth.AuthPlugin)
 
 A plugin for validating JWTs and extracting their payloads.
 
 After optionally validating a JWT found in the request header, will assign a dict with the JWT claims
 to request.token.
+
+#### authenticate(authorization_header, , method, endpoint)
+
+The claims to put on the request (`None` when there are none to put), or
+`CredentialsRejected`. Framework-independent: the Bottle plugin and the Flask
+`before_request` hook (`py2http.flask_plugins`) both call it.
 
 
 # _autosummary/py2http.config.html.md
@@ -1243,6 +1274,60 @@ This module is meant to contain diagnosis and validation tools.
 |---------------------------|----|
 
 
+# _autosummary/py2http.flask_plugins.html.md
+
+# py2http.flask_plugins
+
+Flask counterparts of the Bottle plugins: auth as a `before_request` hook, CORS as an
+`after_request` hook.
+
+The credential checks are the plugins’ own (`JWTPlugin.authenticate`,
+`ApiKeyAuthPlugin.authenticate`, which call `py2http.auth`), so Bottle and Flask
+refuse the same requests for the same reasons. A plugin without an `authenticate`
+method is a Bottle-only plugin: it is refused with `NotImplementedError` rather than
+dropped, because a silently dropped auth plugin would leave its routes open.
+
+### Functions
+
+| [`check_flask_plugins`](_autosummary/py2http.flask_plugins.html.md#py2http.flask_plugins.check_flask_plugins)(plugins)                    | The `plugins` as a list, each known to work under Flask; else `NotImplementedError`.   |
+|--------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
+| [`mk_auth_hook`](_autosummary/py2http.flask_plugins.html.md#py2http.flask_plugins.mk_auth_hook)(plugins, \*, public_views[, cors]) | A `before_request` function running `plugins` (outermost first, as under Bottle).      |
+| [`mk_cors_hook`](_autosummary/py2http.flask_plugins.html.md#py2http.flask_plugins.mk_cors_hook)([origins])                         | An `after_request` function adding the CORS headers `CorsPlugin` adds.                 |
+
+### py2http.flask_plugins.check_flask_plugins(plugins)
+
+The `plugins` as a list, each known to work under Flask; else `NotImplementedError`.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)
+
+```pycon
+>>> check_flask_plugins(None)
+[]
+>>> check_flask_plugins([object()])
+Traceback (most recent call last):
+  ...
+NotImplementedError: The plugin <object object at ...> is Bottle-only...
+```
+
+### py2http.flask_plugins.mk_auth_hook(plugins, , public_views, cors=False)
+
+A `before_request` function running `plugins` (outermost first, as under Bottle).
+
+Everything is guarded except: the `public_views` (the view *functions* themselves,
+not endpoint names: a user function named `openapi` must stay guarded); a request that matched no
+route (it answers 404/405, as under Bottle, and runs no view); and, with `cors`,
+the `OPTIONS` preflight, which Bottle’s CORS plugin answers before any auth runs.
+A plugin’s claims go on `request.token`, where the endpoint finds them through
+`current_request`.
+
+### py2http.flask_plugins.mk_cors_hook(origins='\*')
+
+An `after_request` function adding the CORS headers `CorsPlugin` adds.
+
+Flask answers the `OPTIONS` preflight itself, so this only adds the headers.
+
+
 # _autosummary/py2http.html.md
 
 # py2http
@@ -1265,6 +1350,7 @@ the functionality of the HTTP services.
 | [`decorators`](_autosummary/py2http.decorators.html.md#module-py2http.decorators)           | Decorator tools for py2http.                                                                                                                                                                                                                                              |
 | [`default_configs`](_autosummary/py2http.default_configs.html.md#module-py2http.default_configs) | This module provides default configurations, input mappers, output mappers, and error handlers for an HTTP service implemented in Python using the py2http library.                                                                                                       |
 | [`diagnosis`](_autosummary/py2http.diagnosis.html.md#module-py2http.diagnosis)             | This module is meant to contain diagnosis and validation tools.                                                                                                                                                                                                           |
+| [`flask_plugins`](_autosummary/py2http.flask_plugins.html.md#module-py2http.flask_plugins)     | Flask counterparts of the Bottle plugins: auth as a `before_request` hook, CORS as an `after_request` hook.                                                                                                                                                               |
 | [`middleware`](_autosummary/py2http.middleware.html.md#module-py2http.middleware)           | aiohttp middleware that guards every route of an app: `mk_jwt_middleware` (a verified `Authorization: Bearer` JWT) and `mk_superadmin_middleware` (one shared key).                                                                                                       |
 | [`obj_dispatch`](_autosummary/py2http.obj_dispatch.html.md#module-py2http.obj_dispatch)       | Dispatching HTTP requests to the attributes of objects, classes and modules.                                                                                                                                                                                              |
 | [`openapi_utils`](_autosummary/py2http.openapi_utils.html.md#module-py2http.openapi_utils)     | This module is designed to generate OpenAPI specifications based on Python functions.                                                                                                                                                                                     |
@@ -1795,8 +1881,14 @@ API with a list of handlers for each API.
 
 A Flask app serving `funcs`. The JSON, raw, binary and form input mappers and
 the `send_*_resp` output mappers work as under Bottle; `middleware` is a list
-of WSGI wrappers; `plugins`, `enable_cors`, `publish_swagger` and
-`openapi_insecure` are Bottle’s, and raise `NotImplementedError` here.
+of WSGI wrappers.
+
+As under Bottle, `plugins` guards every route (`JWTPlugin`, `ApiKeyAuthPlugin`;
+a Bottle-only plugin raises `NotImplementedError`) except `/ping`, and except
+`/openapi` when `openapi_insecure`; `enable_cors` adds the CORS headers
+(`cors_allowed_origins`) to every response; `publish_swagger` serves the Swagger
+UI at `swagger_url`, guarded by `plugins` like any other route. See
+`py2http.flask_plugins`.
 
 ### py2http.service.mk_route(func, \*\*configs)
 
@@ -2204,7 +2296,7 @@ so that it can be jsonizable.
 
 # About this build
 
-This documentation was built on **2026-10-13 14:30 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/1a53505875077adabb54722ef5522719ce259c1d"><code>1a53505</code></a> on branch <code>master</code>, for **py2http 0.1.73** (from <code>setup.cfg</code>).
+This documentation was built on **2026-10-13 16:33 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/fd0bbc027a138234d0c57527cff24f20fc9a09fb"><code>fd0bbc0</code></a> on branch <code>master</code>, for **py2http 0.1.74** (from <code>setup.cfg</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -2213,9 +2305,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                       |
 |---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2http/commit/1a53505875077adabb54722ef5522719ce259c1d"><code>1a53505875077adabb54722ef5522719ce259c1d</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2http/commit/fd0bbc027a138234d0c57527cff24f20fc9a09fb"><code>fd0bbc027a138234d0c57527cff24f20fc9a09fb</code></a> |
 | Branch              | <code>master</code>                                                                                                                                   |
-| Tags at this commit | <code>0.1.73</code>                                                                                                                                   |
+| Tags at this commit | <code>0.1.74</code>                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                 |
 | Remote              | <code>https://github.com/i2mint/py2http</code>                                                                                                        |
 
@@ -2224,15 +2316,15 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2http</code>                                                                |
-| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38413615373">38413615373</a>       |
+| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38431191298">38431191298</a>       |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>9e72f89d582c4fe620764ea99ef7aecb9fd14f92</code> (in the history of the built commit) |
+| Event commit | <code>06f773d058ff02939f05ee53f6736ec887ab9830</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.15  |
+| epythet  | 0.2.17  |
 | Sphinx   | 9.1.0   |
 | docutils | 0.22.4  |
 | Python   | 3.12.15 |
@@ -2251,14 +2343,14 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2http/0.1.73/">0.1.73</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/py2http/0.1.74/">0.1.74</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2http && cd py2http
-git checkout 1a53505875077adabb54722ef5522719ce259c1d
-pip install "epythet==0.2.15"
+git checkout fd0bbc027a138234d0c57527cff24f20fc9a09fb
+pip install "epythet==0.2.17"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

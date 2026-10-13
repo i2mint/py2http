@@ -90,6 +90,7 @@
 <li class="toctree-l3"><a class="reference internal" href="py2http.decorators.html">py2http.decorators</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.default_configs.html">py2http.default_configs</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.diagnosis.html">py2http.diagnosis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="py2http.flask_plugins.html">py2http.flask_plugins</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.middleware.html">py2http.middleware</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.obj_dispatch.html">py2http.obj_dispatch</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.openapi_utils.html">py2http.openapi_utils</a></li>
@@ -159,31 +160,34 @@ the functionality of the HTTP services.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="py2http.diagnosis.html#module-py2http.diagnosis" title="py2http.diagnosis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">diagnosis</span></code></a></p></td>
 <td><p>This module is meant to contain diagnosis and validation tools.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="py2http.middleware.html#module-py2http.middleware" title="py2http.middleware"><code class="xref py py-obj docutils literal notranslate"><span class="pre">middleware</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="py2http.flask_plugins.html#module-py2http.flask_plugins" title="py2http.flask_plugins"><code class="xref py py-obj docutils literal notranslate"><span class="pre">flask_plugins</span></code></a></p></td>
+<td><p>Flask counterparts of the Bottle plugins: auth as a <code class="docutils literal notranslate"><span class="pre">before_request</span></code> hook, CORS as an <code class="docutils literal notranslate"><span class="pre">after_request</span></code> hook.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="py2http.middleware.html#module-py2http.middleware" title="py2http.middleware"><code class="xref py py-obj docutils literal notranslate"><span class="pre">middleware</span></code></a></p></td>
 <td><p>aiohttp middleware that guards every route of an app: <code class="docutils literal notranslate"><span class="pre">mk_jwt_middleware</span></code> (a verified <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span></code> JWT) and <code class="docutils literal notranslate"><span class="pre">mk_superadmin_middleware</span></code> (one shared key).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="py2http.obj_dispatch.html#module-py2http.obj_dispatch" title="py2http.obj_dispatch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_dispatch</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="py2http.obj_dispatch.html#module-py2http.obj_dispatch" title="py2http.obj_dispatch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_dispatch</span></code></a></p></td>
 <td><p>Dispatching HTTP requests to the attributes of objects, classes and modules.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="py2http.openapi_utils.html#module-py2http.openapi_utils" title="py2http.openapi_utils"><code class="xref py py-obj docutils literal notranslate"><span class="pre">openapi_utils</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="py2http.openapi_utils.html#module-py2http.openapi_utils" title="py2http.openapi_utils"><code class="xref py py-obj docutils literal notranslate"><span class="pre">openapi_utils</span></code></a></p></td>
 <td><p>This module is designed to generate OpenAPI specifications based on Python functions.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="py2http.route_utils.html#module-py2http.route_utils" title="py2http.route_utils"><code class="xref py py-obj docutils literal notranslate"><span class="pre">route_utils</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="py2http.route_utils.html#module-py2http.route_utils" title="py2http.route_utils"><code class="xref py py-obj docutils literal notranslate"><span class="pre">route_utils</span></code></a></p></td>
 <td><p>This module provides functionality to create handlers for class methods, based on input classes and method names.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="py2http.schema_tools.html#module-py2http.schema_tools" title="py2http.schema_tools"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schema_tools</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="py2http.schema_tools.html#module-py2http.schema_tools" title="py2http.schema_tools"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schema_tools</span></code></a></p></td>
 <td><p>This module provides functions for generating OpenAPI input and output schemas from Python functions, as well as validating input against a schema.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="py2http.service.html#module-py2http.service" title="py2http.service"><code class="xref py py-obj docutils literal notranslate"><span class="pre">service</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="py2http.service.html#module-py2http.service" title="py2http.service"><code class="xref py py-obj docutils literal notranslate"><span class="pre">service</span></code></a></p></td>
 <td><p>This Python module provides a framework for dispatching Python functions as HTTP services and generating OpenAPI specifications for these services.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="py2http.sizeof.html#module-py2http.sizeof" title="py2http.sizeof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sizeof</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="py2http.sizeof.html#module-py2http.sizeof" title="py2http.sizeof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sizeof</span></code></a></p></td>
 <td><p>Approximate the memory an object holds, without walking more of it than a budget.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="py2http.types.html#module-py2http.types" title="py2http.types"><code class="xref py py-obj docutils literal notranslate"><span class="pre">types</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="py2http.types.html#module-py2http.types" title="py2http.types"><code class="xref py py-obj docutils literal notranslate"><span class="pre">types</span></code></a></p></td>
 <td><p>This module defines several type aliases and constants related to function parameters and signatures.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="py2http.util.html#module-py2http.util" title="py2http.util"><code class="xref py py-obj docutils literal notranslate"><span class="pre">util</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="py2http.util.html#module-py2http.util" title="py2http.util"><code class="xref py py-obj docutils literal notranslate"><span class="pre">util</span></code></a></p></td>
 <td><p>This module contains various utilities including a <code class="code docutils literal notranslate"><span class="pre">lazyprop</span></code> descriptor for lazy loading properties, a <code class="code docutils literal notranslate"><span class="pre">CreateProcess</span></code> context manager for running functions in parallel processes, a <code class="code docutils literal notranslate"><span class="pre">ModuleFoundIgnore</span></code> context manager for ignoring <code class="code docutils literal notranslate"><span class="pre">ModuleNotFoundErrors</span></code>, and more.</p></td>
 </tr>
 </tbody>
@@ -202,7 +206,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=0cd3b383"></script>
+<script src="../_static/documentation_options.js?v=c75a234e"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

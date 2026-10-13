@@ -120,6 +120,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2http.decorators.html">py2http.decorators</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2http.default_configs.html">py2http.default_configs</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2http.diagnosis.html">py2http.diagnosis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2http.flask_plugins.html">py2http.flask_plugins</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2http.middleware.html">py2http.middleware</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2http.obj_dispatch.html">py2http.obj_dispatch</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2http.openapi_utils.html">py2http.openapi_utils</a></li>
@@ -190,185 +191,208 @@
 </span><span id="line-13"><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span>
 </span><span id="line-14"><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
 </span><span id="line-15">
-</span><span id="line-16"><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">"py2http"</span><span class="p">)</span>
+</span><span id="line-16"><span class="kn">from</span><span class="w"> </span><span class="nn">py2http.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">BEARER_CHALLENGE</span>
 </span><span id="line-17">
-</span><span id="line-18"><span class="n">DFLT_JWT_ALGORITHMS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"HS256"</span><span class="p">,)</span>
-</span><span id="line-19"><span class="c1"># ``jwt.decode`` arguments the verification setup owns, so ``decode_kwargs`` can't</span>
-</span><span id="line-20"><span class="n">_RESERVED_DECODE_KWARGS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">"jwt"</span><span class="p">,</span> <span class="s2">"key"</span><span class="p">,</span> <span class="s2">"algorithms"</span><span class="p">,</span> <span class="s2">"options"</span><span class="p">})</span>
-</span><span id="line-21"><span class="n">_BEARER_PREFIX</span> <span class="o">=</span> <span class="s2">"bearer "</span>
-</span><span id="line-22">
-</span><span id="line-23">
+</span><span id="line-18"><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">"py2http"</span><span class="p">)</span>
+</span><span id="line-19">
+</span><span id="line-20"><span class="n">DFLT_JWT_ALGORITHMS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"HS256"</span><span class="p">,)</span>
+</span><span id="line-21"><span class="c1"># ``jwt.decode`` arguments the verification setup owns, so ``decode_kwargs`` can't</span>
+</span><span id="line-22"><span class="n">_RESERVED_DECODE_KWARGS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">"jwt"</span><span class="p">,</span> <span class="s2">"key"</span><span class="p">,</span> <span class="s2">"algorithms"</span><span class="p">,</span> <span class="s2">"options"</span><span class="p">})</span>
+</span><span id="line-23"><span class="n">_BEARER_PREFIX</span> <span class="o">=</span> <span class="s2">"bearer "</span>
+</span><span id="line-24">
+</span><span id="line-25">
+<div class="viewcode-block" id="AuthPlugin">
+<a class="viewcode-back" href="../../_autosummary/py2http.auth.html#py2http.auth.AuthPlugin">[docs]</a>
+</span><span id="line-26"><span class="k">class</span><span class="w"> </span><span class="nc">AuthPlugin</span><span class="p">:</span>
+</span><span id="line-27"><span class="w">    </span><span class="sd">"""What a plugin must be to guard a Flask app (see ``py2http.flask_plugins``): a</span>
+</span><span id="line-28"><span class="sd">    subclass with a ``challenge`` (the ``WWW-Authenticate`` value of a refusal) and an</span>
+</span><span id="line-29"><span class="sd">    ``authenticate`` that raises ``CredentialsRejected`` to refuse a request. It is a</span>
+</span><span id="line-30"><span class="sd">    marker class rather than a duck-typed method name, so that a plugin which merely has</span>
+</span><span id="line-31"><span class="sd">    some ``authenticate`` method (returning ``False`` to refuse, say) can't be mistaken</span>
+</span><span id="line-32"><span class="sd">    for one and let everything through."""</span>
+</span><span id="line-33">
+</span><span id="line-34">    <span class="n">challenge</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">BEARER_CHALLENGE</span>
+</span><span id="line-35">
+<div class="viewcode-block" id="AuthPlugin.authenticate">
+<a class="viewcode-back" href="../../_autosummary/py2http.auth.html#py2http.auth.AuthPlugin.authenticate">[docs]</a>
+</span><span id="line-36">    <span class="k">def</span><span class="w"> </span><span class="nf">authenticate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">authorization_header</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">):</span>
+</span><span id="line-37"><span class="w">        </span><span class="sd">"""The claims to put on the request, or ``None``; ``CredentialsRejected`` refuses."""</span>
+</span><span id="line-38">        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</div>
+
+</span><span id="line-39">
+</span><span id="line-40">
 <div class="viewcode-block" id="CredentialsRejected">
 <a class="viewcode-back" href="../../_autosummary/py2http.auth.html#py2http.auth.CredentialsRejected">[docs]</a>
-</span><span id="line-24"><span class="k">class</span><span class="w"> </span><span class="nc">CredentialsRejected</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-</span><span id="line-25"><span class="w">    </span><span class="sd">"""A request's credentials were refused. The message is safe to show the client:</span>
-</span><span id="line-26"><span class="sd">    it never contains the token, nor anything about the server's key."""</span></div>
+</span><span id="line-41"><span class="k">class</span><span class="w"> </span><span class="nc">CredentialsRejected</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+</span><span id="line-42"><span class="w">    </span><span class="sd">"""A request's credentials were refused. The message is safe to show the client:</span>
+</span><span id="line-43"><span class="sd">    it never contains the token, nor anything about the server's key."""</span></div>
 
-</span><span id="line-27">
-</span><span id="line-28">
-</span><span id="line-29"><span class="k">def</span><span class="w"> </span><span class="nf">_algorithm_family</span><span class="p">(</span><span class="n">algorithm</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span id="line-30"><span class="w">    </span><span class="sd">"""The key family an algorithm verifies with: a shared secret for ``HS*``, a</span>
-</span><span id="line-31"><span class="sd">    public key otherwise.</span>
-</span><span id="line-32">
-</span><span id="line-33"><span class="sd">    &gt;&gt;&gt; _algorithm_family('HS512'), _algorithm_family('RS256'), _algorithm_family('ES256')</span>
-</span><span id="line-34"><span class="sd">    ('hmac', 'public-key', 'public-key')</span>
-</span><span id="line-35"><span class="sd">    """</span>
-</span><span id="line-36">    <span class="k">return</span> <span class="s2">"hmac"</span> <span class="k">if</span> <span class="n">algorithm</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"HS"</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"public-key"</span>
-</span><span id="line-37">
-</span><span id="line-38">
-</span><span id="line-39"><span class="k">def</span><span class="w"> </span><span class="nf">_names</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-</span><span id="line-40">    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)):</span>
-</span><span id="line-41">        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> must be a list of names, e.g. [</span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2">]"</span><span class="p">)</span>
-</span><span id="line-42">    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-</span><span id="line-43">
 </span><span id="line-44">
+</span><span id="line-45">
+</span><span id="line-46"><span class="k">def</span><span class="w"> </span><span class="nf">_algorithm_family</span><span class="p">(</span><span class="n">algorithm</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="line-47"><span class="w">    </span><span class="sd">"""The key family an algorithm verifies with: a shared secret for ``HS*``, a</span>
+</span><span id="line-48"><span class="sd">    public key otherwise.</span>
+</span><span id="line-49">
+</span><span id="line-50"><span class="sd">    &gt;&gt;&gt; _algorithm_family('HS512'), _algorithm_family('RS256'), _algorithm_family('ES256')</span>
+</span><span id="line-51"><span class="sd">    ('hmac', 'public-key', 'public-key')</span>
+</span><span id="line-52"><span class="sd">    """</span>
+</span><span id="line-53">    <span class="k">return</span> <span class="s2">"hmac"</span> <span class="k">if</span> <span class="n">algorithm</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"HS"</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"public-key"</span>
+</span><span id="line-54">
+</span><span id="line-55">
+</span><span id="line-56"><span class="k">def</span><span class="w"> </span><span class="nf">_names</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+</span><span id="line-57">    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)):</span>
+</span><span id="line-58">        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> must be a list of names, e.g. [</span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2">]"</span><span class="p">)</span>
+</span><span id="line-59">    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</span><span id="line-60">
+</span><span id="line-61">
 <div class="viewcode-block" id="jwt_algorithms">
 <a class="viewcode-back" href="../../_autosummary/py2http.auth.html#py2http.auth.jwt_algorithms">[docs]</a>
-</span><span id="line-45"><span class="k">def</span><span class="w"> </span><span class="nf">jwt_algorithms</span><span class="p">(</span>
-</span><span id="line-46">    <span class="n">secret</span><span class="p">,</span>
-</span><span id="line-47">    <span class="o">*</span><span class="p">,</span>
-</span><span id="line-48">    <span class="n">verify</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-</span><span id="line-49">    <span class="n">algorithms</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">DFLT_JWT_ALGORITHMS</span><span class="p">,</span>
-</span><span id="line-50">    <span class="n">allow_mixed_algorithm_families</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="line-51"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-</span><span id="line-52"><span class="w">    </span><span class="sd">"""Validate a JWT verification setup, returning the algorithms as a list.</span>
-</span><span id="line-53">
-</span><span id="line-54"><span class="sd">    Raises at construction time, rather than accepting forgeries at request time, when:</span>
-</span><span id="line-55">
-</span><span id="line-56"><span class="sd">    - ``algorithms`` is empty, a bare string, or names an unknown or unsigned (``none``)</span>
-</span><span id="line-57"><span class="sd">      algorithm (PyJWT names are case-sensitive);</span>
-</span><span id="line-58"><span class="sd">    - ``verify`` is True and ``secret`` is empty (an empty HMAC secret lets anyone sign</span>
-</span><span id="line-59"><span class="sd">      tokens), or an HMAC algorithm is asked for with a non-``str``/``bytes`` secret;</span>
-</span><span id="line-60"><span class="sd">    - ``verify`` is True and HMAC and public-key algorithms are mixed with one</span>
-</span><span id="line-61"><span class="sd">      ``secret`` (the classic algorithm-confusion setup), unless</span>
-</span><span id="line-62"><span class="sd">      ``allow_mixed_algorithm_families`` is True.</span>
-</span><span id="line-63">
-</span><span id="line-64"><span class="sd">    &gt;&gt;&gt; jwt_algorithms('s3cret')</span>
-</span><span id="line-65"><span class="sd">    ['HS256']</span>
-</span><span id="line-66"><span class="sd">    &gt;&gt;&gt; jwt_algorithms('', algorithms=['HS256'])</span>
-</span><span id="line-67"><span class="sd">    Traceback (most recent call last):</span>
-</span><span id="line-68"><span class="sd">      ...</span>
-</span><span id="line-69"><span class="sd">    ValueError: secret must be a non-empty key when verify=True</span>
-</span><span id="line-70"><span class="sd">    """</span>
-</span><span id="line-71">    <span class="kn">import</span><span class="w"> </span><span class="nn">jwt</span>
+</span><span id="line-62"><span class="k">def</span><span class="w"> </span><span class="nf">jwt_algorithms</span><span class="p">(</span>
+</span><span id="line-63">    <span class="n">secret</span><span class="p">,</span>
+</span><span id="line-64">    <span class="o">*</span><span class="p">,</span>
+</span><span id="line-65">    <span class="n">verify</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="line-66">    <span class="n">algorithms</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">DFLT_JWT_ALGORITHMS</span><span class="p">,</span>
+</span><span id="line-67">    <span class="n">allow_mixed_algorithm_families</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="line-68"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+</span><span id="line-69"><span class="w">    </span><span class="sd">"""Validate a JWT verification setup, returning the algorithms as a list.</span>
+</span><span id="line-70">
+</span><span id="line-71"><span class="sd">    Raises at construction time, rather than accepting forgeries at request time, when:</span>
 </span><span id="line-72">
-</span><span id="line-73">    <span class="n">algorithms</span> <span class="o">=</span> <span class="n">_names</span><span class="p">(</span><span class="s2">"algorithms"</span><span class="p">,</span> <span class="n">algorithms</span><span class="p">)</span>
-</span><span id="line-74">    <span class="k">if</span> <span class="ow">not</span> <span class="n">algorithms</span><span class="p">:</span>
-</span><span id="line-75">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"algorithms must name at least one JWT algorithm"</span><span class="p">)</span>
-</span><span id="line-76">    <span class="n">known</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">jwt</span><span class="o">.</span><span class="n">algorithms</span><span class="o">.</span><span class="n">get_default_algorithms</span><span class="p">())</span> <span class="o">-</span> <span class="p">{</span><span class="s2">"none"</span><span class="p">}</span>
-</span><span id="line-77">    <span class="k">if</span> <span class="n">unknown</span> <span class="o">:=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">algorithms</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">known</span><span class="p">]:</span>
-</span><span id="line-78">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span id="line-79">            <span class="sa">f</span><span class="s2">"Unknown or unsigned JWT algorithm(s) </span><span class="si">{</span><span class="n">unknown</span><span class="si">}</span><span class="s2">; names are "</span>
-</span><span id="line-80">            <span class="sa">f</span><span class="s2">"case-sensitive, choose from </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">known</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
-</span><span id="line-81">        <span class="p">)</span>
-</span><span id="line-82">    <span class="k">if</span> <span class="n">verify</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">secret</span><span class="p">:</span>
-</span><span id="line-83">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"secret must be a non-empty key when verify=True"</span><span class="p">)</span>
-</span><span id="line-84">    <span class="n">families</span> <span class="o">=</span> <span class="p">{</span><span class="n">_algorithm_family</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">algorithms</span><span class="p">}</span>
-</span><span id="line-85">    <span class="k">if</span> <span class="n">verify</span> <span class="ow">and</span> <span class="s2">"hmac"</span> <span class="ow">in</span> <span class="n">families</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">secret</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)):</span>
-</span><span id="line-86">        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"an HMAC secret must be str or bytes, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">secret</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</span><span id="line-87">    <span class="k">if</span> <span class="n">verify</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">families</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">allow_mixed_algorithm_families</span><span class="p">:</span>
-</span><span id="line-88">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span id="line-89">            <span class="sa">f</span><span class="s2">"algorithms=</span><span class="si">{</span><span class="n">algorithms</span><span class="si">}</span><span class="s2"> mixes HMAC and public-key algorithms with one "</span>
-</span><span id="line-90">            <span class="s2">"secret, which allows algorithm-confusion forgeries; use one family, or "</span>
-</span><span id="line-91">            <span class="s2">"pass allow_mixed_algorithm_families=True if you really mean it"</span>
-</span><span id="line-92">        <span class="p">)</span>
-</span><span id="line-93">    <span class="k">return</span> <span class="n">algorithms</span></div>
+</span><span id="line-73"><span class="sd">    - ``algorithms`` is empty, a bare string, or names an unknown or unsigned (``none``)</span>
+</span><span id="line-74"><span class="sd">      algorithm (PyJWT names are case-sensitive);</span>
+</span><span id="line-75"><span class="sd">    - ``verify`` is True and ``secret`` is empty (an empty HMAC secret lets anyone sign</span>
+</span><span id="line-76"><span class="sd">      tokens), or an HMAC algorithm is asked for with a non-``str``/``bytes`` secret;</span>
+</span><span id="line-77"><span class="sd">    - ``verify`` is True and HMAC and public-key algorithms are mixed with one</span>
+</span><span id="line-78"><span class="sd">      ``secret`` (the classic algorithm-confusion setup), unless</span>
+</span><span id="line-79"><span class="sd">      ``allow_mixed_algorithm_families`` is True.</span>
+</span><span id="line-80">
+</span><span id="line-81"><span class="sd">    &gt;&gt;&gt; jwt_algorithms('s3cret')</span>
+</span><span id="line-82"><span class="sd">    ['HS256']</span>
+</span><span id="line-83"><span class="sd">    &gt;&gt;&gt; jwt_algorithms('', algorithms=['HS256'])</span>
+</span><span id="line-84"><span class="sd">    Traceback (most recent call last):</span>
+</span><span id="line-85"><span class="sd">      ...</span>
+</span><span id="line-86"><span class="sd">    ValueError: secret must be a non-empty key when verify=True</span>
+</span><span id="line-87"><span class="sd">    """</span>
+</span><span id="line-88">    <span class="kn">import</span><span class="w"> </span><span class="nn">jwt</span>
+</span><span id="line-89">
+</span><span id="line-90">    <span class="n">algorithms</span> <span class="o">=</span> <span class="n">_names</span><span class="p">(</span><span class="s2">"algorithms"</span><span class="p">,</span> <span class="n">algorithms</span><span class="p">)</span>
+</span><span id="line-91">    <span class="k">if</span> <span class="ow">not</span> <span class="n">algorithms</span><span class="p">:</span>
+</span><span id="line-92">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"algorithms must name at least one JWT algorithm"</span><span class="p">)</span>
+</span><span id="line-93">    <span class="n">known</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">jwt</span><span class="o">.</span><span class="n">algorithms</span><span class="o">.</span><span class="n">get_default_algorithms</span><span class="p">())</span> <span class="o">-</span> <span class="p">{</span><span class="s2">"none"</span><span class="p">}</span>
+</span><span id="line-94">    <span class="k">if</span> <span class="n">unknown</span> <span class="o">:=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">algorithms</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">known</span><span class="p">]:</span>
+</span><span id="line-95">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span id="line-96">            <span class="sa">f</span><span class="s2">"Unknown or unsigned JWT algorithm(s) </span><span class="si">{</span><span class="n">unknown</span><span class="si">}</span><span class="s2">; names are "</span>
+</span><span id="line-97">            <span class="sa">f</span><span class="s2">"case-sensitive, choose from </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">known</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+</span><span id="line-98">        <span class="p">)</span>
+</span><span id="line-99">    <span class="k">if</span> <span class="n">verify</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">secret</span><span class="p">:</span>
+</span><span id="line-100">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"secret must be a non-empty key when verify=True"</span><span class="p">)</span>
+</span><span id="line-101">    <span class="n">families</span> <span class="o">=</span> <span class="p">{</span><span class="n">_algorithm_family</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">algorithms</span><span class="p">}</span>
+</span><span id="line-102">    <span class="k">if</span> <span class="n">verify</span> <span class="ow">and</span> <span class="s2">"hmac"</span> <span class="ow">in</span> <span class="n">families</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">secret</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)):</span>
+</span><span id="line-103">        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"an HMAC secret must be str or bytes, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">secret</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</span><span id="line-104">    <span class="k">if</span> <span class="n">verify</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">families</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">allow_mixed_algorithm_families</span><span class="p">:</span>
+</span><span id="line-105">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span id="line-106">            <span class="sa">f</span><span class="s2">"algorithms=</span><span class="si">{</span><span class="n">algorithms</span><span class="si">}</span><span class="s2"> mixes HMAC and public-key algorithms with one "</span>
+</span><span id="line-107">            <span class="s2">"secret, which allows algorithm-confusion forgeries; use one family, or "</span>
+</span><span id="line-108">            <span class="s2">"pass allow_mixed_algorithm_families=True if you really mean it"</span>
+</span><span id="line-109">        <span class="p">)</span>
+</span><span id="line-110">    <span class="k">return</span> <span class="n">algorithms</span></div>
 
-</span><span id="line-94">
-</span><span id="line-95">
+</span><span id="line-111">
+</span><span id="line-112">
 <div class="viewcode-block" id="jwt_decode_kwargs">
 <a class="viewcode-back" href="../../_autosummary/py2http.auth.html#py2http.auth.jwt_decode_kwargs">[docs]</a>
-</span><span id="line-96"><span class="k">def</span><span class="w"> </span><span class="nf">jwt_decode_kwargs</span><span class="p">(</span><span class="n">decode_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span id="line-97"><span class="w">    </span><span class="sd">"""Validate extra ``jwt.decode`` arguments (``audience``, ``issuer``,</span>
-</span><span id="line-98"><span class="sd">    ``leeway``...), refusing those the verification setup owns.</span>
-</span><span id="line-99">
-</span><span id="line-100"><span class="sd">    &gt;&gt;&gt; jwt_decode_kwargs({'audience': 'my-api'})</span>
-</span><span id="line-101"><span class="sd">    {'audience': 'my-api'}</span>
-</span><span id="line-102"><span class="sd">    &gt;&gt;&gt; jwt_decode_kwargs({'options': {'verify_signature': False}})</span>
-</span><span id="line-103"><span class="sd">    Traceback (most recent call last):</span>
-</span><span id="line-104"><span class="sd">      ...</span>
-</span><span id="line-105"><span class="sd">    ValueError: decode_kwargs may not set ['options']; use verify= and algorithms=</span>
-</span><span id="line-106"><span class="sd">    """</span>
-</span><span id="line-107">    <span class="n">decode_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">decode_kwargs</span> <span class="ow">or</span> <span class="p">{})</span>
-</span><span id="line-108">    <span class="k">if</span> <span class="n">reserved</span> <span class="o">:=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">_RESERVED_DECODE_KWARGS</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">decode_kwargs</span><span class="p">)):</span>
-</span><span id="line-109">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span id="line-110">            <span class="sa">f</span><span class="s2">"decode_kwargs may not set </span><span class="si">{</span><span class="n">reserved</span><span class="si">}</span><span class="s2">; use verify= and algorithms="</span>
-</span><span id="line-111">        <span class="p">)</span>
-</span><span id="line-112">    <span class="k">return</span> <span class="n">decode_kwargs</span></div>
+</span><span id="line-113"><span class="k">def</span><span class="w"> </span><span class="nf">jwt_decode_kwargs</span><span class="p">(</span><span class="n">decode_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span id="line-114"><span class="w">    </span><span class="sd">"""Validate extra ``jwt.decode`` arguments (``audience``, ``issuer``,</span>
+</span><span id="line-115"><span class="sd">    ``leeway``...), refusing those the verification setup owns.</span>
+</span><span id="line-116">
+</span><span id="line-117"><span class="sd">    &gt;&gt;&gt; jwt_decode_kwargs({'audience': 'my-api'})</span>
+</span><span id="line-118"><span class="sd">    {'audience': 'my-api'}</span>
+</span><span id="line-119"><span class="sd">    &gt;&gt;&gt; jwt_decode_kwargs({'options': {'verify_signature': False}})</span>
+</span><span id="line-120"><span class="sd">    Traceback (most recent call last):</span>
+</span><span id="line-121"><span class="sd">      ...</span>
+</span><span id="line-122"><span class="sd">    ValueError: decode_kwargs may not set ['options']; use verify= and algorithms=</span>
+</span><span id="line-123"><span class="sd">    """</span>
+</span><span id="line-124">    <span class="n">decode_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">decode_kwargs</span> <span class="ow">or</span> <span class="p">{})</span>
+</span><span id="line-125">    <span class="k">if</span> <span class="n">reserved</span> <span class="o">:=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">_RESERVED_DECODE_KWARGS</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">decode_kwargs</span><span class="p">)):</span>
+</span><span id="line-126">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span id="line-127">            <span class="sa">f</span><span class="s2">"decode_kwargs may not set </span><span class="si">{</span><span class="n">reserved</span><span class="si">}</span><span class="s2">; use verify= and algorithms="</span>
+</span><span id="line-128">        <span class="p">)</span>
+</span><span id="line-129">    <span class="k">return</span> <span class="n">decode_kwargs</span></div>
 
-</span><span id="line-113">
-</span><span id="line-114">
+</span><span id="line-130">
+</span><span id="line-131">
 <div class="viewcode-block" id="bearer_token">
 <a class="viewcode-back" href="../../_autosummary/py2http.auth.html#py2http.auth.bearer_token">[docs]</a>
-</span><span id="line-115"><span class="k">def</span><span class="w"> </span><span class="nf">bearer_token</span><span class="p">(</span><span class="n">authorization_header</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span id="line-116"><span class="w">    </span><span class="sd">"""The token of an ``Authorization: Bearer &lt;token&gt;`` header, or ``''``."""</span>
-</span><span id="line-117">    <span class="n">header</span> <span class="o">=</span> <span class="n">authorization_header</span> <span class="ow">or</span> <span class="s2">""</span>
-</span><span id="line-118">    <span class="k">if</span> <span class="n">header</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">_BEARER_PREFIX</span><span class="p">)]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="n">_BEARER_PREFIX</span><span class="p">:</span>
-</span><span id="line-119">        <span class="k">return</span> <span class="s2">""</span>
-</span><span id="line-120">    <span class="k">return</span> <span class="n">header</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">_BEARER_PREFIX</span><span class="p">)</span> <span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span></div>
+</span><span id="line-132"><span class="k">def</span><span class="w"> </span><span class="nf">bearer_token</span><span class="p">(</span><span class="n">authorization_header</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="line-133"><span class="w">    </span><span class="sd">"""The token of an ``Authorization: Bearer &lt;token&gt;`` header, or ``''``."""</span>
+</span><span id="line-134">    <span class="n">header</span> <span class="o">=</span> <span class="n">authorization_header</span> <span class="ow">or</span> <span class="s2">""</span>
+</span><span id="line-135">    <span class="k">if</span> <span class="n">header</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">_BEARER_PREFIX</span><span class="p">)]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="n">_BEARER_PREFIX</span><span class="p">:</span>
+</span><span id="line-136">        <span class="k">return</span> <span class="s2">""</span>
+</span><span id="line-137">    <span class="k">return</span> <span class="n">header</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">_BEARER_PREFIX</span><span class="p">)</span> <span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span></div>
 
-</span><span id="line-121">
-</span><span id="line-122">
+</span><span id="line-138">
+</span><span id="line-139">
 <div class="viewcode-block" id="decode_jwt">
 <a class="viewcode-back" href="../../_autosummary/py2http.auth.html#py2http.auth.decode_jwt">[docs]</a>
-</span><span id="line-123"><span class="k">def</span><span class="w"> </span><span class="nf">decode_jwt</span><span class="p">(</span>
-</span><span id="line-124">    <span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span id="line-125">    <span class="n">secret</span><span class="p">,</span>
-</span><span id="line-126">    <span class="o">*</span><span class="p">,</span>
-</span><span id="line-127">    <span class="n">algorithms</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
-</span><span id="line-128">    <span class="n">verify</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-</span><span id="line-129">    <span class="n">decode_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="line-130"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span id="line-131"><span class="w">    </span><span class="sd">"""The claims of ``token``, or ``CredentialsRejected`` with a client-safe reason.</span>
-</span><span id="line-132">
-</span><span id="line-133"><span class="sd">    With ``verify=False`` neither the signature nor the claims (``exp``...) are checked.</span>
-</span><span id="line-134"><span class="sd">    ``decode_kwargs`` (``audience``, ``issuer``, ``leeway``...) go to ``jwt.decode``.</span>
-</span><span id="line-135"><span class="sd">    """</span>
-</span><span id="line-136">    <span class="kn">import</span><span class="w"> </span><span class="nn">jwt</span>
-</span><span id="line-137">
-</span><span id="line-138">    <span class="k">try</span><span class="p">:</span>
-</span><span id="line-139">        <span class="k">return</span> <span class="n">jwt</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span>
-</span><span id="line-140">            <span class="n">token</span><span class="p">,</span>
-</span><span id="line-141">            <span class="n">secret</span><span class="p">,</span>
-</span><span id="line-142">            <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">"verify_signature"</span><span class="p">:</span> <span class="n">verify</span><span class="p">},</span>
-</span><span id="line-143">            <span class="n">algorithms</span><span class="o">=</span><span class="n">algorithms</span><span class="p">,</span>
-</span><span id="line-144">            <span class="o">**</span><span class="p">(</span><span class="n">decode_kwargs</span> <span class="ow">or</span> <span class="p">{}),</span>
-</span><span id="line-145">        <span class="p">)</span>
-</span><span id="line-146">    <span class="k">except</span> <span class="n">jwt</span><span class="o">.</span><span class="n">InvalidTokenError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># its text describes the token</span>
-</span><span id="line-147">        <span class="k">raise</span> <span class="n">CredentialsRejected</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid authentication token: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
-</span><span id="line-148">    <span class="k">except</span> <span class="p">(</span><span class="n">jwt</span><span class="o">.</span><span class="n">PyJWTError</span><span class="p">,</span> <span class="ne">UnicodeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
-</span><span id="line-149">        <span class="c1"># a key unfit for the token's alg (InvalidKeyError...) describes the server's</span>
-</span><span id="line-150">        <span class="c1"># key, so it is logged rather than sent; a non-UTF-8 header is just refused</span>
-</span><span id="line-151">        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="ne">UnicodeError</span><span class="p">):</span>
-</span><span id="line-152">            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"JWT rejected for a server-side reason: </span><span class="si">%r</span><span class="s2">"</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
-</span><span id="line-153">        <span class="k">raise</span> <span class="n">CredentialsRejected</span><span class="p">(</span>
-</span><span id="line-154">            <span class="s2">"Invalid authentication token: not acceptable"</span>
-</span><span id="line-155">        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span></div>
+</span><span id="line-140"><span class="k">def</span><span class="w"> </span><span class="nf">decode_jwt</span><span class="p">(</span>
+</span><span id="line-141">    <span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="line-142">    <span class="n">secret</span><span class="p">,</span>
+</span><span id="line-143">    <span class="o">*</span><span class="p">,</span>
+</span><span id="line-144">    <span class="n">algorithms</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+</span><span id="line-145">    <span class="n">verify</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="line-146">    <span class="n">decode_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="line-147"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span id="line-148"><span class="w">    </span><span class="sd">"""The claims of ``token``, or ``CredentialsRejected`` with a client-safe reason.</span>
+</span><span id="line-149">
+</span><span id="line-150"><span class="sd">    With ``verify=False`` neither the signature nor the claims (``exp``...) are checked.</span>
+</span><span id="line-151"><span class="sd">    ``decode_kwargs`` (``audience``, ``issuer``, ``leeway``...) go to ``jwt.decode``.</span>
+</span><span id="line-152"><span class="sd">    """</span>
+</span><span id="line-153">    <span class="kn">import</span><span class="w"> </span><span class="nn">jwt</span>
+</span><span id="line-154">
+</span><span id="line-155">    <span class="k">try</span><span class="p">:</span>
+</span><span id="line-156">        <span class="k">return</span> <span class="n">jwt</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span>
+</span><span id="line-157">            <span class="n">token</span><span class="p">,</span>
+</span><span id="line-158">            <span class="n">secret</span><span class="p">,</span>
+</span><span id="line-159">            <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">"verify_signature"</span><span class="p">:</span> <span class="n">verify</span><span class="p">},</span>
+</span><span id="line-160">            <span class="n">algorithms</span><span class="o">=</span><span class="n">algorithms</span><span class="p">,</span>
+</span><span id="line-161">            <span class="o">**</span><span class="p">(</span><span class="n">decode_kwargs</span> <span class="ow">or</span> <span class="p">{}),</span>
+</span><span id="line-162">        <span class="p">)</span>
+</span><span id="line-163">    <span class="k">except</span> <span class="n">jwt</span><span class="o">.</span><span class="n">InvalidTokenError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># its text describes the token</span>
+</span><span id="line-164">        <span class="k">raise</span> <span class="n">CredentialsRejected</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid authentication token: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+</span><span id="line-165">    <span class="k">except</span> <span class="p">(</span><span class="n">jwt</span><span class="o">.</span><span class="n">PyJWTError</span><span class="p">,</span> <span class="ne">UnicodeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+</span><span id="line-166">        <span class="c1"># a key unfit for the token's alg (InvalidKeyError...) describes the server's</span>
+</span><span id="line-167">        <span class="c1"># key, so it is logged rather than sent; a non-UTF-8 header is just refused</span>
+</span><span id="line-168">        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="ne">UnicodeError</span><span class="p">):</span>
+</span><span id="line-169">            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"JWT rejected for a server-side reason: </span><span class="si">%r</span><span class="s2">"</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+</span><span id="line-170">        <span class="k">raise</span> <span class="n">CredentialsRejected</span><span class="p">(</span>
+</span><span id="line-171">            <span class="s2">"Invalid authentication token: not acceptable"</span>
+</span><span id="line-172">        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span></div>
 
-</span><span id="line-156">
-</span><span id="line-157">
+</span><span id="line-173">
+</span><span id="line-174">
 <div class="viewcode-block" id="required_key">
 <a class="viewcode-back" href="../../_autosummary/py2http.auth.html#py2http.auth.required_key">[docs]</a>
-</span><span id="line-158"><span class="k">def</span><span class="w"> </span><span class="nf">required_key</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"api_key"</span><span class="p">):</span>
-</span><span id="line-159"><span class="w">    </span><span class="sd">"""``key``, refused when empty: an empty key would let a request with no</span>
-</span><span id="line-160"><span class="sd">    ``Authorization`` header through."""</span>
-</span><span id="line-161">    <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)):</span>
-</span><span id="line-162">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> must be a non-empty str or bytes"</span><span class="p">)</span>
-</span><span id="line-163">    <span class="k">return</span> <span class="n">key</span></div>
+</span><span id="line-175"><span class="k">def</span><span class="w"> </span><span class="nf">required_key</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"api_key"</span><span class="p">):</span>
+</span><span id="line-176"><span class="w">    </span><span class="sd">"""``key``, refused when empty: an empty key would let a request with no</span>
+</span><span id="line-177"><span class="sd">    ``Authorization`` header through."""</span>
+</span><span id="line-178">    <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)):</span>
+</span><span id="line-179">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> must be a non-empty str or bytes"</span><span class="p">)</span>
+</span><span id="line-180">    <span class="k">return</span> <span class="n">key</span></div>
 
-</span><span id="line-164">
-</span><span id="line-165">
+</span><span id="line-181">
+</span><span id="line-182">
 <div class="viewcode-block" id="key_matches">
 <a class="viewcode-back" href="../../_autosummary/py2http.auth.html#py2http.auth.key_matches">[docs]</a>
-</span><span id="line-166"><span class="k">def</span><span class="w"> </span><span class="nf">key_matches</span><span class="p">(</span><span class="n">given</span><span class="p">,</span> <span class="n">expected</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-</span><span id="line-167"><span class="w">    </span><span class="sd">"""Whether the ``given`` credential equals ``expected``, in constant time."""</span>
-</span><span id="line-168">    <span class="k">if</span> <span class="ow">not</span> <span class="n">given</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">expected</span><span class="p">:</span>
-</span><span id="line-169">        <span class="k">return</span> <span class="kc">False</span>
-</span><span id="line-170">
-</span><span id="line-171">    <span class="k">def</span><span class="w"> </span><span class="nf">_bytes</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>  <span class="c1"># aiohttp keeps non-UTF-8 header bytes as surrogate escapes</span>
-</span><span id="line-172">        <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">errors</span><span class="o">=</span><span class="s2">"surrogateescape"</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span>
-</span><span id="line-173">
-</span><span id="line-174">    <span class="k">return</span> <span class="n">hmac</span><span class="o">.</span><span class="n">compare_digest</span><span class="p">(</span><span class="n">_bytes</span><span class="p">(</span><span class="n">given</span><span class="p">),</span> <span class="n">_bytes</span><span class="p">(</span><span class="n">expected</span><span class="p">))</span></div>
+</span><span id="line-183"><span class="k">def</span><span class="w"> </span><span class="nf">key_matches</span><span class="p">(</span><span class="n">given</span><span class="p">,</span> <span class="n">expected</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="line-184"><span class="w">    </span><span class="sd">"""Whether the ``given`` credential equals ``expected``, in constant time."""</span>
+</span><span id="line-185">    <span class="k">if</span> <span class="ow">not</span> <span class="n">given</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">expected</span><span class="p">:</span>
+</span><span id="line-186">        <span class="k">return</span> <span class="kc">False</span>
+</span><span id="line-187">
+</span><span id="line-188">    <span class="k">def</span><span class="w"> </span><span class="nf">_bytes</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>  <span class="c1"># aiohttp keeps non-UTF-8 header bytes as surrogate escapes</span>
+</span><span id="line-189">        <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">errors</span><span class="o">=</span><span class="s2">"surrogateescape"</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span>
+</span><span id="line-190">
+</span><span id="line-191">    <span class="k">return</span> <span class="n">hmac</span><span class="o">.</span><span class="n">compare_digest</span><span class="p">(</span><span class="n">_bytes</span><span class="p">(</span><span class="n">given</span><span class="p">),</span> <span class="n">_bytes</span><span class="p">(</span><span class="n">expected</span><span class="p">))</span></div>
 
 </span></code></pre></div>
     </div></div>
@@ -385,7 +409,7 @@ Otosense&nbsp;</p>
 </footer>
     </div>
     
-    <script src="../../_static/documentation_options.js?v=0cd3b383"></script>
+    <script src="../../_static/documentation_options.js?v=c75a234e"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

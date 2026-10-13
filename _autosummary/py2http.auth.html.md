@@ -21,10 +21,30 @@ both refuse the same tokens and keys for the same reasons.
 | [`key_matches`](#py2http.auth.key_matches)(given, expected)                     | Whether the `given` credential equals `expected`, in constant time.                                                    |
 | [`required_key`](#py2http.auth.required_key)(key, \*[, name])                    | `key`, refused when empty: an empty key would let a request with no `Authorization` header through.                    |
 
+### Classes
+
+| [`AuthPlugin`](#py2http.auth.AuthPlugin)()   | What a plugin must be to guard a Flask app (see `py2http.flask_plugins`): a subclass with a `challenge` (the `WWW-Authenticate` value of a refusal) and an `authenticate` that raises `CredentialsRejected` to refuse a request.   |
+|-----------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+
 ### Exceptions
 
 | [`CredentialsRejected`](#py2http.auth.CredentialsRejected)   | A request's credentials were refused.   |
 |------------------------------------------------------------------------|-----------------------------------------|
+
+### *class* py2http.auth.AuthPlugin
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+What a plugin must be to guard a Flask app (see `py2http.flask_plugins`): a
+subclass with a `challenge` (the `WWW-Authenticate` value of a refusal) and an
+`authenticate` that raises `CredentialsRejected` to refuse a request. It is a
+marker class rather than a duck-typed method name, so that a plugin which merely has
+some `authenticate` method (returning `False` to refuse, say) can’t be mistaken
+for one and let everything through.
+
+#### authenticate(authorization_header, , method, endpoint)
+
+The claims to put on the request, or `None`; `CredentialsRejected` refuses.
 
 ### *exception* py2http.auth.CredentialsRejected
 

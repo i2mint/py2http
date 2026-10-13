@@ -1,0 +1,14 @@
+py2http.flask\_plugins
+======================
+
+.. automodule:: py2http.flask_plugins
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      check_flask_plugins
+      mk_auth_hook
+      mk_cors_hook
+   
