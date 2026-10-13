@@ -150,7 +150,13 @@ def bottle_error_handler(error: Exception):
 
 
 def flask_error_handler(error: Exception):
-    raise NotImplementedError()
+    """The ``(body, status, headers)`` a Flask view returns for an error, mapped like
+    the bottle handler (``OPAQUE_ERRORS`` hides the text of a 500)."""
+    message = str(error)
+    status = error_status(error)
+    if status == 500 and os.getenv("OPAQUE_ERRORS", None):
+        message = "Internal server error"
+    return {"error": message}, status, _status_headers(status)
 
 
 def default_error_handler(error: Exception):
