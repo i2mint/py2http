@@ -492,6 +492,7 @@ def obj_to_path(obj):
 
 
 _MISSING = object()
+_REQUIRED = object()
 
 
 def call_with_inputs(func: Callable, args: Iterable = (), kwargs: dict = None):
@@ -510,27 +511,32 @@ def call_with_inputs(func: Callable, args: Iterable = (), kwargs: dict = None):
     A positional-only argument that is neither required to be given nor given takes its
     default; a missing required one is an ``InputError`` (a client error), not a
     ``TypeError``. A callable whose signature can't be read gets ``**kwargs`` as is.
+
+    Python lets a function with ``**kwargs`` receive a keyword that is also the name of
+    a positional-only parameter (``Counter.update(iterable=3)``): such an optional
+    parameter is left in ``kwargs``; only required ones are bound by name.
     """
     args, kwargs = list(args), dict(kwargs or {})
     try:
         params = list(signature(func).parameters.values())
     except (ValueError, TypeError):
         return func(*args, **kwargs)
+    takes_any_keyword = any(p.kind is Parameter.VAR_KEYWORD for p in params)
     values = []
     for param in params[len(args) :]:
         if param.kind is not Parameter.POSITIONAL_ONLY:
             break
-        values.append(
-            kwargs.pop(
-                param.name, _MISSING if param.default is not param.empty else param
-            )
-        )
+        required = param.default is param.empty
+        if param.name in kwargs and (required or not takes_any_keyword):
+            values.append(kwargs.pop(param.name))
+        else:
+            values.append(_REQUIRED if required else _MISSING)
     while values and values[-1] is _MISSING:  # trailing optionals: leave to the callee
         values.pop()
-    params_by_position = params[len(args) :]
     for i, value in enumerate(values):
+        param = params[len(args) + i]
+        if value is _REQUIRED:
+            raise InputError(f"Missing argument: {param.name!r}")
         if value is _MISSING:  # an optional one before a given one: its default
-            values[i] = params_by_position[i].default
-        elif isinstance(value, Parameter):
-            raise InputError(f"Missing argument: {value.name!r}")
+            values[i] = param.default
     return func(*args, *values, **kwargs)

@@ -87,3 +87,43 @@ def test_plain_function_with_positional_only_over_http():
 
     app = mk_app([add])
     assert _post(app, "/add", {"x": 1, "y": 2}) == ("200 OK", 3)
+
+
+def test_optional_positional_only_stays_a_keyword_when_there_is_var_keyword():
+    # Counter.update(iterable=None, /, **kwds): ``iterable`` is a keyword here
+    from collections import Counter, UserDict
+
+    assert call_with_inputs(lambda a=0, /, **kw: (a, kw), kwargs={"a": 1}) == (
+        0,
+        {"a": 1},
+    )
+    c = Counter()
+    call_with_inputs(c.update, kwargs={"iterable": 3})
+    assert c == Counter(iterable=3)
+    d = UserDict()
+    call_with_inputs(d.update, kwargs={"other": 1})
+    assert dict(d) == {"other": 1}
+
+
+def test_required_positional_only_is_bound_even_with_var_keyword():
+    assert call_with_inputs(lambda a, /, **kw: (a, kw), kwargs={"a": 1, "b": 2}) == (
+        1,
+        {"b": 2},
+    )
+
+
+def test_class_endpoint_with_positional_only_constructor():
+    from py2http.service import _get_func_to_dispatch_handler, shared_objects
+
+    class Box:
+        def __init__(self, content, /):
+            self.content = content
+
+        def get(self):
+            return self.content
+
+    func = _get_func_to_dispatch_handler(
+        dict(endpoint=Box, name="box", attr_names=["get"], obj_owner=shared_objects)
+    )
+    obj_id = func(content=7)
+    assert func(_obj_id=obj_id, _attr_name="get") == 7

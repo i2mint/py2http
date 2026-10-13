@@ -1237,7 +1237,7 @@ def _class_endpoint_dispatcher(cls, handler, name, is_dispatchable):
         if _obj_id is None:
             if _attr_name is not None:
                 raise InputError("_attr_name must be None when _obj_id is None")
-            new_obj = cls(**kwargs)
+            new_obj = call_with_inputs(cls, kwargs=kwargs)
             new_id = str(uuid4())
             store.put(who, new_id, new_obj)
             check_size(who, new_id, new_obj)
