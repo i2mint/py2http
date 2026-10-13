@@ -12,7 +12,8 @@ Overall, this module provides a collection of useful tools for handling lazy pro
 """
 
 from typing import Optional, Callable, Union, Iterable, Any
-from inspect import Parameter, signature
+from collections.abc import MutableMapping, Sequence
+from inspect import Parameter, Signature, signature
 from multiprocessing.context import Process
 from multiprocessing import Queue, active_children
 from time import sleep, time
@@ -22,6 +23,7 @@ from contextlib import contextmanager
 from strand import run_process
 
 from glom import Spec  # NOTE: Third-party
+from i2.errors import InputError
 
 
 class lazyprop:
@@ -488,3 +490,80 @@ def obj_to_path(obj):
         return obj.__globals__[root_name], tuple(attr_path)
     else:
         return obj
+
+
+_MISSING = object()
+_REQUIRED = object()
+
+
+def _positional_only_sig(*names: str, optional: Iterable[str] = ()) -> Signature:
+    return Signature(
+        Parameter(
+            name,
+            Parameter.POSITIONAL_ONLY,
+            default=None if name in optional else Parameter.empty,
+        )
+        for name in names
+    )
+
+
+def _signature_or_none(func: Callable) -> Optional[Signature]:
+    """The signature of ``func``; for the few built-in container methods the Python
+    versions we support (3.10) can't read one, the one they have in later versions."""
+    try:
+        return signature(func)
+    except (ValueError, TypeError):
+        pass
+    owner = getattr(func, "__self__", None)
+    if getattr(func, "__name__", None) == "__getitem__":
+        return _positional_only_sig("index" if isinstance(owner, Sequence) else "key")
+    if getattr(func, "__name__", None) == "pop" and isinstance(owner, MutableMapping):
+        return _positional_only_sig("key", "default", optional=["default"])
+    return None
+
+
+def call_with_inputs(func: Callable, args: Iterable = (), kwargs: dict = None):
+    """Call ``func(*args, **kwargs)``, passing the entries of ``kwargs`` that name
+    positional-only parameters of ``func`` positionally, which JSON (a mapping) can
+    only supply by name (i2mint/py2http#14).
+
+    >>> call_with_inputs({"a": 1}.__getitem__, kwargs={"key": "a"})
+    1
+    >>> d = {}
+    >>> call_with_inputs(d.__setitem__, kwargs={"key": "k", "value": 2}), d
+    (None, {'k': 2})
+    >>> call_with_inputs(lambda x, /, y=0: (x, y), kwargs={"x": 1, "y": 2})
+    (1, 2)
+
+    A positional-only argument that is neither required to be given nor given takes its
+    default; a missing required one is an ``InputError`` (a client error), not a
+    ``TypeError``. A callable whose signature can't be read gets ``**kwargs`` as is.
+
+    Python lets a function with ``**kwargs`` receive a keyword that is also the name of
+    a positional-only parameter (``Counter.update(iterable=3)``): such an optional
+    parameter is left in ``kwargs``; only required ones are bound by name.
+    """
+    args, kwargs = list(args), dict(kwargs or {})
+    sig = _signature_or_none(func)
+    if sig is None:
+        return func(*args, **kwargs)
+    params = list(sig.parameters.values())
+    takes_any_keyword = any(p.kind is Parameter.VAR_KEYWORD for p in params)
+    values = []
+    for param in params[len(args) :]:
+        if param.kind is not Parameter.POSITIONAL_ONLY:
+            break
+        required = param.default is param.empty
+        if param.name in kwargs and (required or not takes_any_keyword):
+            values.append(kwargs.pop(param.name))
+        else:
+            values.append(_REQUIRED if required else _MISSING)
+    while values and values[-1] is _MISSING:  # trailing optionals: leave to the callee
+        values.pop()
+    for i, value in enumerate(values):
+        param = params[len(args) + i]
+        if value is _REQUIRED:
+            raise InputError(f"Missing argument: {param.name!r}")
+        if value is _MISSING:  # an optional one before a given one: its default
+            values[i] = param.default
+    return func(*args, *values, **kwargs)
