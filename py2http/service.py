@@ -311,17 +311,29 @@ SubAppSpec = TypedDict(
 AppSpec = Union[Handlers, Dict[str, Union[Handlers, SubAppSpec]]]
 
 
+#: Configs only the Bottle app honours. A Flask app refuses them rather than ignore
+#: them: a silently dropped auth plugin would leave its routes open.
+_BOTTLE_ONLY_CONFIGS = ("plugins", "enable_cors", "publish_swagger", "openapi_insecure")
+
+
 def mk_flask_app(funcs, **configs):
+    """A Flask app serving ``funcs``. JSON request bodies only (the raw, binary and
+    form input mappers read Bottle's request); ``middleware`` is a list of WSGI
+    wrappers; ``plugins``, ``enable_cors``, ``publish_swagger`` and
+    ``openapi_insecure`` are Bottle's, and raise ``NotImplementedError`` here."""
     from flask import Flask
 
-    configs = dict(configs, framework=FLASK)  # these are Flask routes whatever the default
+    unsupported = [k for k in _BOTTLE_ONLY_CONFIGS if configs.get(k)]
+    if unsupported:
+        raise NotImplementedError(
+            f"The config {unsupported} is not supported for the framework 'flask'"
+        )
+    configs = dict(configs, framework=FLASK)  # Flask routes whatever the default
     routes, openapi_spec = mk_routes_and_openapi_specs(funcs, **configs)
     app_name = mk_config("app_name", None, configs, default_configs)
     app = Flask(app_name)
-    middleware = mk_config("middleware", None, configs, default_configs)
-    # publish_openapi = mk_config('publish_openapi', None, configs, default_configs)
-    if middleware:
-        app = middleware(app)
+    for wrap in mk_config("middleware", None, configs, default_configs) or ():
+        app.wsgi_app = wrap(app.wsgi_app)
     for route in routes:
         app.add_url_rule(
             route.path,
@@ -330,7 +342,8 @@ def mk_flask_app(funcs, **configs):
             methods=[route.http_method.upper()],
         )
     app.add_url_rule("/ping", "ping", lambda: {"ping": "pong"})
-    app.add_url_rule("/openapi", "openapi", lambda: openapi_spec)
+    if mk_config("publish_openapi", None, configs, default_configs):
+        app.add_url_rule("/openapi", "openapi", lambda: openapi_spec)
     app.openapi_spec = openapi_spec
     return app
 
@@ -569,7 +582,9 @@ def mk_app(app_spec: AppSpec, **configs):
 
 def run_flask(app, *, host, port, certfile=None, keyfile=None, **_):
     """Run a Flask app with Flask's own server (``server`` does not apply to it)."""
-    ssl_context = (certfile, keyfile) if certfile and keyfile else None
+    if bool(certfile) != bool(keyfile):
+        raise ValueError("Give both ssl_certfile and ssl_keyfile, or neither.")
+    ssl_context = (certfile, keyfile) if certfile else None
     app.run(host=host, port=port, ssl_context=ssl_context)
 
 

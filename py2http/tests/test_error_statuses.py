@@ -152,3 +152,38 @@ def test_flask_does_not_leak_into_a_bottle_app(capsys):
 def test_unsupported_framework_is_refused():
     with pytest.raises(NotImplementedError):
         mk_app([_app_raising], framework="django")
+
+
+def test_flask_refuses_what_it_would_ignore():
+    """An auth plugin dropped silently would leave the routes open."""
+    pytest.importorskip("flask")
+    for config in ({"plugins": [object()]}, {"enable_cors": True}):
+        with pytest.raises(NotImplementedError):
+            mk_app([_app_raising], framework="flask", **config)
+
+
+def test_flask_openapi_only_when_published():
+    pytest.importorskip("flask")
+
+    def f():
+        return 1
+
+    assert mk_app([f], framework="flask").test_client().get("/openapi").status_code == 404
+    published = mk_app([f], framework="flask", publish_openapi=True)
+    assert published.test_client().get("/openapi").status_code == 200
+
+
+def test_flask_middleware_wraps_the_wsgi_app():
+    pytest.importorskip("flask")
+    seen = []
+
+    def wrap(wsgi_app):
+        def wrapped(environ, start_response):
+            seen.append(environ["PATH_INFO"])
+            return wsgi_app(environ, start_response)
+
+        return wrapped
+
+    app = mk_app([_app_raising], framework="flask", middleware=[wrap])
+    app.test_client().post("/_app_raising", json={})
+    assert seen == ["/_app_raising"]
