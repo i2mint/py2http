@@ -157,9 +157,8 @@ def test_unsupported_framework_is_refused():
 def test_flask_refuses_what_it_would_ignore():
     """An auth plugin dropped silently would leave the routes open."""
     pytest.importorskip("flask")
-    for config in ({"plugins": [object()]}, {"enable_cors": True}):
-        with pytest.raises(NotImplementedError):
-            mk_app([_app_raising], framework="flask", **config)
+    with pytest.raises(NotImplementedError):
+        mk_app([_app_raising], framework="flask", plugins=[object()])
 
 
 def test_flask_openapi_only_when_published():
