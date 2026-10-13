@@ -6,6 +6,9 @@ service; these tests go through a real ``mk_app`` app.
 """
 
 import asyncio
+import base64
+import json
+import time
 import warnings
 
 import jwt
@@ -37,6 +40,10 @@ def _app(*plugins):
 
 def _bearer(token):
     return {"Authorization": f"Bearer {token}"}
+
+
+def _b64(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
 
 
 def _token(claims=None, *, key=SECRET, algorithm="HS256"):
@@ -141,3 +148,98 @@ def test_superadmin_middleware():
     assert _aiohttp_get(mw, {"Authorization": API_KEY}) == 200
     assert _aiohttp_get(mw, {"Authorization": "nope"}) == 401
     assert _aiohttp_get(mw, {}) == 401
+
+
+# ------------------------------------- hardening (the sprint fixed these in the
+# aiohttp middleware only; JWTPlugin is what guards an mk_app service)
+
+
+def _rsa_keys():
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+
+    private = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    public_pem = private.public_key().public_bytes(
+        serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+    return private, public_pem
+
+
+@pytest.mark.parametrize(
+    "token",
+    [
+        _token({"sub": "alice", "exp": int(time.time()) - 60}),  # expired
+        _token(algorithm="HS512"),  # an algorithm not allowed
+        _b64(b'{"alg":"none","typ":"JWT"}') + "." + _b64(b'{"sub":"alice"}') + ".",
+    ],
+    ids=["expired", "disallowed-alg", "alg-none"],
+)
+def test_jwt_rejected_tokens_are_401_not_500_and_not_echoed(token):
+    status, body = call_wsgi(
+        _app(JWTPlugin(SECRET)), "/whoami", {}, headers=_bearer(token)
+    )
+    assert status.startswith("401")
+    assert token not in json.dumps(body)
+
+
+def test_jwt_token_of_another_key_family_is_401():
+    private, public_pem = _rsa_keys()
+    app = _app(JWTPlugin(public_pem, algorithms=["RS256"]))
+    assert call_wsgi(app, "/whoami", {}, headers=_bearer(_token()))[0].startswith("401")
+
+
+def test_jwt_needs_the_bearer_scheme():
+    app = _app(JWTPlugin(SECRET))
+    headers = {"Authorization": f"Basic {_token()}"}
+    assert call_wsgi(app, "/whoami", {}, headers=headers)[0].startswith("401")
+    headers = {"Authorization": f"bearer {_token()}"}
+    assert call_wsgi(app, "/whoami", {}, headers=headers)[0].startswith("200")
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"secret": ""},  # would fail on every request instead
+        {"secret": SECRET, "algorithms": ["HS256", "RS256"]},
+        {"secret": SECRET, "algorithms": ["none"]},
+    ],
+)
+def test_jwt_unsafe_setups_are_refused_at_construction(kwargs):
+    with pytest.raises((ValueError, TypeError)):
+        JWTPlugin(**kwargs)
+
+
+def test_jwt_verify_false_needs_no_secret():
+    JWTPlugin(verify=False)
+
+
+def test_jwt_ignore_methods_with_published_openapi():
+    """Routes py2http adds itself (``/openapi``) carry no ``method_name``."""
+    app = mk_app(
+        [whoami, other],
+        plugins=[JWTPlugin(SECRET, ignore_methods=["other"])],
+        publish_openapi=True,
+    )
+    status, _ = call_wsgi(app, "/openapi", method="GET", headers=_bearer(_token()))
+    assert status.startswith("200")
+    assert call_wsgi(app, "/openapi", method="GET")[0].startswith("401")
+
+
+def test_jwt_and_api_key_plugins_stack():
+    app = _app(JWTPlugin(SECRET, ignore_methods=["other"]), ApiKeyAuthPlugin(API_KEY))
+    headers = {"Authorization": API_KEY}
+    assert call_wsgi(app, "/other", {}, headers=headers)[0].startswith("200")
+
+
+def test_cors_preflight_passes_without_token():
+    app = mk_app([whoami], plugins=[JWTPlugin(SECRET)], enable_cors=True)
+    status, _ = call_wsgi(app, "/whoami", method="OPTIONS")
+    assert status.startswith("200")
+
+
+@pytest.mark.parametrize("key", ["", None, b""])
+def test_empty_api_keys_are_refused(key):
+    with pytest.raises(ValueError):
+        ApiKeyAuthPlugin(key)
+    with pytest.raises(ValueError):
+        mk_superadmin_middleware(key)

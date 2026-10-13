@@ -1,41 +1,34 @@
-"""
-py2http is a Python module that allows you to dispatch Python functions as HTTP
-services.
-By running a basic HTTP service from a list of functions, you can access OpenAPI
-specifications, Swagger documentation, and utilize the HTTP service's routes.
-Additionally, Py2http provides features for method transformation, input mapping,
-output mapping, error handling, and client generation.
-
-The code snippet provided below is a part of Py2http module and includes middleware
-functions for handling JWT authentication and superadmin authorization.
-These middleware functions are designed to be used within the Py2http framework to
-ensure secure and authenticated access to HTTP routes.
-
-Include the following docstring to describe this module:
-"Middleware functions for handling JWT authentication and superadmin authorization
-within the Py2http framework. These functions ensure secure access to HTTP routes
-by verifying credentials and permissions. Use these middleware functions to enforce
-authentication and control access to web resources.
-"""
+"""aiohttp middleware that guards every route of an app: ``mk_jwt_middleware``
+(a verified ``Authorization: Bearer`` JWT) and ``mk_superadmin_middleware`` (one
+shared key). The checks themselves live in ``py2http.auth``, shared with the Bottle
+plugins of ``py2http.bottle_plugins``."""
 
 import json
 from collections.abc import Iterable
 from warnings import warn
 
+from py2http.auth import (
+    DFLT_JWT_ALGORITHMS,
+    CredentialsRejected,
+    _algorithm_family,  # noqa: F401  (was defined here)
+    _names,
+    bearer_token,
+    decode_jwt,
+    jwt_algorithms,
+    key_matches,
+    required_key,
+)
 from py2http.constants import JSON_CONTENT_TYPE
 
-DFLT_JWT_ALGORITHMS = ("HS256",)
 DFLT_PUBLIC_ROUTES = ("ping", "openapi")
 
 
-def _algorithm_family(algorithm: str) -> str:
-    """The key family an algorithm verifies with: a shared secret for ``HS*``, a
-    public key otherwise.
+def _unauthorized(message):
+    from aiohttp import web
 
-    >>> _algorithm_family('HS512'), _algorithm_family('RS256'), _algorithm_family('ES256')
-    ('hmac', 'public-key', 'public-key')
-    """
-    return "hmac" if algorithm.upper().startswith("HS") else "public-key"
+    return web.HTTPUnauthorized(
+        text=json.dumps({"error": message}), content_type=JSON_CONTENT_TYPE
+    )
 
 
 def mk_jwt_middleware(
@@ -72,83 +65,48 @@ def mk_jwt_middleware(
             this is True. The middleware used to accept ``["HS256", "RS256"]``;
             pass that list with this flag to restore it.
     """
-    import jwt
     from aiohttp import web
 
-    for name, value in [("algorithms", algorithms), ("public_routes", public_routes)]:
-        if isinstance(value, (str, bytes)):
-            raise TypeError(f"{name} must be a list of names, e.g. [{value!r}]")
-    algorithms = list(algorithms)
-    if not algorithms:
-        raise ValueError("algorithms must name at least one JWT algorithm")
-    known = set(jwt.algorithms.get_default_algorithms()) - {"none"}
-    if unknown := [a for a in algorithms if a not in known]:
-        raise ValueError(
-            f"Unknown or unsigned JWT algorithm(s) {unknown}; names are "
-            f"case-sensitive, choose from {sorted(known)}"
-        )
-    if verify and not secret:
-        raise ValueError("secret must be a non-empty key when verify=True")
-    families = {_algorithm_family(a) for a in algorithms}
-    if verify and "hmac" in families and not isinstance(secret, (str, bytes)):
-        raise TypeError(f"an HMAC secret must be str or bytes, got {type(secret)}")
-    if len(families) > 1 and not allow_mixed_algorithm_families:
-        raise ValueError(
-            f"algorithms={algorithms} mixes HMAC and public-key algorithms with one "
-            "secret, which allows algorithm-confusion forgeries; use one family, or "
-            "pass allow_mixed_algorithm_families=True if you really mean it"
-        )
-    public_routes = frozenset(name for name in public_routes if name is not None)
-
-    def _unauthorized(message):
-        return web.HTTPUnauthorized(
-            text=json.dumps({"error": message}),
-            content_type=JSON_CONTENT_TYPE,
-        )
+    algorithms = jwt_algorithms(
+        secret,
+        verify=verify,
+        algorithms=algorithms,
+        allow_mixed_algorithm_families=allow_mixed_algorithm_families,
+    )
+    public_routes = frozenset(
+        name for name in _names("public_routes", public_routes) if name is not None
+    )
 
     @web.middleware
     async def middleware(req, handler):
         route = req.match_info.route
         if getattr(route, "name", None) in public_routes:
             return await handler(req)
-        auth_header = req.headers.get("Authorization", "")
-        token = auth_header[7:] if auth_header[:7].lower() == "bearer " else ""
+        token = bearer_token(req.headers.get("Authorization"))
         try:
-            decoded = jwt.decode(
-                token,
-                secret,
-                options={"verify_signature": verify},
-                algorithms=algorithms,
-            )
-        except jwt.PyJWTError as error:  # incl. a key unfit for the token's alg
+            req.token = decode_jwt(token, secret, algorithms=algorithms, verify=verify)
+        except CredentialsRejected as rejection:
             if verify:
-                # InvalidTokenError texts describe the token ("Signature has
-                # expired"); other PyJWTErrors can describe the server's key
-                reason = (
-                    str(error)
-                    if isinstance(error, jwt.InvalidTokenError)
-                    else "not acceptable"
-                )
-                raise _unauthorized(f"Invalid authentication token: {reason}")
-            warn(f"Invalid JWT: {error}")
-            return await handler(req)
-        req.token = decoded
+                raise _unauthorized(str(rejection)) from None
+            warn(f"Invalid JWT: {rejection.__cause__}")
         return await handler(req)
 
     return middleware
 
 
 def mk_superadmin_middleware(secret):
+    """Make an aiohttp middleware that only lets through requests whose
+    ``Authorization`` header is exactly ``secret`` (compared in constant time).
+    An empty ``secret`` is refused, since it would let header-less requests through.
+    """
     from aiohttp import web
+
+    secret = required_key(secret, name="secret")
 
     @web.middleware
     async def middleware(req, handler):
-        auth_header = req.headers.get("Authorization", "")
-        if auth_header == secret:
+        if key_matches(req.headers.get("Authorization"), secret):
             return await handler(req)
-        return web.HTTPUnauthorized(
-            text=json.dumps({"error": "invalid API key"}),
-            content_type=JSON_CONTENT_TYPE,
-        )
+        raise _unauthorized("invalid API key")
 
     return middleware
