@@ -19,16 +19,18 @@ from py2http.auth import (
     key_matches,
     required_key,
 )
-from py2http.constants import JSON_CONTENT_TYPE
+from py2http.constants import API_KEY_CHALLENGE, BEARER_CHALLENGE, JSON_CONTENT_TYPE
 
 DFLT_PUBLIC_ROUTES = ("ping", "openapi")
 
 
-def _unauthorized(message):
+def _unauthorized(message, challenge=BEARER_CHALLENGE):
     from aiohttp import web
 
     return web.HTTPUnauthorized(
-        text=json.dumps({"error": message}), content_type=JSON_CONTENT_TYPE
+        text=json.dumps({"error": message}),
+        content_type=JSON_CONTENT_TYPE,
+        headers={"WWW-Authenticate": challenge},
     )
 
 
@@ -119,6 +121,6 @@ def mk_superadmin_middleware(secret):
     async def middleware(req, handler):
         if key_matches(req.headers.get("Authorization"), secret):
             return await handler(req)
-        raise _unauthorized("invalid API key")
+        raise _unauthorized("invalid API key", API_KEY_CHALLENGE)
 
     return middleware

@@ -32,9 +32,12 @@ def run_server(launcher, wait_before_entering=0, verbose=False, **kwargs):
         clog(f"... server terminated")
 
 
-def call_wsgi(app, path, payload=None, *, method="POST", headers=()):
+def call_wsgi(
+    app, path, payload=None, *, method="POST", headers=(), with_headers=False
+):
     """Send one request to the WSGI ``app`` in-process; return ``(status, body)``, the
-    body decoded from JSON when it is JSON.
+    body decoded from JSON when it is JSON (``(status, body, response_headers)`` with
+    ``with_headers``, header names lower-cased).
 
     ``headers`` maps header names (``"Authorization"``) to values.
     """
@@ -49,12 +52,20 @@ def call_wsgi(app, path, payload=None, *, method="POST", headers=()):
     for name, value in dict(headers).items():
         environ["HTTP_" + name.upper().replace("-", "_")] = value
     setup_testing_defaults(environ)
-    statuses = []
-    out = b"".join(app(environ, lambda status, headers, *a: statuses.append(status)))
+    statuses, response_headers = [], {}
+
+    def start_response(status, headers, *a):
+        statuses.append(status)
+        response_headers.update((k.lower(), v) for k, v in headers)  # case-insensitive
+
+    out = b"".join(app(environ, start_response))
     try:
-        return statuses[0], json.loads(out)
+        body = json.loads(out)
     except ValueError:
-        return statuses[0], out.decode()
+        body = out.decode()
+    if with_headers:
+        return statuses[0], body, response_headers
+    return statuses[0], body
 
 
 def as_owner(owner, func, **kwargs):

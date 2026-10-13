@@ -3,13 +3,20 @@
 A handler whose ``endpoint`` is not a function names the attributes clients may call
 with ``attr_names`` (see ``public_attr`` for ``'*'``):
 
-- a **module**: its functions are called by name;
+- a **module**: its functions are called by name. They are function endpoints like
+  any other: no object is kept, so there is no size bound, and a function that mutates
+  module globals does so for every client, exactly as a plain function endpoint (or a
+  bound method passed into an app spec) would. Authenticate with the auth middleware
+  (``mk_jwt_middleware``, ``JWTPlugin``), or pass an optional ``obj_owner`` to refuse
+  requests it does not identify;
 - an **instance** (one object every client shares): ``_instance_endpoint_dispatcher``;
 - a **class** (each client creates and uses its own objects):
   ``_class_endpoint_dispatcher``.
 
 Instances and classes need an ``obj_owner``, a ``(request) -> owner`` hook reading
-``current_request``, and are bounded in size (``py2http.sizeof``).
+``current_request``, and are bounded in size (``py2http.sizeof``), measured after each
+call except those to ``obj_readers``. A call returning a generator, coroutine or async
+generator is measured when it is returned and again when that result finishes.
 """
 
 import inspect
@@ -323,8 +330,14 @@ def _get_func_to_dispatch_handler(handler):
         func = _class_endpoint_dispatcher(endpoint, handler, name, is_dispatchable)
 
     elif isinstance(endpoint, ModuleType):  # a module's functions: no shared object
+        owner_of = handler.get("obj_owner")
+        if owner_of is None or owner_of is shared_objects:
+            owner = lambda: None  # noqa: E731
+        else:
+            owner = _request_owner(owner_of, name)
 
         def func(_attr_name=None, **kwargs):
+            owner()  # an optional gate: refuses requests the hook does not identify
             return _get_attr_value(endpoint, _attr_name, is_dispatchable, **kwargs)
 
     else:
@@ -410,9 +423,14 @@ def _instance_endpoint_dispatcher(obj, handler, name, is_dispatchable):
       for a large object. Not measured: data the object keeps outside the process
       (files, a database), and state held in its class or in module globals.
       Measuring walks the object (up to ``max_obj_size`` bytes of it) after every
-      call, reads included, so a large limit costs time on every request. A method
-      returning a generator or coroutine does its work after the measure: what it
-      adds is caught by the next call.
+      call except those to ``obj_readers``, so a large limit costs time on each such
+      request. A method returning a generator, coroutine or async generator is
+      measured when it returns and again when that result finishes.
+    - ``obj_readers``: names of dispatched attributes that never add to the object
+      (``read``, ``keys``, ``get``...; not ``__getitem__`` of a ``defaultdict``, which
+      inserts): calls to them are not measured, which saves the walk on every read. Empty by default; the bound holds only if every
+      name listed really never adds (what one does add is caught by the next measured
+      call).
     - ``obj_shrinkers``: names of dispatched attributes that only ever remove
       (``pop``, ``clear``, ``__delitem__`` if ``attr_names`` lists it...), still
       callable while the object is over its limit so a client can bring it back under.
@@ -443,16 +461,8 @@ def _instance_endpoint_dispatcher(obj, handler, name, is_dispatchable):
             f"{max_obj_size} bytes (as measured by obj_sizeof): raise max_obj_size, pass "
             "an obj_sizeof that skips what clients cannot grow, or max_obj_size=None."
         )
-    shrinkers = handler.get("obj_shrinkers", ())
-    if isinstance(shrinkers, str):
-        raise TypeError(f"obj_shrinkers must be a collection of names: {shrinkers!r}")
-    shrinkers = frozenset(shrinkers)
-    for attr_name in shrinkers:
-        if not is_dispatchable(obj, attr_name):
-            raise ValueError(
-                f"obj_shrinkers of {name!r}: {attr_name!r} is not dispatched "
-                "(see attr_names)"
-            )
+    shrinkers = _names_option(handler, "obj_shrinkers", obj, name, is_dispatchable)
+    readers = _names_option(handler, "obj_readers", obj, name, is_dispatchable)
     over_limit = threading.Event()  # set while the object is known to be too big
     measuring = threading.Lock()  # so a stale measure cannot clear a newer one's flag
 
@@ -478,12 +488,19 @@ def _instance_endpoint_dispatcher(obj, handler, name, is_dispatchable):
         shrinking = isinstance(_attr_name, str) and _attr_name in shrinkers
         if over_limit.is_set() and measure() and not shrinking:
             refuse()
-        try:
+
+        def call():
             return _get_attr_value(obj, _attr_name, is_dispatchable, **kwargs)
-        finally:  # a call that grows the object and then raises is measured too
+
+        if isinstance(_attr_name, str) and _attr_name in readers:
+            return call()
+
+        def settle():
             # a shrinker that ran but left it over the limit keeps its result
             if measure() and not shrinking:
                 refuse()
+
+        return _call_then_settle(call, settle)
 
     return func
 
@@ -512,7 +529,10 @@ def _class_endpoint_dispatcher(cls, handler, name, is_dispatchable):
       that takes a budget over it is dropped. ``None`` disables a budget. An object
       referencing large shared data (a loaded model) counts that data: raise
       ``max_obj_size`` or pass an ``obj_sizeof`` that skips it. A single call can still
-      allocate before it is measured.
+      allocate before it is measured. A method returning a generator, coroutine or
+      async generator is measured when it returns and again when that result finishes.
+    - ``obj_readers``: names of methods that never add to an object; calls to them are
+      not measured (see ``_instance_endpoint_dispatcher``).
     """
     owner_of = handler.get("obj_owner")
     if owner_of is None:
@@ -523,6 +543,10 @@ def _class_endpoint_dispatcher(cls, handler, name, is_dispatchable):
             "client holding an object id use the object, as before."
         )
     max_obj_size = handler.get("max_obj_size", DFLT_MAX_OBJ_SIZE)
+    # the class's own attributes (no object yet for is_dispatchable): catches typos
+    readers = _names_option(
+        handler, "obj_readers", cls, name, lambda c, n: hasattr(c, n)
+    )
     max_owner_bytes = handler.get("max_owner_bytes", DFLT_MAX_OWNER_BYTES)
     max_total_bytes = handler.get("max_total_bytes", DFLT_MAX_TOTAL_BYTES)
     sizeof = handler.get("obj_sizeof", bounded_deep_sizeof)
@@ -584,12 +608,96 @@ def _class_endpoint_dispatcher(cls, handler, name, is_dispatchable):
             raise InputError(f"No object found with id {_obj_id}")
         if _attr_name is None:
             raise InputError("_attr_name must be provided when _obj_id is not None")
-        try:
+
+        def call():
             return _get_attr_value(obj, _attr_name, is_dispatchable, **kwargs)
-        finally:  # a call that grows the object and then raises is measured too
-            check_size(who, _obj_id, obj)
+
+        if isinstance(_attr_name, str) and _attr_name in readers:
+            return call()
+        return _call_then_settle(call, lambda: check_size(who, _obj_id, obj))
 
     return func
+
+
+def _names_option(handler, option, obj, name, is_dispatchable) -> frozenset:
+    """A handler option naming dispatched attributes, validated."""
+    names = handler.get(option, ())
+    if isinstance(names, str):
+        raise TypeError(f"{option} must be a collection of names: {names!r}")
+    names = frozenset(names)
+    for attr_name in names:
+        if not is_dispatchable(obj, attr_name):
+            raise ValueError(
+                f"{option} of {name!r}: {attr_name!r} is not dispatched (see attr_names)"
+            )
+    return names
+
+
+def _settled(result, settle: Callable[[], None]):
+    """``result``, after ``settle()``; for a generator, coroutine or async generator
+    (which do more work after being returned) ``settle()`` runs again when it finishes.
+
+    Settling at return is what bounds a call whose lazy result is never consumed (a
+    generator a JSON encoder refuses, a client that disconnects): whatever the method
+    did before returning is measured either way.
+    """
+    settle()
+    if inspect.isgenerator(result):
+
+        def settling_generator():
+            try:
+                return (yield from result)
+            finally:
+                settle()
+
+        return settling_generator()
+    if inspect.iscoroutine(result):
+
+        async def settling_coroutine():
+            try:
+                return await result
+            finally:
+                settle()
+
+        return settling_coroutine()
+    if inspect.isasyncgen(result):
+
+        async def settling_async_generator():
+            # driven by hand so asend()/athrow() reach the inner generator
+            value, error = None, None
+            try:
+                while True:
+                    try:
+                        if error is None:
+                            item = await result.asend(value)
+                        else:
+                            item = await result.athrow(error)
+                    except StopAsyncIteration:
+                        return
+                    value, error = None, None
+                    try:
+                        value = yield item
+                    except GeneratorExit:
+                        await result.aclose()
+                        raise
+                    except BaseException as e:
+                        error = e
+            finally:
+                settle()
+
+        return settling_async_generator()
+    return result
+
+
+def _call_then_settle(call: Callable[[], Any], settle: Callable[[], None]):
+    """``call()``, then ``settle()`` (see ``_settled``); also after a call that raised,
+    since it may have grown the object first."""
+    try:
+        result = call()
+    except BaseException:
+        settle()
+        raise
+    return _settled(result, settle)
 
 
 def _get_attr_value(obj, attr_name, is_dispatchable, /, **kwargs):
