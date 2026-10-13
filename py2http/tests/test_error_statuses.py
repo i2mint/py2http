@@ -81,6 +81,8 @@ def test_flask_error_handler(error, status, monkeypatch):
     response = app.test_client().get("/fail")
     assert response.status_code == status
     assert set(response.get_json()) == {"error"}
+    if status == 400:  # as the bottle handler: the status line names the error
+        assert response.status == f"400 {type(error).__name__}"
     if status == 401:
         assert response.headers["WWW-Authenticate"] == "Bearer"
     else:

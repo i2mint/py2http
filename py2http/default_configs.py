@@ -156,7 +156,8 @@ def flask_error_handler(error: Exception):
     status = error_status(error)
     if status == 500 and os.getenv("OPAQUE_ERRORS", None):
         message = "Internal server error"
-    return {"error": message}, status, _status_headers(status)
+    status_line = f"400 {type(error).__name__}" if status == 400 else status
+    return {"error": message}, status_line, _status_headers(status)
 
 
 def default_error_handler(error: Exception):
