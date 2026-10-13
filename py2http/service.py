@@ -237,10 +237,12 @@ _BOUND_METHODS = (MethodType, BuiltinMethodType, MethodWrapperType)
 def bounded_deep_sizeof(obj, limit: Optional[int] = None) -> int:
     """Approximate memory held by ``obj`` and everything it references (containers,
     instance ``__dict__`` and ``__slots__``, what a bound method, a ``partial`` or a
-    closure holds), counting each object once. Stops as soon as the total exceeds
-    ``limit``, so measuring costs at most about ``limit`` bytes' worth of objects.
-    Classes, modules and functions themselves are shared, so not counted, and neither
-    is what they hold (class attributes, module globals).
+    function's closure, attributes and defaults hold), counting each object once. Stops
+    as soon as the total exceeds ``limit``, so measuring costs at most about ``limit``
+    bytes' worth of objects. Classes, modules and the code of functions are shared, so
+    not counted, and neither is what classes and modules hold (class attributes, module
+    globals), nor caches kept in C (``lru_cache``). Holding a bound method of another
+    object counts that whole object, as holding the object itself would.
 
     >>> small, big = bounded_deep_sizeof([1, 2]), bounded_deep_sizeof(list(range(1000)))
     >>> small < big
@@ -254,14 +256,14 @@ def bounded_deep_sizeof(obj, limit: Optional[int] = None) -> int:
         if id(o) in seen or isinstance(o, _SHARED_SIZE_LEAVES):
             continue
         seen.add(id(o))
-        if isinstance(o, FunctionType):  # shared code, but its closure is its own
-            todo.extend(cell.cell_contents for cell in o.__closure__ or ()
-                        if _cell_is_set(cell))
+        try:
+            held = _held_by_callable(o)
+        except Exception:  # an exotic object (a mock, a proxy): measure it plainly
+            held = None
+        if isinstance(o, FunctionType):  # the code is shared; only what it holds counts
+            todo.extend(held or ())
             continue
-        if isinstance(o, _BOUND_METHODS):  # what it is bound to (a module is a leaf)
-            todo.append(o.__self__)
-        elif isinstance(o, partial):
-            todo.extend((o.func, o.args, o.keywords))
+        todo.extend(held or ())
         total += sys.getsizeof(o, 0)
         if limit is not None and total > limit:
             break
@@ -270,14 +272,39 @@ def bounded_deep_sizeof(obj, limit: Optional[int] = None) -> int:
             todo.extend(o.values())
         elif isinstance(o, (list, tuple, set, frozenset, deque)):
             todo.extend(o)
-        if hasattr(o, "__dict__") and isinstance(vars(o), dict):
-            todo.append(vars(o))
-        for klass in type(o).__mro__:
-            slots = getattr(klass, "__slots__", ())
-            for slot in (slots,) if isinstance(slots, str) else slots:
-                if slot not in ("__dict__", "__weakref__") and hasattr(o, slot):
-                    todo.append(getattr(o, slot))
+        try:  # a __getattr__ may raise anything
+            todo.extend(_instance_state(o))
+        except Exception:
+            pass
     return total
+
+
+def _instance_state(o):
+    """An object's ``__dict__`` and the values of its ``__slots__``."""
+    if hasattr(o, "__dict__") and isinstance(vars(o), dict):
+        yield vars(o)
+    for klass in type(o).__mro__:
+        slots = getattr(klass, "__slots__", ())
+        for slot in (slots,) if isinstance(slots, str) else slots:
+            if slot not in ("__dict__", "__weakref__") and hasattr(o, slot):
+                yield getattr(o, slot)
+
+
+def _held_by_callable(o) -> Optional[list]:
+    """What a function (closure, attributes, defaults), bound method, static or class
+    method, or ``partial`` holds; ``None`` for anything else."""
+    if isinstance(o, FunctionType):
+        cells = [c.cell_contents for c in o.__closure__ or () if _cell_is_set(c)]
+        return [*cells, o.__dict__, o.__defaults__, o.__kwdefaults__]
+    if isinstance(o, MethodType):
+        return [o.__self__, o.__func__]
+    if isinstance(o, _BOUND_METHODS):  # a builtin's: what it is bound to
+        return [o.__self__]
+    if isinstance(o, (staticmethod, classmethod)):
+        return [o.__func__]
+    if isinstance(o, partial):
+        return [o.func, o.args, o.keywords]
+    return None
 
 
 def _cell_is_set(cell) -> bool:
@@ -1048,10 +1075,12 @@ def _instance_endpoint_dispatcher(obj, handler, name, is_dispatchable):
       call, reads included, so a large limit costs time on every request. A method
       returning a generator or coroutine does its work after the measure: what it
       adds is caught by the next call.
-    - ``obj_shrinkers``: names of attributes that only ever remove (``__delitem__``,
-      ``pop``, ``clear``...), still callable while the object is over its limit so a
-      client can bring it back under. Empty by default: py2http cannot tell which
-      methods shrink an object.
+    - ``obj_shrinkers``: names of dispatched attributes that only ever remove
+      (``pop``, ``clear``, ``__delitem__`` if ``attr_names`` lists it...), still
+      callable while the object is over its limit so a client can bring it back under.
+      Empty by default: py2http cannot tell which methods shrink an object, and the
+      bound holds only if every name listed really only removes (one that also adds is
+      never refused).
     """
     owner_of = handler.get("obj_owner")
     if owner_of is None:
@@ -1074,11 +1103,30 @@ def _instance_endpoint_dispatcher(obj, handler, name, is_dispatchable):
             f"{max_obj_size} bytes (as measured by obj_sizeof): raise max_obj_size, pass "
             "an obj_sizeof that skips what clients cannot grow, or max_obj_size=None."
         )
-    shrinkers = frozenset(handler.get("obj_shrinkers", ()))
+    shrinkers = handler.get("obj_shrinkers", ())
+    if isinstance(shrinkers, str):
+        raise TypeError(f"obj_shrinkers must be a collection of names: {shrinkers!r}")
+    shrinkers = frozenset(shrinkers)
+    for attr_name in shrinkers:
+        if not is_dispatchable(obj, attr_name):
+            raise ValueError(
+                f"obj_shrinkers of {name!r}: {attr_name!r} is not dispatched "
+                "(see attr_names)"
+            )
     over_limit = threading.Event()  # set while the object is known to be too big
+    measuring = threading.Lock()  # so a stale measure cannot clear a newer one's flag
+
+    def measure() -> bool:
+        """Whether the object is over its limit, recorded in ``over_limit``."""
+        with measuring:
+            too_big = is_too_big()
+            if too_big:
+                over_limit.set()
+            else:
+                over_limit.clear()
+            return too_big
 
     def refuse():
-        over_limit.set()
         allowed = f" (except {', '.join(sorted(shrinkers))})" if shrinkers else ""
         raise InputError(
             f"{name} is over its size limit ({max_obj_size} bytes): calls{allowed} "
@@ -1088,21 +1136,14 @@ def _instance_endpoint_dispatcher(obj, handler, name, is_dispatchable):
     def func(_attr_name=None, **kwargs):
         owner()
         shrinking = isinstance(_attr_name, str) and _attr_name in shrinkers
-        if over_limit.is_set():
-            if not is_too_big():
-                over_limit.clear()
-            elif not shrinking:
-                refuse()
+        if over_limit.is_set() and measure() and not shrinking:
+            refuse()
         try:
             return _get_attr_value(obj, _attr_name, is_dispatchable, **kwargs)
         finally:  # a call that grows the object and then raises is measured too
-            if is_too_big():
-                if shrinking:  # it ran, and removed what it could: stay refused
-                    over_limit.set()
-                else:
-                    refuse()
-            else:
-                over_limit.clear()
+            # a shrinker that ran but left it over the limit keeps its result
+            if measure() and not shrinking:
+                refuse()
 
     return func
 

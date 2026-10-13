@@ -204,3 +204,33 @@ def test_state_behind_methods_partials_and_closures_is_measured():
         holder = Holder()
         holder.held = held
         assert bounded_deep_sizeof(holder) > 100_000, held
+
+
+def test_shrinkers_are_checked_at_build():
+    with pytest.raises(TypeError, match="collection"):
+        _instance(attr_names=["remove"], obj_shrinkers="remove")
+    with pytest.raises(ValueError, match="not dispatched"):
+        _instance(attr_names=["remove"], obj_shrinkers=["remvoe"])
+
+
+def test_more_held_state_is_measured_and_odd_objects_do_not_break_it():
+    from types import MethodType
+    from unittest.mock import Mock
+
+    from py2http.service import bounded_deep_sizeof
+
+    big = [str(i) * 1000 for i in range(100)]
+
+    def closure(self):
+        return big
+
+    class Holder:
+        pass
+
+    holder = Holder()
+    holder.held = MethodType(closure, object())
+    assert bounded_deep_sizeof(holder) > 100_000
+    holder.held = staticmethod(lambda: big)
+    assert bounded_deep_sizeof(holder) > 100_000
+    holder.held = Mock(spec=type(closure))
+    assert bounded_deep_sizeof(holder) > 0
