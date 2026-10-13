@@ -18,7 +18,7 @@ from aiohttp.test_utils import TestClient, TestServer
 
 from py2http import mk_app
 from py2http.bottle_plugins import ApiKeyAuthPlugin, JWTPlugin
-from py2http.middleware import mk_superadmin_middleware
+from py2http.middleware import mk_jwt_middleware, mk_superadmin_middleware
 from py2http.service import current_request
 from py2http.tests.utils_for_testing import call_wsgi
 
@@ -44,6 +44,17 @@ def _bearer(token):
 
 def _b64(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
+
+
+def _hs256_with_key(claims, key: bytes) -> str:
+    """Sign by hand, so tests can forge what PyJWT itself refuses to produce."""
+    import hashlib
+    import hmac
+
+    header = _b64(json.dumps({"alg": "HS256", "typ": "JWT"}).encode())
+    signing_input = f"{header}.{_b64(json.dumps(claims).encode())}"
+    sig = hmac.new(key, signing_input.encode(), hashlib.sha256).digest()
+    return f"{signing_input}.{_b64(sig)}"
 
 
 def _token(claims=None, *, key=SECRET, algorithm="HS256"):
@@ -243,3 +254,96 @@ def test_empty_api_keys_are_refused(key):
         ApiKeyAuthPlugin(key)
     with pytest.raises(ValueError):
         mk_superadmin_middleware(key)
+
+
+# ------------------------------------- adversarial-review findings, and #25
+
+
+def _raw_get(app, path, raw_header: bytes):
+    """GET with a raw (possibly non-UTF-8) ``Authorization`` header, as WSGI hands
+    it over: latin-1 decoded bytes."""
+    import io
+    from wsgiref.util import setup_testing_defaults
+
+    environ = {
+        "REQUEST_METHOD": "GET",
+        "PATH_INFO": path,
+        "HTTP_AUTHORIZATION": raw_header.decode("latin-1"),
+        "wsgi.input": io.BytesIO(b""),
+    }
+    setup_testing_defaults(environ)
+    statuses = []
+    b"".join(app(environ, lambda status, headers, *a: statuses.append(status)))
+    return statuses[0]
+
+
+@pytest.mark.parametrize(
+    "plugin",
+    [JWTPlugin(SECRET), ApiKeyAuthPlugin(API_KEY)],
+    ids=["jwt", "api-key"],
+)
+def test_non_utf8_authorization_header_is_401_not_500(plugin):
+    app = mk_app([whoami], plugins=[plugin], http_method="get")
+    assert _raw_get(app, "/whoami", b"Bearer \xe9.\xe9.\xe9").startswith("401")
+
+
+def _aiohttp_raw_status(middleware, raw_header: bytes) -> int:
+    """Send a raw (non-UTF-8) header over a socket, which aiohttp's client won't."""
+    app = web.Application(middlewares=[middleware])
+    app.router.add_get("/hello", _hello)
+
+    async def go():
+        async with TestServer(app) as server:
+            reader, writer = await asyncio.open_connection(server.host, server.port)
+            writer.write(
+                b"GET /hello HTTP/1.1\r\nHost: x\r\nConnection: close\r\n"
+                b"Authorization: " + raw_header + b"\r\n\r\n"
+            )
+            await writer.drain()
+            status_line = await reader.readline()
+            writer.close()
+            return int(status_line.split()[1])
+
+    return asyncio.run(go())
+
+
+@pytest.mark.parametrize(
+    "middleware",
+    [mk_superadmin_middleware(API_KEY), mk_jwt_middleware(SECRET)],
+    ids=["superadmin", "jwt"],
+)
+def test_aiohttp_non_utf8_authorization_header_is_401(middleware):
+    assert _aiohttp_raw_status(middleware, b"Bearer \xe9.\xe9.\xe9") == 401
+
+
+def test_mixed_families_are_fine_without_verification():
+    JWTPlugin(verify=False, algorithms=["HS256", "RS256"])
+
+
+def test_server_side_key_problem_is_logged(caplog):
+    _, public_pem = _rsa_keys()
+    plugin = JWTPlugin(
+        public_pem, algorithms=["HS256", "RS256"], allow_mixed_algorithm_families=True
+    )
+    forged = _hs256_with_key({"sub": "mallory"}, public_pem)
+    with caplog.at_level("WARNING", logger="py2http"):
+        status, _ = call_wsgi(_app(plugin), "/whoami", {}, headers=_bearer(forged))
+    assert status.startswith("401")
+    assert "server-side reason" in caplog.text
+
+
+@pytest.mark.parametrize("make", [JWTPlugin, mk_jwt_middleware])
+def test_audience_passes_through_decode_kwargs(make):
+    """A token with an ``aud`` claim needs ``decode_kwargs={'audience': ...}`` (#25)."""
+    token = _token({"sub": "alice", "aud": "my-api"})
+    if make is JWTPlugin:
+        app = _app(JWTPlugin(SECRET, decode_kwargs={"audience": "my-api"}))
+        assert (
+            call_wsgi(app, "/whoami", {}, headers=_bearer(token))[1]["sub"] == "alice"
+        )
+        app = _app(JWTPlugin(SECRET))
+        assert call_wsgi(app, "/whoami", {}, headers=_bearer(token))[0].startswith(
+            "401"
+        )
+    with pytest.raises(ValueError, match="options"):
+        make(SECRET, decode_kwargs={"options": {"verify_signature": False}})

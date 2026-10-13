@@ -9,9 +9,15 @@ both refuse the same tokens and keys for the same reasons.
 """
 
 import hmac
-from collections.abc import Iterable
+import logging
+from collections.abc import Iterable, Mapping
+from typing import Optional
+
+logger = logging.getLogger("py2http")
 
 DFLT_JWT_ALGORITHMS = ("HS256",)
+# ``jwt.decode`` arguments the verification setup owns, so ``decode_kwargs`` can't
+_RESERVED_DECODE_KWARGS = frozenset({"jwt", "key", "algorithms", "options"})
 _BEARER_PREFIX = "bearer "
 
 
@@ -51,8 +57,9 @@ def jwt_algorithms(
       algorithm (PyJWT names are case-sensitive);
     - ``verify`` is True and ``secret`` is empty (an empty HMAC secret lets anyone sign
       tokens), or an HMAC algorithm is asked for with a non-``str``/``bytes`` secret;
-    - HMAC and public-key algorithms are mixed with one ``secret`` (the classic
-      algorithm-confusion setup), unless ``allow_mixed_algorithm_families`` is True.
+    - ``verify`` is True and HMAC and public-key algorithms are mixed with one
+      ``secret`` (the classic algorithm-confusion setup), unless
+      ``allow_mixed_algorithm_families`` is True.
 
     >>> jwt_algorithms('s3cret')
     ['HS256']
@@ -77,13 +84,32 @@ def jwt_algorithms(
     families = {_algorithm_family(a) for a in algorithms}
     if verify and "hmac" in families and not isinstance(secret, (str, bytes)):
         raise TypeError(f"an HMAC secret must be str or bytes, got {type(secret)}")
-    if len(families) > 1 and not allow_mixed_algorithm_families:
+    if verify and len(families) > 1 and not allow_mixed_algorithm_families:
         raise ValueError(
             f"algorithms={algorithms} mixes HMAC and public-key algorithms with one "
             "secret, which allows algorithm-confusion forgeries; use one family, or "
             "pass allow_mixed_algorithm_families=True if you really mean it"
         )
     return algorithms
+
+
+def jwt_decode_kwargs(decode_kwargs: Optional[Mapping] = None) -> dict:
+    """Validate extra ``jwt.decode`` arguments (``audience``, ``issuer``,
+    ``leeway``...), refusing those the verification setup owns.
+
+    >>> jwt_decode_kwargs({'audience': 'my-api'})
+    {'audience': 'my-api'}
+    >>> jwt_decode_kwargs({'options': {'verify_signature': False}})
+    Traceback (most recent call last):
+      ...
+    ValueError: decode_kwargs may not set ['options']; use verify= and algorithms=
+    """
+    decode_kwargs = dict(decode_kwargs or {})
+    if reserved := sorted(_RESERVED_DECODE_KWARGS & set(decode_kwargs)):
+        raise ValueError(
+            f"decode_kwargs may not set {reserved}; use verify= and algorithms="
+        )
+    return decode_kwargs
 
 
 def bearer_token(authorization_header) -> str:
@@ -94,10 +120,18 @@ def bearer_token(authorization_header) -> str:
     return header[len(_BEARER_PREFIX) :].strip()
 
 
-def decode_jwt(token: str, secret, *, algorithms: list, verify: bool = True) -> dict:
+def decode_jwt(
+    token: str,
+    secret,
+    *,
+    algorithms: list,
+    verify: bool = True,
+    decode_kwargs: Optional[Mapping] = None,
+) -> dict:
     """The claims of ``token``, or ``CredentialsRejected`` with a client-safe reason.
 
     With ``verify=False`` neither the signature nor the claims (``exp``...) are checked.
+    ``decode_kwargs`` (``audience``, ``issuer``, ``leeway``...) go to ``jwt.decode``.
     """
     import jwt
 
@@ -107,13 +141,17 @@ def decode_jwt(token: str, secret, *, algorithms: list, verify: bool = True) -> 
             secret,
             options={"verify_signature": verify},
             algorithms=algorithms,
+            **(decode_kwargs or {}),
         )
-    except jwt.PyJWTError as error:  # incl. a key unfit for the token's alg
-        # InvalidTokenError texts describe the token ("Signature has expired"); other
-        # PyJWTErrors (InvalidKeyError...) can describe the server's key
-        reason = str(error) if isinstance(error, jwt.InvalidTokenError) else None
+    except jwt.InvalidTokenError as error:  # its text describes the token
+        raise CredentialsRejected(f"Invalid authentication token: {error}") from error
+    except (jwt.PyJWTError, UnicodeError) as error:
+        # a key unfit for the token's alg (InvalidKeyError...) describes the server's
+        # key, so it is logged rather than sent; a non-UTF-8 header is just refused
+        if not isinstance(error, UnicodeError):
+            logger.warning("JWT rejected for a server-side reason: %r", error)
         raise CredentialsRejected(
-            f"Invalid authentication token: {reason or 'not acceptable'}"
+            "Invalid authentication token: not acceptable"
         ) from error
 
 
@@ -130,7 +168,7 @@ def key_matches(given, expected) -> bool:
     if not given or not expected:
         return False
 
-    def _bytes(x):
-        return x.encode() if isinstance(x, str) else x
+    def _bytes(x):  # aiohttp keeps non-UTF-8 header bytes as surrogate escapes
+        return x.encode(errors="surrogateescape") if isinstance(x, str) else x
 
     return hmac.compare_digest(_bytes(given), _bytes(expected))

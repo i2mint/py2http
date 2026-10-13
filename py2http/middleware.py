@@ -15,6 +15,7 @@ from py2http.auth import (
     bearer_token,
     decode_jwt,
     jwt_algorithms,
+    jwt_decode_kwargs,
     key_matches,
     required_key,
 )
@@ -38,6 +39,7 @@ def mk_jwt_middleware(
     algorithms: Iterable[str] = DFLT_JWT_ALGORITHMS,
     public_routes: Iterable[str] = DFLT_PUBLIC_ROUTES,
     allow_mixed_algorithm_families: bool = False,
+    decode_kwargs: dict = None,
 ):
     """Make an aiohttp middleware that requires a valid ``Authorization: Bearer``
     JWT on every request, and puts the decoded claims on ``request.token``.
@@ -64,6 +66,9 @@ def mk_jwt_middleware(
             public key as the HMAC secret), so it raises ``ValueError`` unless
             this is True. The middleware used to accept ``["HS256", "RS256"]``;
             pass that list with this flag to restore it.
+        decode_kwargs: Extra ``jwt.decode`` arguments, such as ``audience``,
+            ``issuer`` or ``leeway`` (without them a token carrying an ``aud``
+            claim is always refused).
     """
     from aiohttp import web
 
@@ -73,6 +78,7 @@ def mk_jwt_middleware(
         algorithms=algorithms,
         allow_mixed_algorithm_families=allow_mixed_algorithm_families,
     )
+    decode_kwargs = jwt_decode_kwargs(decode_kwargs)
     public_routes = frozenset(
         name for name in _names("public_routes", public_routes) if name is not None
     )
@@ -84,7 +90,13 @@ def mk_jwt_middleware(
             return await handler(req)
         token = bearer_token(req.headers.get("Authorization"))
         try:
-            req.token = decode_jwt(token, secret, algorithms=algorithms, verify=verify)
+            req.token = decode_jwt(
+                token,
+                secret,
+                algorithms=algorithms,
+                verify=verify,
+                decode_kwargs=decode_kwargs,
+            )
         except CredentialsRejected as rejection:
             if verify:
                 raise _unauthorized(str(rejection)) from None

@@ -13,12 +13,22 @@ from py2http.auth import (
     bearer_token,
     decode_jwt,
     jwt_algorithms,
+    jwt_decode_kwargs,
     key_matches,
     required_key,
 )
 from py2http.constants import JSON_CONTENT_TYPE
 
 OPTIONS = "OPTIONS"
+
+
+def _authorization_header() -> str:
+    """The request's ``Authorization`` header; ``''`` if it is not valid UTF-8 (Bottle
+    raises when decoding it), which every check then refuses."""
+    try:
+        return request.headers.get("Authorization", "")
+    except UnicodeError:
+        return ""
 
 
 def _unauthorized(message):
@@ -43,6 +53,7 @@ class JWTPlugin:
         algorithms: Iterable[str] = None,
         *,
         allow_mixed_algorithm_families: bool = False,
+        decode_kwargs: dict = None,
     ):
         """Creates a new JWTPlugin instance.
 
@@ -55,6 +66,8 @@ class JWTPlugin:
         :param algorithms: (Optional) The algorithms a token may be signed with
             (default ``("HS256",)``); validated as ``py2http.auth.jwt_algorithms``
             describes, as is ``allow_mixed_algorithm_families``.
+        :param decode_kwargs: (Optional) Extra ``jwt.decode`` arguments, such as
+            ``audience``, ``issuer`` or ``leeway``.
         """
         self._secret = secret
         self._verify = verify
@@ -66,12 +79,16 @@ class JWTPlugin:
             algorithms=algorithms or DFLT_JWT_ALGORITHMS,
             allow_mixed_algorithm_families=allow_mixed_algorithm_families,
         )
+        self._decode_kwargs = jwt_decode_kwargs(decode_kwargs)
 
     def _claims(self):
         """The (renamed) claims of the request's token; raises ``CredentialsRejected``."""
-        token = bearer_token(request.headers.get("Authorization"))
         decoded = decode_jwt(
-            token, self._secret, algorithms=self._algorithms, verify=self._verify
+            bearer_token(_authorization_header()),
+            self._secret,
+            algorithms=self._algorithms,
+            verify=self._verify,
+            decode_kwargs=self._decode_kwargs,
         )
         for k, v in self._mapper.items():
             if k in decoded:
@@ -107,7 +124,7 @@ class ApiKeyAuthPlugin:
     def __call__(self, handler):
         @wraps(handler)
         def wrapped_handler(*args, **kwargs):
-            if key_matches(request.headers.get("Authorization"), self._api_key):
+            if key_matches(_authorization_header(), self._api_key):
                 return handler(*args, **kwargs)
             return _unauthorized("invalid API key")
 
