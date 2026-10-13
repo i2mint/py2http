@@ -17,33 +17,41 @@ Overall, this module offers a comprehensive approach to creating HTTP services f
 Python functions, enabling developers to easily expose their functions as remote APIs
 with minimal setup.
 
+### Module Attributes
+
+| [`current_request`](#py2http.service.current_request)   | The request being handled (set around every handler call), so per-request hooks such as `obj_owner` can read it without the dispatched function taking it.   |
+|--------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`ObjOwner`](#py2http.service.ObjOwner)          | `(request) -> owner`, a hashable that identifies an *authenticated* client (e.g. a user id from a verified token).                                           |
+
 ### Functions
 
-| `func_copy`(func)                                                                                 |                                                                                                                   |
-|---------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| `method_not_found`(method_name)                                                                   |                                                                                                                   |
-| `mk_aiohttp_app`(funcs, \*\*configs)                                                              |                                                                                                                   |
-| [`mk_app`](#py2http.service.mk_app)(app_spec, \*[, app_name, framework, ...]) | Generates an application which exposes web services created from the given python functions to remotely run them. |
-| `mk_bottle_app`(funcs, \*\*configs)                                                               |                                                                                                                   |
-| `mk_flask_app`(funcs, \*\*configs)                                                                |                                                                                                                   |
-| [`mk_route`](#py2http.service.mk_route)(func, \*\*configs)                      | Generate a route object and an OpenAPI path specification for a function                                          |
-| `mk_routes_and_openapi_specs`(funcs, \*\*configs)                                                 |                                                                                                                   |
-| [`public_attr`](#py2http.service.public_attr)(obj, attr_name)                      | The attribute policy `attr_names='*'` stands for: only public methods.                                            |
-| [`run_app`](#py2http.service.run_app)(app_obj, \*[, app_name, framework, ...]) | Run an application which exposes web services created from the given python functions to remotely run them.       |
-| [`unsafe_any_attr`](#py2http.service.unsafe_any_attr)(obj, attr_name)                  | Dispatch ANY attribute of the object, including private ones and dunders.                                         |
+| [`bounded_deep_sizeof`](#py2http.service.bounded_deep_sizeof)(obj[, limit])                | Approximate memory held by `obj` and everything it references (containers, instance `__dict__` and `__slots__`), counting each object once.   |
+|---------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| `func_copy`(func)                                                                                 |                                                                                                                                               |
+| `method_not_found`(method_name)                                                                   |                                                                                                                                               |
+| `mk_aiohttp_app`(funcs, \*\*configs)                                                              |                                                                                                                                               |
+| [`mk_app`](#py2http.service.mk_app)(app_spec, \*[, app_name, framework, ...]) | Generates an application which exposes web services created from the given python functions to remotely run them.                             |
+| `mk_bottle_app`(funcs, \*\*configs)                                                               |                                                                                                                                               |
+| `mk_flask_app`(funcs, \*\*configs)                                                                |                                                                                                                                               |
+| [`mk_route`](#py2http.service.mk_route)(func, \*\*configs)                      | Generate a route object and an OpenAPI path specification for a function                                                                      |
+| `mk_routes_and_openapi_specs`(funcs, \*\*configs)                                                 |                                                                                                                                               |
+| [`public_attr`](#py2http.service.public_attr)(obj, attr_name)                      | The attribute policy `attr_names='*'` stands for: only public methods.                                                                        |
+| [`run_app`](#py2http.service.run_app)(app_obj, \*[, app_name, framework, ...]) | Run an application which exposes web services created from the given python functions to remotely run them.                                   |
+| [`unsafe_any_attr`](#py2http.service.unsafe_any_attr)(obj, attr_name)                  | Dispatch ANY attribute of the object, including private ones and dunders.                                                                     |
 
 ### Classes
 
-| [`LRUObjStore`](#py2http.service.LRUObjStore)(\*[, max_size])   | A mapping that keeps at most `max_size` items, evicting the least recently used one when a new key would exceed it.   |
-|--------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
-| [`SubAppSpec`](#py2http.service.SubAppSpec)                    |                                                                                                                       |
+| [`LRUObjStore`](#py2http.service.LRUObjStore)(\*[, max_size, on_evict])   | A mapping that keeps at most `max_size` items, evicting the least recently used one when a new key would exceed it (`on_evict(k, v)` is told).   |
+|------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`OwnedObjStore`](#py2http.service.OwnedObjStore)(\*[, quota, max_owners])  | Objects kept per owner, with object and byte budgets.                                                                                            |
+| [`SubAppSpec`](#py2http.service.SubAppSpec)                              |                                                                                                                                                  |
 
-### *class* py2http.service.LRUObjStore(, max_size=1000)
+### *class* py2http.service.LRUObjStore(, max_size=1000, on_evict=None)
 
 Bases: [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping)
 
 A mapping that keeps at most `max_size` items, evicting the least recently
-used one when a new key would exceed it.
+used one when a new key would exceed it (`on_evict(k, v)` is told).
 
 Used as the default store of objects created through a class endpoint, so that
 clients cannot grow server memory without bound by creating objects.
@@ -57,9 +65,69 @@ clients cannot grow server memory without bound by creating objects.
 ['a', 'c']
 ```
 
+### py2http.service.ObjOwner
+
+`(request) -> owner`, a hashable that identifies an
+*authenticated* client (e.g. a user id from a verified token). `None` and `""`
+mean “not identified” and are refused. A client-chosen value (a session cookie the
+client mints, an IP) lets one client create owners until others are evicted.
+
+* **Type:**
+  `obj_owner` hook
+
+alias of `Callable`[[[`Any`](https://docs.python.org/3/library/typing.html#typing.Any)], [`Any`](https://docs.python.org/3/library/typing.html#typing.Any) | [`None`](https://docs.python.org/3/builtins/constants.html#None)]
+
+### *class* py2http.service.OwnedObjStore(, quota=100, max_owners=1000)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+Objects kept per owner, with object and byte budgets. Thread-safe.
+
+- `quota` objects per owner: an owner’s own least recently used object is evicted
+  beyond it, never someone else’s;
+- `max_owners` owners at once: the least recently active owner’s objects go;
+- byte accounting: `record()` the size of an object; `owner_bytes()` and
+  `total_bytes` sum what is currently stored.
+
+```pycon
+>>> s = OwnedObjStore(quota=2, max_owners=2)
+>>> s.put('ann', 'a1', 1); s.put('ann', 'a2', 2); s.put('bob', 'b1', 3)
+>>> s.put('ann', 'a3', 4)  # ann's quota: her least recently used object goes
+>>> s.get('ann', 'a1') is None, s.get('ann', 'a3'), s.get('bob', 'b1')
+(True, 4, 3)
+>>> s.get('bob', 'a3') is None  # another owner's id is simply not found
+True
+>>> s.record('ann', 'a3', 100); s.record('bob', 'b1', 5)
+>>> s.owner_bytes('ann'), s.total_bytes
+(100, 105)
+```
+
 ### *class* py2http.service.SubAppSpec
 
 Bases: [`TypedDict`](https://docs.python.org/3/library/typing.html#typing.TypedDict)
+
+### py2http.service.bounded_deep_sizeof(obj, limit=None)
+
+Approximate memory held by `obj` and everything it references (containers,
+instance `__dict__` and `__slots__`), counting each object once. Stops as soon
+as the total exceeds `limit`, so measuring costs at most about `limit` bytes’
+worth of objects. Classes, modules and functions are shared, so not counted.
+
+* **Return type:**
+  [`int`](https://docs.python.org/3/builtins/functions.html#int)
+
+```pycon
+>>> small, big = bounded_deep_sizeof([1, 2]), bounded_deep_sizeof(list(range(1000)))
+>>> small < big
+True
+>>> bounded_deep_sizeof(list(range(10**6)), limit=1000) > 1000
+True
+```
+
+### py2http.service.current_request *: [ContextVar](https://docs.python.org/3/library/contextvars.html#contextvars.ContextVar)* *= <ContextVar name='py2http_current_request' default=None>*
+
+The request being handled (set around every handler call), so per-request hooks such
+as `obj_owner` can read it without the dispatched function taking it.
 
 ### py2http.service.mk_app(app_spec, \*, app_name='HTTP Service', framework='bottle', input_mapper=<function default_input_mapper>, output_mapper=<function send_json_resp.<locals>.output_mapper>, error_handler=<function default_error_handler>, header_inputs={}, middleware=[], host='localhost', port=3030, server='gunicorn', http_method='post', openapi={}, logger=None, plugins=[], enable_cors=False, cors_allowed_origins='\*', publish_openapi=False, openapi_insecure=False, publish_swagger=False, swagger_url='/swagger', swagger_title='Swagger', ssl_certfile=None, ssl_keyfile=None, \*\*configs)
 

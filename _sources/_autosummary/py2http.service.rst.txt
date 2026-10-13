@@ -4,10 +4,18 @@ py2http.service
 .. automodule:: py2http.service
 
    
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      current_request
+      ObjOwner
+   
    .. rubric:: Functions
 
    .. autosummary::
    
+      bounded_deep_sizeof
       func_copy
       method_not_found
       mk_aiohttp_app
@@ -25,5 +33,6 @@ py2http.service
    .. autosummary::
    
       LRUObjStore
+      OwnedObjStore
       SubAppSpec
    
