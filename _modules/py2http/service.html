@@ -230,7 +230,7 @@
 </span><span id="line-56">    <span class="n">mk_input_schema_from_func</span><span class="p">,</span>
 </span><span id="line-57">    <span class="n">mk_output_schema_from_func</span><span class="p">,</span>
 </span><span id="line-58"><span class="p">)</span>
-</span><span id="line-59"><span class="kn">from</span><span class="w"> </span><span class="nn">py2http.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeAsserter</span>
+</span><span id="line-59"><span class="kn">from</span><span class="w"> </span><span class="nn">py2http.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeAsserter</span><span class="p">,</span> <span class="n">call_with_inputs</span>
 </span><span id="line-60"><span class="kn">from</span><span class="w"> </span><span class="nn">py2http.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">JSON_CONTENT_TYPE</span>
 </span><span id="line-61">
 </span><span id="line-62"><span class="c1"># Instance endpoints (``handler['endpoint']`` is an object) are one object every client</span>
@@ -709,7 +709,7 @@
 </span><span id="line-518">        <span class="k">try</span><span class="p">:</span>
 </span><span id="line-519">            <span class="n">inputs</span> <span class="o">=</span> <span class="n">input_mapper</span><span class="p">(</span><span class="n">req</span><span class="p">)</span>
 </span><span id="line-520">            <span class="n">input_args</span><span class="p">,</span> <span class="n">input_kwargs</span> <span class="o">=</span> <span class="n">get_input_args_and_kwargs</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
-</span><span id="line-521">            <span class="n">raw_result</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">input_args</span><span class="p">,</span> <span class="o">**</span><span class="n">input_kwargs</span><span class="p">)</span>
+</span><span id="line-521">            <span class="n">raw_result</span> <span class="o">=</span> <span class="n">call_with_inputs</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">input_args</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">)</span>
 </span><span id="line-522">            <span class="k">return</span> <span class="n">output_mapper</span><span class="p">(</span><span class="n">raw_result</span><span class="p">,</span> <span class="o">**</span><span class="n">inputs</span><span class="p">)</span>
 </span><span id="line-523">        <span class="k">finally</span><span class="p">:</span>
 </span><span id="line-524">            <span class="n">current_request</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
@@ -727,7 +727,7 @@
 </span><span id="line-536">        <span class="k">if</span> <span class="n">isawaitable</span><span class="p">(</span><span class="n">inputs</span><span class="p">):</span>  <span class="c1"># Pattern: pass-on async property</span>
 </span><span id="line-537">            <span class="n">inputs</span> <span class="o">=</span> <span class="k">await</span> <span class="n">inputs</span>
 </span><span id="line-538">        <span class="n">input_args</span><span class="p">,</span> <span class="n">input_kwargs</span> <span class="o">=</span> <span class="n">get_input_args_and_kwargs</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
-</span><span id="line-539">        <span class="n">raw_result</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">input_args</span><span class="p">,</span> <span class="o">**</span><span class="n">input_kwargs</span><span class="p">)</span>
+</span><span id="line-539">        <span class="n">raw_result</span> <span class="o">=</span> <span class="n">call_with_inputs</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">input_args</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">)</span>
 </span><span id="line-540">        <span class="k">if</span> <span class="n">isawaitable</span><span class="p">(</span><span class="n">raw_result</span><span class="p">):</span>  <span class="c1"># Pattern: pass-on async property</span>
 </span><span id="line-541">            <span class="n">raw_result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">raw_result</span>
 </span><span id="line-542">        <span class="n">final_result</span> <span class="o">=</span> <span class="n">output_mapper</span><span class="p">(</span><span class="n">raw_result</span><span class="p">,</span> <span class="o">**</span><span class="n">inputs</span><span class="p">)</span>
@@ -1435,7 +1435,7 @@
 </span><span id="line-1237">        <span class="k">if</span> <span class="n">_obj_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="line-1238">            <span class="k">if</span> <span class="n">_attr_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="line-1239">                <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="s2">"_attr_name must be None when _obj_id is None"</span><span class="p">)</span>
-</span><span id="line-1240">            <span class="n">new_obj</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span id="line-1240">            <span class="n">new_obj</span> <span class="o">=</span> <span class="n">call_with_inputs</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="p">)</span>
 </span><span id="line-1241">            <span class="n">new_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid4</span><span class="p">())</span>
 </span><span id="line-1242">            <span class="n">store</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">who</span><span class="p">,</span> <span class="n">new_id</span><span class="p">,</span> <span class="n">new_obj</span><span class="p">)</span>
 </span><span id="line-1243">            <span class="n">check_size</span><span class="p">(</span><span class="n">who</span><span class="p">,</span> <span class="n">new_id</span><span class="p">,</span> <span class="n">new_obj</span><span class="p">)</span>
@@ -1460,7 +1460,7 @@
 </span><span id="line-1262">        <span class="p">)</span>
 </span><span id="line-1263">    <span class="n">attr</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">)</span>
 </span><span id="line-1264">    <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">attr</span><span class="p">):</span>
-</span><span id="line-1265">        <span class="k">return</span> <span class="n">attr</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span id="line-1265">        <span class="k">return</span> <span class="n">call_with_inputs</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="p">)</span>
 </span><span id="line-1266">    <span class="k">return</span> <span class="n">attr</span>
 </span></code></pre></div>
     </div></div>
@@ -1477,7 +1477,7 @@ Otosense&nbsp;</p>
 </footer>
     </div>
     
-    <script src="../../_static/documentation_options.js?v=946d7960"></script>
+    <script src="../../_static/documentation_options.js?v=7c77daa2"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

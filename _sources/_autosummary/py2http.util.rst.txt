@@ -8,6 +8,7 @@ py2http.util
 
    .. autosummary::
    
+      call_with_inputs
       conditional_logger
       deprecate
       if_not_empty

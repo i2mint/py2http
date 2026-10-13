@@ -14,15 +14,16 @@ Overall, this module provides a collection of useful tools for handling lazy pro
 
 ### Functions
 
-| `conditional_logger`([verbose, log_func])                                            |                                                                                                             |
-|--------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
-| [`deprecate`](#py2http.util.deprecate)([func, msg])              | Decorator to emit a DeprecationWarning when the decorated function is called.                               |
-| `if_not_empty`(obj[, if_empty_val])                                                  |                                                                                                             |
-| [`obj_to_items_gen`](#py2http.util.obj_to_items_gen)(obj, attrs[, ...]) | Make a generator of (k, v) items extracted from an input object, given an iterable of attributes to extract |
-| [`obj_to_path`](#py2http.util.obj_to_path)(obj)                    | Quasi-inverse of obj_to_path: Get a root_obj and attr_path from an object.                                  |
-| [`path_to_obj`](#py2http.util.path_to_obj)(root_obj, attr_path)    | Get an object from a root object and "attribute path" specification.                                        |
-| `py_obj_info`(obj)                                                                   |                                                                                                             |
-| [`pyparam_to_dict`](#py2http.util.pyparam_to_dict)(param[, kv_trans])  | Get dict from a Parameter object                                                                            |
+| [`call_with_inputs`](#py2http.util.call_with_inputs)(func[, args, kwargs])   | Call `func(*args, **kwargs)`, passing the entries of `kwargs` that name positional-only parameters of `func` positionally, which JSON (a mapping) can only supply by name (i2mint/py2http#14).   |
+|-------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `conditional_logger`([verbose, log_func])                                                 |                                                                                                                                                                                                  |
+| [`deprecate`](#py2http.util.deprecate)([func, msg])                   | Decorator to emit a DeprecationWarning when the decorated function is called.                                                                                                                    |
+| `if_not_empty`(obj[, if_empty_val])                                                       |                                                                                                                                                                                                  |
+| [`obj_to_items_gen`](#py2http.util.obj_to_items_gen)(obj, attrs[, ...])      | Make a generator of (k, v) items extracted from an input object, given an iterable of attributes to extract                                                                                      |
+| [`obj_to_path`](#py2http.util.obj_to_path)(obj)                         | Quasi-inverse of obj_to_path: Get a root_obj and attr_path from an object.                                                                                                                       |
+| [`path_to_obj`](#py2http.util.path_to_obj)(root_obj, attr_path)         | Get an object from a root object and "attribute path" specification.                                                                                                                             |
+| `py_obj_info`(obj)                                                                        |                                                                                                                                                                                                  |
+| [`pyparam_to_dict`](#py2http.util.pyparam_to_dict)(param[, kv_trans])       | Get dict from a Parameter object                                                                                                                                                                 |
 
 ### Classes
 
@@ -125,6 +126,30 @@ Traceback (most recent call last):
     ...
 ValueError: Unrecognized kind: not_a_kind. The ones I recognize: ['foo', 'bar']
 ```
+
+### py2http.util.call_with_inputs(func, args=(), kwargs=None)
+
+Call `func(*args, **kwargs)`, passing the entries of `kwargs` that name
+positional-only parameters of `func` positionally, which JSON (a mapping) can
+only supply by name (i2mint/py2http#14).
+
+```pycon
+>>> call_with_inputs({"a": 1}.__getitem__, kwargs={"key": "a"})
+1
+>>> d = {}
+>>> call_with_inputs(d.__setitem__, kwargs={"key": "k", "value": 2}), d
+(None, {'k': 2})
+>>> call_with_inputs(lambda x, /, y=0: (x, y), kwargs={"x": 1, "y": 2})
+(1, 2)
+```
+
+A positional-only argument that is neither required to be given nor given takes its
+default; a missing required one is an `InputError` (a client error), not a
+`TypeError`. A callable whose signature can’t be read gets `**kwargs` as is.
+
+Python lets a function with `**kwargs` receive a keyword that is also the name of
+a positional-only parameter (`Counter.update(iterable=3)`): such an optional
+parameter is left in `kwargs`; only required ones are bound by name.
 
 ### py2http.util.deprecate(func=None, , msg=None)
 

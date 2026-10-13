@@ -1,4 +1,4 @@
-> built 2026-10-13 05:19 UTC from b787f51 (master) · py2http 0.1.67. Details: build_info.json
+> built 2026-10-13 06:24 UTC from 3911131 (master) · py2http 0.1.68. Details: build_info.json
 
 # index.html.md
 
@@ -1670,15 +1670,16 @@ Overall, this module provides a collection of useful tools for handling lazy pro
 
 ### Functions
 
-| `conditional_logger`([verbose, log_func])                                            |                                                                                                             |
-|--------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
-| [`deprecate`](_autosummary/py2http.util.html.md#py2http.util.deprecate)([func, msg])              | Decorator to emit a DeprecationWarning when the decorated function is called.                               |
-| `if_not_empty`(obj[, if_empty_val])                                                  |                                                                                                             |
-| [`obj_to_items_gen`](_autosummary/py2http.util.html.md#py2http.util.obj_to_items_gen)(obj, attrs[, ...]) | Make a generator of (k, v) items extracted from an input object, given an iterable of attributes to extract |
-| [`obj_to_path`](_autosummary/py2http.util.html.md#py2http.util.obj_to_path)(obj)                    | Quasi-inverse of obj_to_path: Get a root_obj and attr_path from an object.                                  |
-| [`path_to_obj`](_autosummary/py2http.util.html.md#py2http.util.path_to_obj)(root_obj, attr_path)    | Get an object from a root object and "attribute path" specification.                                        |
-| `py_obj_info`(obj)                                                                   |                                                                                                             |
-| [`pyparam_to_dict`](_autosummary/py2http.util.html.md#py2http.util.pyparam_to_dict)(param[, kv_trans])  | Get dict from a Parameter object                                                                            |
+| [`call_with_inputs`](_autosummary/py2http.util.html.md#py2http.util.call_with_inputs)(func[, args, kwargs])   | Call `func(*args, **kwargs)`, passing the entries of `kwargs` that name positional-only parameters of `func` positionally, which JSON (a mapping) can only supply by name (i2mint/py2http#14).   |
+|-------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `conditional_logger`([verbose, log_func])                                                 |                                                                                                                                                                                                  |
+| [`deprecate`](_autosummary/py2http.util.html.md#py2http.util.deprecate)([func, msg])                   | Decorator to emit a DeprecationWarning when the decorated function is called.                                                                                                                    |
+| `if_not_empty`(obj[, if_empty_val])                                                       |                                                                                                                                                                                                  |
+| [`obj_to_items_gen`](_autosummary/py2http.util.html.md#py2http.util.obj_to_items_gen)(obj, attrs[, ...])      | Make a generator of (k, v) items extracted from an input object, given an iterable of attributes to extract                                                                                      |
+| [`obj_to_path`](_autosummary/py2http.util.html.md#py2http.util.obj_to_path)(obj)                         | Quasi-inverse of obj_to_path: Get a root_obj and attr_path from an object.                                                                                                                       |
+| [`path_to_obj`](_autosummary/py2http.util.html.md#py2http.util.path_to_obj)(root_obj, attr_path)         | Get an object from a root object and "attribute path" specification.                                                                                                                             |
+| `py_obj_info`(obj)                                                                        |                                                                                                                                                                                                  |
+| [`pyparam_to_dict`](_autosummary/py2http.util.html.md#py2http.util.pyparam_to_dict)(param[, kv_trans])       | Get dict from a Parameter object                                                                                                                                                                 |
 
 ### Classes
 
@@ -1781,6 +1782,30 @@ Traceback (most recent call last):
     ...
 ValueError: Unrecognized kind: not_a_kind. The ones I recognize: ['foo', 'bar']
 ```
+
+### py2http.util.call_with_inputs(func, args=(), kwargs=None)
+
+Call `func(*args, **kwargs)`, passing the entries of `kwargs` that name
+positional-only parameters of `func` positionally, which JSON (a mapping) can
+only supply by name (i2mint/py2http#14).
+
+```pycon
+>>> call_with_inputs({"a": 1}.__getitem__, kwargs={"key": "a"})
+1
+>>> d = {}
+>>> call_with_inputs(d.__setitem__, kwargs={"key": "k", "value": 2}), d
+(None, {'k': 2})
+>>> call_with_inputs(lambda x, /, y=0: (x, y), kwargs={"x": 1, "y": 2})
+(1, 2)
+```
+
+A positional-only argument that is neither required to be given nor given takes its
+default; a missing required one is an `InputError` (a client error), not a
+`TypeError`. A callable whose signature can’t be read gets `**kwargs` as is.
+
+Python lets a function with `**kwargs` receive a keyword that is also the name of
+a positional-only parameter (`Counter.update(iterable=3)`): such an optional
+parameter is left in `kwargs`; only required ones are bound by name.
 
 ### py2http.util.deprecate(func=None, , msg=None)
 
@@ -1935,7 +1960,7 @@ so that it can be jsonizable.
 
 # About this build
 
-This documentation was built on **2026-10-13 05:19 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/b787f51ba2689fafffbfe7a087ca97246d337070"><code>b787f51</code></a> on branch <code>master</code>, for **py2http 0.1.67** (from <code>setup.cfg</code>).
+This documentation was built on **2026-10-13 06:24 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/39111310fa6df8a9c687dbc582b2d2f769cb50eb"><code>3911131</code></a> on branch <code>master</code>, for **py2http 0.1.68** (from <code>setup.cfg</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -1944,9 +1969,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                       |
 |---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2http/commit/b787f51ba2689fafffbfe7a087ca97246d337070"><code>b787f51ba2689fafffbfe7a087ca97246d337070</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2http/commit/39111310fa6df8a9c687dbc582b2d2f769cb50eb"><code>39111310fa6df8a9c687dbc582b2d2f769cb50eb</code></a> |
 | Branch              | <code>master</code>                                                                                                                                   |
-| Tags at this commit | <code>0.1.67</code>                                                                                                                                   |
+| Tags at this commit | <code>0.1.68</code>                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                 |
 | Remote              | <code>https://github.com/i2mint/py2http</code>                                                                                                        |
 
@@ -1955,15 +1980,15 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2http</code>                                                                |
-| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38350606364">38350606364</a>       |
+| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38356345284">38356345284</a>       |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>73e0df8ed03c5ab5531256594d07c5eb3cb9dd8e</code> (in the history of the built commit) |
+| Event commit | <code>3866d3ada75b633aac5d1d158ef6c91a87352a68</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.13  |
+| epythet  | 0.2.14  |
 | Sphinx   | 9.1.0   |
 | docutils | 0.22.4  |
 | Python   | 3.12.15 |
@@ -1982,14 +2007,14 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2http/0.1.67/">0.1.67</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/py2http/0.1.68/">0.1.68</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2http && cd py2http
-git checkout b787f51ba2689fafffbfe7a087ca97246d337070
-pip install "epythet==0.2.13"
+git checkout 39111310fa6df8a9c687dbc582b2d2f769cb50eb
+pip install "epythet==0.2.14"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

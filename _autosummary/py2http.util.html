@@ -134,28 +134,31 @@
 <p class="rubric">Functions</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">conditional_logger</span></code>([verbose, log_func])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#py2http.util.call_with_inputs" title="py2http.util.call_with_inputs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">call_with_inputs</span></code></a>(func[, args, kwargs])</p></td>
+<td><p>Call <code class="docutils literal notranslate"><span class="pre">func(*args,</span> <span class="pre">**kwargs)</span></code>, passing the entries of <code class="docutils literal notranslate"><span class="pre">kwargs</span></code> that name positional-only parameters of <code class="docutils literal notranslate"><span class="pre">func</span></code> positionally, which JSON (a mapping) can only supply by name (i2mint/py2http#14).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">conditional_logger</span></code>([verbose, log_func])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#py2http.util.deprecate" title="py2http.util.deprecate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deprecate</span></code></a>([func, msg])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#py2http.util.deprecate" title="py2http.util.deprecate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deprecate</span></code></a>([func, msg])</p></td>
 <td><p>Decorator to emit a DeprecationWarning when the decorated function is called.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">if_not_empty</span></code>(obj[, if_empty_val])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">if_not_empty</span></code>(obj[, if_empty_val])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#py2http.util.obj_to_items_gen" title="py2http.util.obj_to_items_gen"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_to_items_gen</span></code></a>(obj, attrs[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#py2http.util.obj_to_items_gen" title="py2http.util.obj_to_items_gen"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_to_items_gen</span></code></a>(obj, attrs[, ...])</p></td>
 <td><p>Make a generator of (k, v) items extracted from an input object, given an iterable of attributes to extract</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#py2http.util.obj_to_path" title="py2http.util.obj_to_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_to_path</span></code></a>(obj)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#py2http.util.obj_to_path" title="py2http.util.obj_to_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_to_path</span></code></a>(obj)</p></td>
 <td><p>Quasi-inverse of obj_to_path: Get a root_obj and attr_path from an object.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#py2http.util.path_to_obj" title="py2http.util.path_to_obj"><code class="xref py py-obj docutils literal notranslate"><span class="pre">path_to_obj</span></code></a>(root_obj, attr_path)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#py2http.util.path_to_obj" title="py2http.util.path_to_obj"><code class="xref py py-obj docutils literal notranslate"><span class="pre">path_to_obj</span></code></a>(root_obj, attr_path)</p></td>
 <td><p>Get an object from a root object and "attribute path" specification.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">py_obj_info</span></code>(obj)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">py_obj_info</span></code>(obj)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#py2http.util.pyparam_to_dict" title="py2http.util.pyparam_to_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pyparam_to_dict</span></code></a>(param[, kv_trans])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#py2http.util.pyparam_to_dict" title="py2http.util.pyparam_to_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pyparam_to_dict</span></code></a>(param[, kv_trans])</p></td>
 <td><p>Get dict from a Parameter object</p></td>
 </tr>
 </tbody>
@@ -265,6 +268,30 @@ the error will be raised normally.</p>
 </span><span id="line-5"><span class="gr">ValueError</span>: <span class="n">Unrecognized kind: not_a_kind. The ones I recognize: ['foo', 'bar']</span>
 </span></code></pre></div>
 </div>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.util.call_with_inputs">
+<span class="sig-prename descclassname"><span class="pre">py2http.util.</span></span><span class="sig-name descname"><span class="pre">call_with_inputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/util.html#call_with_inputs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.util.call_with_inputs" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.util.call_with_inputs'">¶</a></dt>
+<dd><p>Call <code class="docutils literal notranslate"><span class="pre">func(*args,</span> <span class="pre">**kwargs)</span></code>, passing the entries of <code class="docutils literal notranslate"><span class="pre">kwargs</span></code> that name
+positional-only parameters of <code class="docutils literal notranslate"><span class="pre">func</span></code> positionally, which JSON (a mapping) can
+only supply by name (i2mint/py2http#14).</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="gp">&gt;&gt;&gt; </span><span class="n">call_with_inputs</span><span class="p">({</span><span class="s2">"a"</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"key"</span><span class="p">:</span> <span class="s2">"a"</span><span class="p">})</span>
+</span><span id="line-2"><span class="go">1</span>
+</span><span id="line-3"><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span id="line-4"><span class="gp">&gt;&gt;&gt; </span><span class="n">call_with_inputs</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"key"</span><span class="p">:</span> <span class="s2">"k"</span><span class="p">,</span> <span class="s2">"value"</span><span class="p">:</span> <span class="mi">2</span><span class="p">}),</span> <span class="n">d</span>
+</span><span id="line-5"><span class="go">(None, {'k': 2})</span>
+</span><span id="line-6"><span class="gp">&gt;&gt;&gt; </span><span class="n">call_with_inputs</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"x"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"y"</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
+</span><span id="line-7"><span class="go">(1, 2)</span>
+</span></code></pre></div>
+</div>
+<p>A positional-only argument that is neither required to be given nor given takes its
+default; a missing required one is an <code class="docutils literal notranslate"><span class="pre">InputError</span></code> (a client error), not a
+<code class="docutils literal notranslate"><span class="pre">TypeError</span></code>. A callable whose signature can’t be read gets <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> as is.</p>
+<p>Python lets a function with <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> receive a keyword that is also the name of
+a positional-only parameter (<code class="docutils literal notranslate"><span class="pre">Counter.update(iterable=3)</span></code>): such an optional
+parameter is left in <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>; only required ones are bound by name.</p>
+<dl class="field-list simple">
+</dl>
 </dd></dl>
 <dl class="py function">
 <dt class="sig sig-object py" id="py2http.util.deprecate">
@@ -428,6 +455,7 @@ so that it can be jsonizable.</p>
 <li><a :data-current="activeSection === '#py2http.util.ModuleNotFoundIgnore'" class="reference internal" href="#py2http.util.ModuleNotFoundIgnore"><code class="docutils literal notranslate"><span class="pre">ModuleNotFoundIgnore</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.util.Skip'" class="reference internal" href="#py2http.util.Skip"><code class="docutils literal notranslate"><span class="pre">Skip</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.util.TypeAsserter'" class="reference internal" href="#py2http.util.TypeAsserter"><code class="docutils literal notranslate"><span class="pre">TypeAsserter</span></code></a></li>
+<li><a :data-current="activeSection === '#py2http.util.call_with_inputs'" class="reference internal" href="#py2http.util.call_with_inputs"><code class="docutils literal notranslate"><span class="pre">call_with_inputs()</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.util.deprecate'" class="reference internal" href="#py2http.util.deprecate"><code class="docutils literal notranslate"><span class="pre">deprecate()</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.util.lazyprop'" class="reference internal" href="#py2http.util.lazyprop"><code class="docutils literal notranslate"><span class="pre">lazyprop</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.util.obj_to_items_gen'" class="reference internal" href="#py2http.util.obj_to_items_gen"><code class="docutils literal notranslate"><span class="pre">obj_to_items_gen()</span></code></a></li>
@@ -449,7 +477,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=946d7960"></script>
+<script src="../_static/documentation_options.js?v=7c77daa2"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
