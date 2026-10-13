@@ -16,6 +16,9 @@ Python functions, enabling developers to easily expose their functions as remote
 with minimal setup."""
 
 import inspect
+from collections import OrderedDict
+from collections.abc import MutableMapping
+from types import ModuleType
 from uuid import uuid4
 from aiohttp import web
 import asyncio
@@ -53,7 +56,101 @@ from py2http.schema_tools import (
 from py2http.util import TypeAsserter
 from py2http.constants import JSON_CONTENT_TYPE
 
-obj_store = {}
+# Maximum number of objects a class endpoint keeps alive; the least recently used
+# one is evicted beyond that. Pass ``obj_store=...`` in a handler to change it.
+DFLT_OBJ_STORE_MAX_SIZE = 1000
+
+
+class LRUObjStore(MutableMapping):
+    """A mapping that keeps at most ``max_size`` items, evicting the least recently
+    used one when a new key would exceed it.
+
+    Used as the default store of objects created through a class endpoint, so that
+    clients cannot grow server memory without bound by creating objects.
+
+    >>> s = LRUObjStore(max_size=2)
+    >>> s['a'], s['b'] = 1, 2
+    >>> _ = s['a']  # 'a' is now the most recently used
+    >>> s['c'] = 3
+    >>> sorted(s)
+    ['a', 'c']
+    """
+
+    def __init__(self, *, max_size: int = DFLT_OBJ_STORE_MAX_SIZE):
+        if max_size < 1:
+            raise ValueError(f"max_size must be at least 1, got {max_size}")
+        self.max_size = max_size
+        self._data = OrderedDict()
+
+    def __getitem__(self, k):
+        v = self._data[k]
+        self._data.move_to_end(k)
+        return v
+
+    def __setitem__(self, k, v):
+        self._data[k] = v
+        self._data.move_to_end(k)
+        while len(self._data) > self.max_size:
+            self._data.popitem(last=False)
+
+    def __delitem__(self, k):
+        del self._data[k]
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self):
+        return len(self._data)
+
+
+def public_attr(obj, attr_name: str) -> bool:
+    """The attribute policy ``attr_names='*'`` stands for: a name is dispatchable if
+    it does not start with ``_`` and is defined on the object's class (or, for a
+    module, in the module itself).
+
+    This keeps private helpers and dunders (``__dict__``, ``__init__``, ...) and
+    per-instance state out of reach of HTTP clients.
+
+    >>> class A:
+    ...     def f(self): ...
+    ...     def _g(self): ...
+    ...     def __init__(self): self.secret = 1
+    >>> [public_attr(A(), name) for name in ('f', '_g', '__init__', '__dict__', 'secret')]
+    [True, False, False, False, False]
+    """
+    if not isinstance(attr_name, str) or attr_name.startswith("_"):
+        return False
+    if isinstance(obj, ModuleType):
+        return attr_name in vars(obj)
+    # look in the class's MRO only: hasattr(type(obj), ...) would also find
+    # metaclass attributes (``mro``, ...) that the instance does not have
+    return any(attr_name in vars(klass) for klass in type(obj).__mro__)
+
+
+def unsafe_any_attr(obj, attr_name: str) -> bool:
+    """Dispatch ANY attribute of the object, including private ones and dunders.
+
+    This was the behaviour of ``attr_names='*'`` before ``public_attr``: it lets a
+    client read ``__dict__``, call ``__init__`` with arguments of its choosing, and so
+    on. Use ``attr_names=unsafe_any_attr`` only when every client is trusted.
+    """
+    return isinstance(attr_name, str) and hasattr(obj, attr_name)
+
+
+def _attr_name_policy(attr_names) -> Callable[[Any, str], bool]:
+    """Normalize a handler's ``attr_names`` into a ``(obj, attr_name) -> bool``
+    predicate: ``'*'`` means ``public_attr``, a callable is used as is, and an
+    iterable of names is an explicit allow-list (dunders included, if listed).
+    """
+    if attr_names == "*":
+        return public_attr
+    if callable(attr_names):
+        return attr_names
+    if isinstance(attr_names, str):
+        allowed = {attr_names}
+    else:
+        allowed = set(attr_names)
+    return lambda obj, attr_name: attr_name in allowed and hasattr(obj, attr_name)
 
 
 def method_not_found(method_name):
@@ -617,8 +714,12 @@ def _get_func_to_dispatch_handler(handler):
         return endpoint
         # was return endpoint, but then the output didn't get the __name__ = name
         # func = endpoint
+    is_dispatchable = _attr_name_policy(attr_names)
     if inspect.isclass(endpoint):
         cls = endpoint
+        obj_store = handler.get("obj_store")
+        if obj_store is None:
+            obj_store = LRUObjStore()
 
         def func(_obj_id=None, _attr_name=None, **kwargs):
             if _obj_id is None:
@@ -629,24 +730,23 @@ def _get_func_to_dispatch_handler(handler):
                 obj_store[new_id] = new_obj
                 return new_id
             obj = obj_store.get(_obj_id)
-            if not obj:
+            if obj is None:
                 raise InputError(f"No object found with id {_obj_id}")
             if _attr_name is None:
                 raise InputError("_attr_name must be provided when _obj_id is not None")
-            return _get_attr_value(obj, _attr_name, attr_names, **kwargs)
+            return _get_attr_value(obj, _attr_name, is_dispatchable, **kwargs)
 
     else:
 
         def func(_attr_name=None, **kwargs):
-            return _get_attr_value(endpoint, _attr_name, attr_names, **kwargs)
+            return _get_attr_value(endpoint, _attr_name, is_dispatchable, **kwargs)
 
     func.__name__ = name
     return func
 
 
-def _get_attr_value(obj, attr_name, valid_attr_names, **kwargs):
-    valid_attr_names = [attr_name] if valid_attr_names == "*" else valid_attr_names
-    if attr_name not in valid_attr_names or not hasattr(obj, attr_name):
+def _get_attr_value(obj, attr_name, is_dispatchable, **kwargs):
+    if not is_dispatchable(obj, attr_name):
         raise InputError(
             f"No attribute found with name {attr_name} or it is not dispatched"
         )
