@@ -1020,7 +1020,9 @@ def _class_endpoint_dispatcher(cls, handler, name, is_dispatchable):
 
     else:
         if not callable(owner_of):
-            raise TypeError(f"obj_owner must be callable or shared_objects: {owner_of!r}")
+            raise TypeError(
+                f"obj_owner must be callable or shared_objects: {owner_of!r}"
+            )
         if handler.get("obj_store") is not None:
             raise ValueError(
                 "obj_store applies to obj_owner=shared_objects only; with an obj_owner "
