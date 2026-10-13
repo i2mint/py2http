@@ -123,7 +123,8 @@ def public_attr(obj, attr_name: str) -> bool:
 
     Note that every public method is exposed, inherited ones included (e.g. a
     pydantic model's ``model_dump``). For anything holding secrets, or a mapping
-    whose mutators should stay private, list the names explicitly instead.
+    whose mutators should stay private (``MutableMapping`` mixins such as
+    ``clear`` and ``pop`` are plain functions), list the names explicitly instead.
 
     >>> class A:
     ...     data = 0
@@ -139,7 +140,11 @@ def public_attr(obj, attr_name: str) -> bool:
         return False
     if isinstance(obj, ModuleType):
         return _is_public_module_function(obj, attr_name)
-    if attr_name in getattr(obj, "__dict__", {}):
+    try:  # (bypassing any class-level ``__dict__`` attribute)
+        instance_dict = object.__getattribute__(obj, "__dict__")
+    except AttributeError:
+        instance_dict = {}
+    if attr_name in instance_dict:
         return False  # instance state, or an instance attribute shadowing a method
     # Look in the class's MRO dicts only (not the metaclass: ``mro``, ...), and at
     # the raw class attribute, not what the instance would return for it
@@ -785,7 +790,7 @@ def _get_func_to_dispatch_handler(handler):
     return func
 
 
-def _get_attr_value(obj, attr_name, is_dispatchable, **kwargs):
+def _get_attr_value(obj, attr_name, is_dispatchable, /, **kwargs):
     if not is_dispatchable(obj, attr_name):
         raise InputError(
             f"No attribute found with name {attr_name} or it is not dispatched"

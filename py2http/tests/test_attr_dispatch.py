@@ -246,3 +246,38 @@ def test_non_str_names_and_ids_are_input_errors(bad):
     cls_func = _dispatcher(Counter, "*")
     with pytest.raises(InputError):
         cls_func(_obj_id=bad if bad is not None else [], _attr_name="incr")
+
+
+def test_method_params_named_like_dispatch_internals():
+    class A:
+        def f(self, obj, attr_name, is_dispatchable):
+            return [obj, attr_name, is_dispatchable]
+
+    func = _dispatcher(A(), "*")
+    assert func(_attr_name="f", obj=1, attr_name=2, is_dispatchable=3) == [1, 2, 3]
+
+
+def test_star_exposes_mutable_mapping_mixins_as_documented():
+    """Inherited public Python methods ARE dispatched: use an explicit list for stores."""
+    from collections.abc import MutableMapping
+
+    class MM(MutableMapping):
+        def __init__(self):
+            self._d = {"a": 1}
+
+        def __getitem__(self, k):
+            return self._d[k]
+
+        def __setitem__(self, k, v):
+            self._d[k] = v
+
+        def __delitem__(self, k):
+            del self._d[k]
+
+        def __iter__(self):
+            return iter(self._d)
+
+        def __len__(self):
+            return len(self._d)
+
+    assert public_attr(MM(), "clear")
