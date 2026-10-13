@@ -332,46 +332,56 @@
 </span><span id="line-149">    <span class="k">return</span> <span class="p">{</span><span class="s2">"error"</span><span class="p">:</span> <span class="n">message</span><span class="p">}</span>
 </span><span id="line-150">
 </span><span id="line-151">
+<div class="viewcode-block" id="flask_error_handler">
+<a class="viewcode-back" href="../../_autosummary/py2http.default_configs.html#py2http.default_configs.flask_error_handler">[docs]</a>
 </span><span id="line-152"><span class="k">def</span><span class="w"> </span><span class="nf">flask_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">):</span>
-</span><span id="line-153">    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
-</span><span id="line-154">
-</span><span id="line-155">
-</span><span id="line-156"><span class="k">def</span><span class="w"> </span><span class="nf">default_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">):</span>
-</span><span id="line-157">    <span class="n">framework</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">"PY2HTTP_FRAMEWORK"</span><span class="p">,</span> <span class="n">BOTTLE</span><span class="p">)</span>
-</span><span id="line-158">    <span class="k">if</span> <span class="n">framework</span> <span class="o">==</span> <span class="n">AIOHTTP</span><span class="p">:</span>
-</span><span id="line-159">        <span class="k">return</span> <span class="n">aiohttp_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-</span><span id="line-160">    <span class="k">if</span> <span class="n">framework</span> <span class="o">==</span> <span class="n">BOTTLE</span><span class="p">:</span>
-</span><span id="line-161">        <span class="k">return</span> <span class="n">bottle_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-</span><span id="line-162">    <span class="k">if</span> <span class="n">framework</span> <span class="o">==</span> <span class="n">FLASK</span><span class="p">:</span>
-</span><span id="line-163">        <span class="k">return</span> <span class="n">flask_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-</span><span id="line-164">    <span class="k">return</span> <span class="n">bottle_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-</span><span id="line-165">
-</span><span id="line-166">
-</span><span id="line-167"><span class="n">default_configs</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="line-168">    <span class="s2">"app_name"</span><span class="p">:</span> <span class="s2">"HTTP Service"</span><span class="p">,</span>
-</span><span id="line-169">    <span class="s2">"framework"</span><span class="p">:</span> <span class="n">BOTTLE</span><span class="p">,</span>
-</span><span id="line-170">    <span class="s2">"input_mapper"</span><span class="p">:</span> <span class="n">default_input_mapper</span><span class="p">,</span>
-</span><span id="line-171">    <span class="s2">"output_mapper"</span><span class="p">:</span> <span class="n">default_output_mapper</span><span class="p">,</span>
-</span><span id="line-172">    <span class="s2">"error_handler"</span><span class="p">:</span> <span class="n">default_error_handler</span><span class="p">,</span>
-</span><span id="line-173">    <span class="s2">"header_inputs"</span><span class="p">:</span> <span class="p">{},</span>
-</span><span id="line-174">    <span class="s2">"middleware"</span><span class="p">:</span> <span class="p">[],</span>
-</span><span id="line-175">    <span class="s2">"host"</span><span class="p">:</span> <span class="s2">"localhost"</span><span class="p">,</span>
-</span><span id="line-176">    <span class="s2">"port"</span><span class="p">:</span> <span class="mi">3030</span><span class="p">,</span>
-</span><span id="line-177">    <span class="s2">"server"</span><span class="p">:</span> <span class="s2">"gunicorn"</span><span class="p">,</span>
-</span><span id="line-178">    <span class="s2">"http_method"</span><span class="p">:</span> <span class="s2">"post"</span><span class="p">,</span>
-</span><span id="line-179">    <span class="s2">"openapi"</span><span class="p">:</span> <span class="p">{},</span>
-</span><span id="line-180">    <span class="s2">"logger"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="line-181">    <span class="s2">"plugins"</span><span class="p">:</span> <span class="p">[],</span>
-</span><span id="line-182">    <span class="s2">"enable_cors"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="line-183">    <span class="s2">"cors_allowed_origins"</span><span class="p">:</span> <span class="s2">"*"</span><span class="p">,</span>
-</span><span id="line-184">    <span class="s2">"publish_openapi"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="line-185">    <span class="s2">"openapi_insecure"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="line-186">    <span class="s2">"publish_swagger"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="line-187">    <span class="s2">"swagger_url"</span><span class="p">:</span> <span class="s2">"/swagger"</span><span class="p">,</span>
-</span><span id="line-188">    <span class="s2">"swagger_title"</span><span class="p">:</span> <span class="s2">"Swagger"</span><span class="p">,</span>
-</span><span id="line-189">    <span class="s2">"ssl_certfile"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="line-190">    <span class="s2">"ssl_keyfile"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="line-191"><span class="p">}</span>
+</span><span id="line-153"><span class="w">    </span><span class="sd">"""The ``(body, status, headers)`` a Flask view returns for an error, mapped like</span>
+</span><span id="line-154"><span class="sd">    the bottle handler (``OPAQUE_ERRORS`` hides the text of a 500)."""</span>
+</span><span id="line-155">    <span class="n">message</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+</span><span id="line-156">    <span class="n">status</span> <span class="o">=</span> <span class="n">error_status</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+</span><span id="line-157">    <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">500</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">"OPAQUE_ERRORS"</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+</span><span id="line-158">        <span class="n">message</span> <span class="o">=</span> <span class="s2">"Internal server error"</span>
+</span><span id="line-159">    <span class="n">status_line</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"400 </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">400</span> <span class="k">else</span> <span class="n">status</span>
+</span><span id="line-160">    <span class="k">return</span> <span class="p">{</span><span class="s2">"error"</span><span class="p">:</span> <span class="n">message</span><span class="p">},</span> <span class="n">status_line</span><span class="p">,</span> <span class="n">_status_headers</span><span class="p">(</span><span class="n">status</span><span class="p">)</span></div>
+
+</span><span id="line-161">
+</span><span id="line-162">
+</span><span id="line-163"><span class="k">def</span><span class="w"> </span><span class="nf">default_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">):</span>
+</span><span id="line-164">    <span class="n">framework</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">"PY2HTTP_FRAMEWORK"</span><span class="p">,</span> <span class="n">BOTTLE</span><span class="p">)</span>
+</span><span id="line-165">    <span class="k">if</span> <span class="n">framework</span> <span class="o">==</span> <span class="n">AIOHTTP</span><span class="p">:</span>
+</span><span id="line-166">        <span class="k">return</span> <span class="n">aiohttp_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+</span><span id="line-167">    <span class="k">if</span> <span class="n">framework</span> <span class="o">==</span> <span class="n">BOTTLE</span><span class="p">:</span>
+</span><span id="line-168">        <span class="k">return</span> <span class="n">bottle_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+</span><span id="line-169">    <span class="k">if</span> <span class="n">framework</span> <span class="o">==</span> <span class="n">FLASK</span><span class="p">:</span>
+</span><span id="line-170">        <span class="k">return</span> <span class="n">flask_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+</span><span id="line-171">    <span class="k">return</span> <span class="n">bottle_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+</span><span id="line-172">
+</span><span id="line-173">
+</span><span id="line-174"><span class="n">default_configs</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="line-175">    <span class="s2">"app_name"</span><span class="p">:</span> <span class="s2">"HTTP Service"</span><span class="p">,</span>
+</span><span id="line-176">    <span class="s2">"framework"</span><span class="p">:</span> <span class="n">BOTTLE</span><span class="p">,</span>
+</span><span id="line-177">    <span class="s2">"input_mapper"</span><span class="p">:</span> <span class="n">default_input_mapper</span><span class="p">,</span>
+</span><span id="line-178">    <span class="s2">"output_mapper"</span><span class="p">:</span> <span class="n">default_output_mapper</span><span class="p">,</span>
+</span><span id="line-179">    <span class="s2">"error_handler"</span><span class="p">:</span> <span class="n">default_error_handler</span><span class="p">,</span>
+</span><span id="line-180">    <span class="s2">"header_inputs"</span><span class="p">:</span> <span class="p">{},</span>
+</span><span id="line-181">    <span class="s2">"middleware"</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="line-182">    <span class="s2">"host"</span><span class="p">:</span> <span class="s2">"localhost"</span><span class="p">,</span>
+</span><span id="line-183">    <span class="s2">"port"</span><span class="p">:</span> <span class="mi">3030</span><span class="p">,</span>
+</span><span id="line-184">    <span class="s2">"server"</span><span class="p">:</span> <span class="s2">"gunicorn"</span><span class="p">,</span>
+</span><span id="line-185">    <span class="s2">"http_method"</span><span class="p">:</span> <span class="s2">"post"</span><span class="p">,</span>
+</span><span id="line-186">    <span class="s2">"openapi"</span><span class="p">:</span> <span class="p">{},</span>
+</span><span id="line-187">    <span class="s2">"logger"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="line-188">    <span class="s2">"plugins"</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="line-189">    <span class="s2">"enable_cors"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="line-190">    <span class="s2">"cors_allowed_origins"</span><span class="p">:</span> <span class="s2">"*"</span><span class="p">,</span>
+</span><span id="line-191">    <span class="s2">"publish_openapi"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="line-192">    <span class="s2">"openapi_insecure"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="line-193">    <span class="s2">"publish_swagger"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="line-194">    <span class="s2">"swagger_url"</span><span class="p">:</span> <span class="s2">"/swagger"</span><span class="p">,</span>
+</span><span id="line-195">    <span class="s2">"swagger_title"</span><span class="p">:</span> <span class="s2">"Swagger"</span><span class="p">,</span>
+</span><span id="line-196">    <span class="s2">"ssl_certfile"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="line-197">    <span class="s2">"ssl_keyfile"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="line-198"><span class="p">}</span>
 </span></code></pre></div>
     </div></div>
           </main>
@@ -387,7 +397,7 @@ Otosense&nbsp;</p>
 </footer>
     </div>
     
-    <script src="../../_static/documentation_options.js?v=3b2b39e9"></script>
+    <script src="../../_static/documentation_options.js?v=9f53bdf0"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

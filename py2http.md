@@ -1,4 +1,4 @@
-> built 2026-10-13 09:06 UTC from 59d12fb (master) · py2http 0.1.70. Details: build_info.json
+> built 2026-10-13 09:09 UTC from ffc3505 (master) · py2http 0.1.71. Details: build_info.json
 
 # index.html.md
 
@@ -1158,7 +1158,7 @@ up an HTTP service in Python using the py2http library.
 | `default_error_handler`(error)                                                |                                                                                                                                                                                                                              |
 | `default_input_mapper`(\*\*inputs)                                            |                                                                                                                                                                                                                              |
 | [`error_status`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.error_status)(error)          | The HTTP status for an error a handler raised (500 when it is not a client's).                                                                                                                                               |
-| `flask_error_handler`(error)                                                  |                                                                                                                                                                                                                              |
+| [`flask_error_handler`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.flask_error_handler)(error)   | The `(body, status, headers)` a Flask view returns for an error, mapped like the bottle handler (`OPAQUE_ERRORS` hides the text of a 500).                                                                                   |
 | `flask_output_mapper`(output, \*\*inputs)                                     |                                                                                                                                                                                                                              |
 | [`www_authenticate_challenge`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.www_authenticate_challenge)() | The `WWW-Authenticate` value of a 401 a dispatched function raised: the `PY2HTTP_WWW_AUTHENTICATE` environment variable, else `Bearer` (also when the variable holds a line break, which would make every 401 fail to send). |
 
@@ -1175,6 +1175,11 @@ The HTTP status for an error a handler raised (500 when it is not a client’s).
 >>> error_status(InputError()), error_status(KeyError())
 (400, 500)
 ```
+
+### py2http.default_configs.flask_error_handler(error)
+
+The `(body, status, headers)` a Flask view returns for an error, mapped like
+the bottle handler (`OPAQUE_ERRORS` hides the text of a 500).
 
 ### py2http.default_configs.www_authenticate_challenge()
 
@@ -2153,18 +2158,20 @@ so that it can be jsonizable.
 
 # About this build
 
-This documentation was built on **2026-10-13 09:06 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/59d12fb19d8e926793634e5d14661323f660b6d5"><code>59d12fb</code></a> on branch <code>master</code>, for **py2http 0.1.70** (from <code>setup.cfg</code>).
+This documentation was built on **2026-10-13 09:09 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/ffc3505231cceaf92485652390dae61af82c8c0f"><code>ffc3505</code></a> on branch <code>master</code>, for **py2http 0.1.71** (from <code>setup.cfg</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.1.71) is ahead of the latest release on PyPI (0.1.69): these docs describe unreleased code.
 
 ## Source
 
 |                     |                                                                                                                                                       |
 |---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2http/commit/59d12fb19d8e926793634e5d14661323f660b6d5"><code>59d12fb19d8e926793634e5d14661323f660b6d5</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2http/commit/ffc3505231cceaf92485652390dae61af82c8c0f"><code>ffc3505231cceaf92485652390dae61af82c8c0f</code></a> |
 | Branch              | <code>master</code>                                                                                                                                   |
-| Tags at this commit | <code>0.1.70</code>                                                                                                                                   |
+| Tags at this commit | <code>0.1.71</code>                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                 |
 | Remote              | <code>https://github.com/i2mint/py2http</code>                                                                                                        |
 
@@ -2173,9 +2180,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2http</code>                                                                |
-| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38373670290">38373670290</a>       |
+| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38374097798">38374097798</a>       |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>12e93ccd6581f56071d096b6a7e275d05b9560f8</code> (in the history of the built commit) |
+| Event commit | <code>807c6c583b5d4025c9e01afc460065e8404033dd</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -2200,13 +2207,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2http/0.1.70/">0.1.70</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/py2http/0.1.69/">0.1.69</a>, older than the documented version (0.1.71).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2http && cd py2http
-git checkout 59d12fb19d8e926793634e5d14661323f660b6d5
+git checkout ffc3505231cceaf92485652390dae61af82c8c0f
 pip install "epythet==0.2.15"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

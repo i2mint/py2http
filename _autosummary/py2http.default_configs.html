@@ -161,8 +161,8 @@ up an HTTP service in Python using the py2http library.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#py2http.default_configs.error_status" title="py2http.default_configs.error_status"><code class="xref py py-obj docutils literal notranslate"><span class="pre">error_status</span></code></a>(error)</p></td>
 <td><p>The HTTP status for an error a handler raised (500 when it is not a client's).</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">flask_error_handler</span></code>(error)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#py2http.default_configs.flask_error_handler" title="py2http.default_configs.flask_error_handler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">flask_error_handler</span></code></a>(error)</p></td>
+<td><p>The <code class="docutils literal notranslate"><span class="pre">(body,</span> <span class="pre">status,</span> <span class="pre">headers)</span></code> a Flask view returns for an error, mapped like the bottle handler (<code class="docutils literal notranslate"><span class="pre">OPAQUE_ERRORS</span></code> hides the text of a 500).</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">flask_output_mapper</span></code>(output, **inputs)</p></td>
 <td><p></p></td>
@@ -189,6 +189,14 @@ up an HTTP service in Python using the py2http library.</p>
 </div>
 </dd></dl>
 <dl class="py function">
+<dt class="sig sig-object py" id="py2http.default_configs.flask_error_handler">
+<span class="sig-prename descclassname"><span class="pre">py2http.default_configs.</span></span><span class="sig-name descname"><span class="pre">flask_error_handler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">error</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/default_configs.html#flask_error_handler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.default_configs.flask_error_handler" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.default_configs.flask_error_handler'">¶</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">(body,</span> <span class="pre">status,</span> <span class="pre">headers)</span></code> a Flask view returns for an error, mapped like
+the bottle handler (<code class="docutils literal notranslate"><span class="pre">OPAQUE_ERRORS</span></code> hides the text of a 500).</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+<dl class="py function">
 <dt class="sig sig-object py" id="py2http.default_configs.www_authenticate_challenge">
 <span class="sig-prename descclassname"><span class="pre">py2http.default_configs.</span></span><span class="sig-name descname"><span class="pre">www_authenticate_challenge</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/default_configs.html#www_authenticate_challenge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.default_configs.www_authenticate_challenge" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.default_configs.www_authenticate_challenge'">¶</a></dt>
 <dd><p>The <code class="docutils literal notranslate"><span class="pre">WWW-Authenticate</span></code> value of a 401 a dispatched function raised: the
@@ -210,6 +218,7 @@ variable holds a line break, which would make every 401 fail to send).</p>
 <div class="sticky top-16 -mt-10 max-h-[calc(100vh-5rem)] h-full overflow-y-auto pt-6 space-y-2"><p class="font-medium">On this page</p>
 <ul>
 <li><a :data-current="activeSection === '#py2http.default_configs.error_status'" class="reference internal" href="#py2http.default_configs.error_status"><code class="docutils literal notranslate"><span class="pre">error_status()</span></code></a></li>
+<li><a :data-current="activeSection === '#py2http.default_configs.flask_error_handler'" class="reference internal" href="#py2http.default_configs.flask_error_handler"><code class="docutils literal notranslate"><span class="pre">flask_error_handler()</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.default_configs.www_authenticate_challenge'" class="reference internal" href="#py2http.default_configs.www_authenticate_challenge"><code class="docutils literal notranslate"><span class="pre">www_authenticate_challenge()</span></code></a></li>
 </ul>
 </div>
@@ -226,7 +235,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=3b2b39e9"></script>
+<script src="../_static/documentation_options.js?v=9f53bdf0"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
