@@ -59,6 +59,10 @@ from py2http.schema_tools import (
 from py2http.util import TypeAsserter
 from py2http.constants import JSON_CONTENT_TYPE
 
+# Instance endpoints (``handler['endpoint']`` is an object) are one object every client
+# shares; they too need an ``obj_owner`` and are bounded by ``max_obj_size`` (see
+# ``_instance_endpoint_dispatcher``).
+#
 # Class endpoints (``handler['endpoint']`` is a class) keep the objects clients create.
 # Who may use an object is the handler's ``obj_owner`` (see ``ObjOwner``); how many
 # objects an owner may keep is ``obj_quota``; how many bytes each object, each owner and
@@ -475,7 +479,13 @@ def mk_route(func, **configs):
 
     @handle_error
     async def aiohttp_handle_request(req):
-        current_request.set(req)  # each aiohttp request runs in its own task context
+        token = current_request.set(req)
+        try:
+            return await _aiohttp_handle(req)
+        finally:
+            current_request.reset(token)
+
+    async def _aiohttp_handle(req):
         inputs = input_mapper(req)
         if isawaitable(inputs):  # Pattern: pass-on async property
             inputs = await inputs
@@ -928,10 +938,13 @@ def _get_func_to_dispatch_handler(handler):
     if inspect.isclass(endpoint):
         func = _class_endpoint_dispatcher(endpoint, handler, name, is_dispatchable)
 
-    else:
+    elif isinstance(endpoint, ModuleType):  # a module's functions: no shared object
 
         def func(_attr_name=None, **kwargs):
             return _get_attr_value(endpoint, _attr_name, is_dispatchable, **kwargs)
+
+    else:
+        func = _instance_endpoint_dispatcher(endpoint, handler, name, is_dispatchable)
 
     func.__name__ = name
     return func
@@ -966,6 +979,96 @@ class _MappingObjStore:
 
 
 _SHARED_OWNER = "<shared>"
+
+
+def _request_owner(owner_of: ObjOwner, name: str) -> Callable[[], Any]:
+    """A zero-argument function giving the owner of the request being handled, as
+    ``owner_of(current_request)`` says, refusing requests it does not identify."""
+    if not callable(owner_of):
+        raise TypeError(f"obj_owner must be callable or shared_objects: {owner_of!r}")
+
+    def owner():
+        who = owner_of(current_request.get())
+        if who is None or who == "":
+            raise AuthorizationError(f"{name}: no owner for this request")
+        try:
+            hash(who)
+        except TypeError:
+            raise TypeError(
+                f"obj_owner of {name!r} must return a hashable, got {type(who)}"
+            ) from None
+        return who
+
+    return owner
+
+
+def _instance_endpoint_dispatcher(obj, handler, name, is_dispatchable):
+    """The function behind an instance endpoint (``handler['endpoint']`` is an object,
+    not a class or module): it dispatches ``_attr_name`` on that one object, which every
+    client allowed in shares. A method that mutates it (``__setitem__``, ``write``...)
+    lets each of them change what the others see.
+
+    Handler options:
+
+    - ``obj_owner`` (required): ``(request) -> owner`` (see ``ObjOwner``); a request it
+      does not identify is refused, the others share the object. Or ``shared_objects``
+      to let any client use it. An instance endpoint without one is refused at build
+      time.
+    - ``max_obj_size`` (``DFLT_MAX_OBJ_SIZE``) and ``obj_sizeof``
+      (``bounded_deep_sizeof``): the bytes the object may hold, measured when the
+      service is built (an object already over it is refused then) and after every
+      dispatched call, failed ones included. The call that takes it over the limit has
+      already run: its result is withheld, the object is kept, and every later call is
+      refused until it is back under (shrunk outside the service). So memory is bounded
+      by the limit plus what the calls running at that moment allocate. ``None``
+      disables the check. Raise ``max_obj_size``, or pass an ``obj_sizeof`` that
+      skips what is not request-driven (a loaded model, a database connection), for a
+      large object. Data the object keeps outside the process (files, a database) is
+      not measured.
+    """
+    owner_of = handler.get("obj_owner")
+    if owner_of is None:
+        raise ValueError(
+            f"Instance endpoint {name!r} is one object shared by every client: give it "
+            "an obj_owner, a callable (request) -> owner (e.g. the authenticated user "
+            "id) that refuses requests it does not identify, or obj_owner=shared_objects "
+            "(from py2http.service) to let any client use it, as before."
+        )
+    owner = (lambda: None) if owner_of is shared_objects else _request_owner(owner_of, name)
+    max_obj_size = handler.get("max_obj_size", DFLT_MAX_OBJ_SIZE)
+    sizeof = handler.get("obj_sizeof", bounded_deep_sizeof)
+
+    def is_too_big():
+        return max_obj_size is not None and sizeof(obj, max_obj_size) > max_obj_size
+
+    if is_too_big():
+        raise ValueError(
+            f"Instance endpoint {name!r} already holds more than max_obj_size="
+            f"{max_obj_size} bytes (as measured by obj_sizeof): raise max_obj_size, pass "
+            "an obj_sizeof that skips what clients cannot grow, or max_obj_size=None."
+        )
+    over_limit = threading.Event()  # set while the object is known to be too big
+
+    def refuse():
+        over_limit.set()
+        raise InputError(
+            f"{name} is over its size limit ({max_obj_size} bytes): calls are refused "
+            "until it is back under"
+        )
+
+    def func(_attr_name=None, **kwargs):
+        owner()
+        if over_limit.is_set():
+            if is_too_big():
+                refuse()
+            over_limit.clear()
+        try:
+            return _get_attr_value(obj, _attr_name, is_dispatchable, **kwargs)
+        finally:  # a call that grows the object and then raises is measured too
+            if is_too_big():
+                refuse()
+
+    return func
 
 
 def _class_endpoint_dispatcher(cls, handler, name, is_dispatchable):
@@ -1019,10 +1122,7 @@ def _class_endpoint_dispatcher(cls, handler, name, is_dispatchable):
             return _SHARED_OWNER
 
     else:
-        if not callable(owner_of):
-            raise TypeError(
-                f"obj_owner must be callable or shared_objects: {owner_of!r}"
-            )
+        owner = _request_owner(owner_of, name)
         if handler.get("obj_store") is not None:
             raise ValueError(
                 "obj_store applies to obj_owner=shared_objects only; with an obj_owner "
@@ -1032,18 +1132,6 @@ def _class_endpoint_dispatcher(cls, handler, name, is_dispatchable):
             quota=handler.get("obj_quota", DFLT_OBJ_QUOTA),
             max_owners=handler.get("max_owners", DFLT_MAX_OWNERS),
         )
-
-        def owner():
-            who = owner_of(current_request.get())
-            if who is None or who == "":
-                raise AuthorizationError(f"{name}: no owner for this request")
-            try:
-                hash(who)
-            except TypeError:
-                raise TypeError(
-                    f"obj_owner of {name!r} must return a hashable, got {type(who)}"
-                ) from None
-            return who
 
     def over_budget(who, obj_id, obj):
         """Why the object must go, or None. Records its size when it may stay."""

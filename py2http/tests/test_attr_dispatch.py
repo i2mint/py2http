@@ -28,9 +28,7 @@ class Counter:
 
 
 def _dispatcher(endpoint, attr_names, **handler_extras):
-    if inspect.isclass(
-        endpoint
-    ):  # class endpoints must say who owns their objects (#22)
+    if not inspect.ismodule(endpoint):  # objects must say who may use them (#22, #30)
         handler_extras.setdefault("obj_owner", shared_objects)
     return _get_func_to_dispatch_handler(
         dict(endpoint=endpoint, name="ep", attr_names=attr_names, **handler_extras)
