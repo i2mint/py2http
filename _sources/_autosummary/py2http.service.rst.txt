@@ -17,6 +17,7 @@ py2http.service
       mk_route
       mk_routes_and_openapi_specs
       run_app
+      run_flask
    
    .. rubric:: Classes
 

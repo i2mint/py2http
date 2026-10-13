@@ -160,8 +160,8 @@ with minimal setup.</p>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_bottle_app</span></code>(funcs, **configs)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_flask_app</span></code>(funcs, **configs)</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#py2http.service.mk_flask_app" title="py2http.service.mk_flask_app"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_flask_app</span></code></a>(funcs, **configs)</p></td>
+<td><p>A Flask app serving <code class="docutils literal notranslate"><span class="pre">funcs</span></code>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#py2http.service.mk_route" title="py2http.service.mk_route"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_route</span></code></a>(func, **configs)</p></td>
 <td><p>Generate a route object and an OpenAPI path specification for a function</p></td>
@@ -171,6 +171,9 @@ with minimal setup.</p>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#py2http.service.run_app" title="py2http.service.run_app"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_app</span></code></a>(app_obj, *[, app_name, framework, ...])</p></td>
 <td><p>Run an application which exposes web services created from the given python functions to remotely run them.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#py2http.service.run_flask" title="py2http.service.run_flask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_flask</span></code></a>(app, *, host, port[, certfile, ...])</p></td>
+<td><p>Run a Flask app with Flask's own server (<code class="docutils literal notranslate"><span class="pre">server</span></code> does not apply to it).</p></td>
 </tr>
 </tbody>
 </table>
@@ -273,6 +276,14 @@ configuration documentation.</p></li>
 </dl>
 </dd></dl>
 <dl class="py function">
+<dt class="sig sig-object py" id="py2http.service.mk_flask_app">
+<span class="sig-prename descclassname"><span class="pre">py2http.service.</span></span><span class="sig-name descname"><span class="pre">mk_flask_app</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">configs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/service.html#mk_flask_app"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.service.mk_flask_app" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.service.mk_flask_app'">¶</a></dt>
+<dd><p>A Flask app serving <code class="docutils literal notranslate"><span class="pre">funcs</span></code>. JSON request bodies only (the raw, binary and
+form input mappers read Bottle’s request); <code class="docutils literal notranslate"><span class="pre">middleware</span></code> is a list of WSGI
+wrappers; <code class="docutils literal notranslate"><span class="pre">plugins</span></code>, <code class="docutils literal notranslate"><span class="pre">enable_cors</span></code>, <code class="docutils literal notranslate"><span class="pre">publish_swagger</span></code> and
+<code class="docutils literal notranslate"><span class="pre">openapi_insecure</span></code> are Bottle’s, and raise <code class="docutils literal notranslate"><span class="pre">NotImplementedError</span></code> here.</p>
+</dd></dl>
+<dl class="py function">
 <dt class="sig sig-object py" id="py2http.service.mk_route">
 <span class="sig-prename descclassname"><span class="pre">py2http.service.</span></span><span class="sig-name descname"><span class="pre">mk_route</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">configs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/service.html#mk_route"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.service.mk_route" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.service.mk_route'">¶</a></dt>
 <dd><p>Generate a route object and an OpenAPI path specification for a function</p>
@@ -306,14 +317,21 @@ configuration documentation.</p></li>
 </dd>
 </dl>
 </dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.service.run_flask">
+<span class="sig-prename descclassname"><span class="pre">py2http.service.</span></span><span class="sig-name descname"><span class="pre">run_flask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">certfile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keyfile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">_</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/service.html#run_flask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.service.run_flask" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.service.run_flask'">¶</a></dt>
+<dd><p>Run a Flask app with Flask’s own server (<code class="docutils literal notranslate"><span class="pre">server</span></code> does not apply to it).</p>
+</dd></dl>
 </section>
 </div></div><aside class="hidden text-sm xl:block" id="right-sidebar">
 <div class="sticky top-16 -mt-10 max-h-[calc(100vh-5rem)] h-full overflow-y-auto pt-6 space-y-2"><p class="font-medium">On this page</p>
 <ul>
 <li><a :data-current="activeSection === '#py2http.service.SubAppSpec'" class="reference internal" href="#py2http.service.SubAppSpec"><code class="docutils literal notranslate"><span class="pre">SubAppSpec</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.service.mk_app'" class="reference internal" href="#py2http.service.mk_app"><code class="docutils literal notranslate"><span class="pre">mk_app()</span></code></a></li>
+<li><a :data-current="activeSection === '#py2http.service.mk_flask_app'" class="reference internal" href="#py2http.service.mk_flask_app"><code class="docutils literal notranslate"><span class="pre">mk_flask_app()</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.service.mk_route'" class="reference internal" href="#py2http.service.mk_route"><code class="docutils literal notranslate"><span class="pre">mk_route()</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.service.run_app'" class="reference internal" href="#py2http.service.run_app"><code class="docutils literal notranslate"><span class="pre">run_app()</span></code></a></li>
+<li><a :data-current="activeSection === '#py2http.service.run_flask'" class="reference internal" href="#py2http.service.run_flask"><code class="docutils literal notranslate"><span class="pre">run_flask()</span></code></a></li>
 </ul>
 </div>
 </aside>
@@ -329,7 +347,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=9f53bdf0"></script>
+<script src="../_static/documentation_options.js?v=a8ab379a"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

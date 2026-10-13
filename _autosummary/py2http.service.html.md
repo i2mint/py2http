@@ -25,10 +25,11 @@ with minimal setup.
 | `mk_aiohttp_app`(funcs, \*\*configs)                                                              |                                                                                                                   |
 | [`mk_app`](#py2http.service.mk_app)(app_spec, \*[, app_name, framework, ...]) | Generates an application which exposes web services created from the given python functions to remotely run them. |
 | `mk_bottle_app`(funcs, \*\*configs)                                                               |                                                                                                                   |
-| `mk_flask_app`(funcs, \*\*configs)                                                                |                                                                                                                   |
+| [`mk_flask_app`](#py2http.service.mk_flask_app)(funcs, \*\*configs)                 | A Flask app serving `funcs`.                                                                                      |
 | [`mk_route`](#py2http.service.mk_route)(func, \*\*configs)                      | Generate a route object and an OpenAPI path specification for a function                                          |
 | `mk_routes_and_openapi_specs`(funcs, \*\*configs)                                                 |                                                                                                                   |
 | [`run_app`](#py2http.service.run_app)(app_obj, \*[, app_name, framework, ...]) | Run an application which exposes web services created from the given python functions to remotely run them.       |
+| [`run_flask`](#py2http.service.run_flask)(app, \*, host, port[, certfile, ...])  | Run a Flask app with Flask's own server (`server` does not apply to it).                                          |
 
 ### Classes
 
@@ -131,6 +132,13 @@ API with a list of handlers for each API.
   * **\*\*configs** ([*dict*](https://docs.python.org/3/builtins/stdtypes.html#dict)) – The configuration for the application. See config.yaml for
     configuration documentation.
 
+### py2http.service.mk_flask_app(funcs, \*\*configs)
+
+A Flask app serving `funcs`. JSON request bodies only (the raw, binary and
+form input mappers read Bottle’s request); `middleware` is a list of WSGI
+wrappers; `plugins`, `enable_cors`, `publish_swagger` and
+`openapi_insecure` are Bottle’s, and raise `NotImplementedError` here.
+
 ### py2http.service.mk_route(func, \*\*configs)
 
 Generate a route object and an OpenAPI path specification for a function
@@ -155,3 +163,7 @@ You can also generate the application first, then run it using this function.
   * **\*\*configs** ([*dict*](https://docs.python.org/3/builtins/stdtypes.html#dict)) – The configuration for the application. See
     `py2http.default_configs:default_configs` for defaults and config.yaml for
     configuration documentation.
+
+### py2http.service.run_flask(app, , host, port, certfile=None, keyfile=None, \*\*\_)
+
+Run a Flask app with Flask’s own server (`server` does not apply to it).

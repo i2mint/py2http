@@ -231,157 +231,200 @@
 </span><span id="line-54">    <span class="k">return</span> <span class="n">output</span>
 </span><span id="line-55">
 </span><span id="line-56">
-</span><span id="line-57"><span class="k">def</span><span class="w"> </span><span class="nf">bottle_output_mapper</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="o">**</span><span class="n">inputs</span><span class="p">):</span>
-</span><span id="line-58">    <span class="n">response</span><span class="o">.</span><span class="n">content_type</span> <span class="o">=</span> <span class="n">JSON_CONTENT_TYPE</span>
-</span><span id="line-59">    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">JsonRespEncoder</span><span class="p">)</span>
+<div class="viewcode-block" id="flask_json_output_mapper">
+<a class="viewcode-back" href="../../_autosummary/py2http.default_configs.html#py2http.default_configs.flask_json_output_mapper">[docs]</a>
+</span><span id="line-57"><span class="k">def</span><span class="w"> </span><span class="nf">flask_json_output_mapper</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="o">**</span><span class="n">inputs</span><span class="p">):</span>
+</span><span id="line-58"><span class="w">    </span><span class="sd">"""The default output mapper of a Flask app: the output as a JSON response."""</span>
+</span><span id="line-59">    <span class="kn">from</span><span class="w"> </span><span class="nn">flask</span><span class="w"> </span><span class="kn">import</span> <span class="n">Response</span>
 </span><span id="line-60">
-</span><span id="line-61">
-</span><span id="line-62"><span class="k">def</span><span class="w"> </span><span class="nf">_raise_http_client_error</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-</span><span id="line-63">    <span class="k">raise</span> <span class="n">error</span><span class="p">(</span>
-</span><span id="line-64">        <span class="n">text</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">"error"</span><span class="p">:</span> <span class="n">message</span><span class="p">}),</span>
-</span><span id="line-65">        <span class="n">content_type</span><span class="o">=</span><span class="n">JSON_CONTENT_TYPE</span><span class="p">,</span>
-</span><span id="line-66">        <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">,</span>
-</span><span id="line-67">        <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
-</span><span id="line-68">    <span class="p">)</span>
-</span><span id="line-69">
-</span><span id="line-70">
+</span><span id="line-61">    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span>
+</span><span id="line-62">        <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">JsonRespEncoder</span><span class="p">),</span> <span class="n">content_type</span><span class="o">=</span><span class="n">JSON_CONTENT_TYPE</span>
+</span><span id="line-63">    <span class="p">)</span></div>
+
+</span><span id="line-64">
+</span><span id="line-65">
+</span><span id="line-66"><span class="n">flask_json_output_mapper</span><span class="o">.</span><span class="n">content_type</span> <span class="o">=</span> <span class="n">JSON_CONTENT_TYPE</span>
+</span><span id="line-67">
+</span><span id="line-68">
+</span><span id="line-69"><span class="k">def</span><span class="w"> </span><span class="nf">bottle_output_mapper</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="o">**</span><span class="n">inputs</span><span class="p">):</span>
+</span><span id="line-70">    <span class="n">response</span><span class="o">.</span><span class="n">content_type</span> <span class="o">=</span> <span class="n">JSON_CONTENT_TYPE</span>
+</span><span id="line-71">    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">JsonRespEncoder</span><span class="p">)</span>
+</span><span id="line-72">
+</span><span id="line-73">
+</span><span id="line-74"><span class="k">def</span><span class="w"> </span><span class="nf">_raise_http_client_error</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+</span><span id="line-75">    <span class="k">raise</span> <span class="n">error</span><span class="p">(</span>
+</span><span id="line-76">        <span class="n">text</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">"error"</span><span class="p">:</span> <span class="n">message</span><span class="p">}),</span>
+</span><span id="line-77">        <span class="n">content_type</span><span class="o">=</span><span class="n">JSON_CONTENT_TYPE</span><span class="p">,</span>
+</span><span id="line-78">        <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">,</span>
+</span><span id="line-79">        <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+</span><span id="line-80">    <span class="p">)</span>
+</span><span id="line-81">
+</span><span id="line-82">
 <div class="viewcode-block" id="www_authenticate_challenge">
 <a class="viewcode-back" href="../../_autosummary/py2http.default_configs.html#py2http.default_configs.www_authenticate_challenge">[docs]</a>
-</span><span id="line-71"><span class="k">def</span><span class="w"> </span><span class="nf">www_authenticate_challenge</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span id="line-72"><span class="w">    </span><span class="sd">"""The ``WWW-Authenticate`` value of a 401 a dispatched function raised: the</span>
-</span><span id="line-73"><span class="sd">    ``PY2HTTP_WWW_AUTHENTICATE`` environment variable, else ``Bearer`` (also when the</span>
-</span><span id="line-74"><span class="sd">    variable holds a line break, which would make every 401 fail to send).</span>
-</span><span id="line-75">
-</span><span id="line-76"><span class="sd">    &gt;&gt;&gt; os.environ.pop(WWW_AUTHENTICATE_ENV_VAR, None) and None</span>
-</span><span id="line-77"><span class="sd">    &gt;&gt;&gt; www_authenticate_challenge()</span>
-</span><span id="line-78"><span class="sd">    'Bearer'</span>
-</span><span id="line-79"><span class="sd">    """</span>
-</span><span id="line-80">    <span class="n">challenge</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">WWW_AUTHENTICATE_ENV_VAR</span><span class="p">)</span>
-</span><span id="line-81">    <span class="k">if</span> <span class="ow">not</span> <span class="n">challenge</span><span class="p">:</span>
-</span><span id="line-82">        <span class="k">return</span> <span class="n">BEARER_CHALLENGE</span>
-</span><span id="line-83">    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">c</span> <span class="ow">in</span> <span class="n">challenge</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="s2">"</span><span class="se">\r\n\0</span><span class="s2">"</span><span class="p">):</span>
-</span><span id="line-84">        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-</span><span id="line-85">            <span class="s2">"</span><span class="si">%s</span><span class="s2"> holds a control character; sending </span><span class="si">%r</span><span class="s2"> instead"</span><span class="p">,</span>
-</span><span id="line-86">            <span class="n">WWW_AUTHENTICATE_ENV_VAR</span><span class="p">,</span>
-</span><span id="line-87">            <span class="n">BEARER_CHALLENGE</span><span class="p">,</span>
-</span><span id="line-88">        <span class="p">)</span>
-</span><span id="line-89">        <span class="k">return</span> <span class="n">BEARER_CHALLENGE</span>
-</span><span id="line-90">    <span class="k">return</span> <span class="n">challenge</span></div>
+</span><span id="line-83"><span class="k">def</span><span class="w"> </span><span class="nf">www_authenticate_challenge</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="line-84"><span class="w">    </span><span class="sd">"""The ``WWW-Authenticate`` value of a 401 a dispatched function raised: the</span>
+</span><span id="line-85"><span class="sd">    ``PY2HTTP_WWW_AUTHENTICATE`` environment variable, else ``Bearer`` (also when the</span>
+</span><span id="line-86"><span class="sd">    variable holds a line break, which would make every 401 fail to send).</span>
+</span><span id="line-87">
+</span><span id="line-88"><span class="sd">    &gt;&gt;&gt; os.environ.pop(WWW_AUTHENTICATE_ENV_VAR, None) and None</span>
+</span><span id="line-89"><span class="sd">    &gt;&gt;&gt; www_authenticate_challenge()</span>
+</span><span id="line-90"><span class="sd">    'Bearer'</span>
+</span><span id="line-91"><span class="sd">    """</span>
+</span><span id="line-92">    <span class="n">challenge</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">WWW_AUTHENTICATE_ENV_VAR</span><span class="p">)</span>
+</span><span id="line-93">    <span class="k">if</span> <span class="ow">not</span> <span class="n">challenge</span><span class="p">:</span>
+</span><span id="line-94">        <span class="k">return</span> <span class="n">BEARER_CHALLENGE</span>
+</span><span id="line-95">    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">c</span> <span class="ow">in</span> <span class="n">challenge</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="s2">"</span><span class="se">\r\n\0</span><span class="s2">"</span><span class="p">):</span>
+</span><span id="line-96">        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+</span><span id="line-97">            <span class="s2">"</span><span class="si">%s</span><span class="s2"> holds a control character; sending </span><span class="si">%r</span><span class="s2"> instead"</span><span class="p">,</span>
+</span><span id="line-98">            <span class="n">WWW_AUTHENTICATE_ENV_VAR</span><span class="p">,</span>
+</span><span id="line-99">            <span class="n">BEARER_CHALLENGE</span><span class="p">,</span>
+</span><span id="line-100">        <span class="p">)</span>
+</span><span id="line-101">        <span class="k">return</span> <span class="n">BEARER_CHALLENGE</span>
+</span><span id="line-102">    <span class="k">return</span> <span class="n">challenge</span></div>
 
-</span><span id="line-91">
-</span><span id="line-92">
-</span><span id="line-93"><span class="k">def</span><span class="w"> </span><span class="nf">_status_headers</span><span class="p">(</span><span class="n">status</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span id="line-94">    <span class="k">return</span> <span class="p">{</span><span class="s2">"WWW-Authenticate"</span><span class="p">:</span> <span class="n">www_authenticate_challenge</span><span class="p">()}</span> <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">401</span> <span class="k">else</span> <span class="p">{}</span>
-</span><span id="line-95">
-</span><span id="line-96">
-</span><span id="line-97"><span class="c1"># HTTP status of each client error, most specific class first. ``ForbiddenError`` and</span>
-</span><span id="line-98"><span class="c1"># ``OverwritesNotAllowed`` mean the client may not do this (403); any other</span>
-</span><span id="line-99"><span class="c1"># ``AuthorizationError`` means the request did not say who it is (401).</span>
-</span><span id="line-100"><span class="n">_CLIENT_ERROR_STATUSES</span> <span class="o">=</span> <span class="p">(</span>
-</span><span id="line-101">    <span class="p">((</span><span class="n">ForbiddenError</span><span class="p">,</span> <span class="n">OverwritesNotAllowed</span><span class="p">),</span> <span class="mi">403</span><span class="p">),</span>
-</span><span id="line-102">    <span class="p">(</span><span class="n">AuthorizationError</span><span class="p">,</span> <span class="mi">401</span><span class="p">),</span>
-</span><span id="line-103">    <span class="p">((</span><span class="n">InputError</span><span class="p">,</span> <span class="n">DuplicateRecordError</span><span class="p">),</span> <span class="mi">400</span><span class="p">),</span>
-</span><span id="line-104">    <span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="mi">404</span><span class="p">),</span>
-</span><span id="line-105"><span class="p">)</span>
-</span><span id="line-106"><span class="n">_AIOHTTP_ERRORS</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="line-107">    <span class="mi">400</span><span class="p">:</span> <span class="n">web</span><span class="o">.</span><span class="n">HTTPBadRequest</span><span class="p">,</span>
-</span><span id="line-108">    <span class="mi">401</span><span class="p">:</span> <span class="n">web</span><span class="o">.</span><span class="n">HTTPUnauthorized</span><span class="p">,</span>
-</span><span id="line-109">    <span class="mi">403</span><span class="p">:</span> <span class="n">web</span><span class="o">.</span><span class="n">HTTPForbidden</span><span class="p">,</span>
-</span><span id="line-110">    <span class="mi">404</span><span class="p">:</span> <span class="n">web</span><span class="o">.</span><span class="n">HTTPNotFound</span><span class="p">,</span>
-</span><span id="line-111"><span class="p">}</span>
-</span><span id="line-112">
-</span><span id="line-113">
+</span><span id="line-103">
+</span><span id="line-104">
+</span><span id="line-105"><span class="k">def</span><span class="w"> </span><span class="nf">_status_headers</span><span class="p">(</span><span class="n">status</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span id="line-106">    <span class="k">return</span> <span class="p">{</span><span class="s2">"WWW-Authenticate"</span><span class="p">:</span> <span class="n">www_authenticate_challenge</span><span class="p">()}</span> <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">401</span> <span class="k">else</span> <span class="p">{}</span>
+</span><span id="line-107">
+</span><span id="line-108">
+</span><span id="line-109"><span class="c1"># HTTP status of each client error, most specific class first. ``ForbiddenError`` and</span>
+</span><span id="line-110"><span class="c1"># ``OverwritesNotAllowed`` mean the client may not do this (403); any other</span>
+</span><span id="line-111"><span class="c1"># ``AuthorizationError`` means the request did not say who it is (401).</span>
+</span><span id="line-112"><span class="n">_CLIENT_ERROR_STATUSES</span> <span class="o">=</span> <span class="p">(</span>
+</span><span id="line-113">    <span class="p">((</span><span class="n">ForbiddenError</span><span class="p">,</span> <span class="n">OverwritesNotAllowed</span><span class="p">),</span> <span class="mi">403</span><span class="p">),</span>
+</span><span id="line-114">    <span class="p">(</span><span class="n">AuthorizationError</span><span class="p">,</span> <span class="mi">401</span><span class="p">),</span>
+</span><span id="line-115">    <span class="p">((</span><span class="n">InputError</span><span class="p">,</span> <span class="n">DuplicateRecordError</span><span class="p">),</span> <span class="mi">400</span><span class="p">),</span>
+</span><span id="line-116">    <span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="mi">404</span><span class="p">),</span>
+</span><span id="line-117"><span class="p">)</span>
+</span><span id="line-118"><span class="n">_AIOHTTP_ERRORS</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="line-119">    <span class="mi">400</span><span class="p">:</span> <span class="n">web</span><span class="o">.</span><span class="n">HTTPBadRequest</span><span class="p">,</span>
+</span><span id="line-120">    <span class="mi">401</span><span class="p">:</span> <span class="n">web</span><span class="o">.</span><span class="n">HTTPUnauthorized</span><span class="p">,</span>
+</span><span id="line-121">    <span class="mi">403</span><span class="p">:</span> <span class="n">web</span><span class="o">.</span><span class="n">HTTPForbidden</span><span class="p">,</span>
+</span><span id="line-122">    <span class="mi">404</span><span class="p">:</span> <span class="n">web</span><span class="o">.</span><span class="n">HTTPNotFound</span><span class="p">,</span>
+</span><span id="line-123"><span class="p">}</span>
+</span><span id="line-124">
+</span><span id="line-125">
 <div class="viewcode-block" id="error_status">
 <a class="viewcode-back" href="../../_autosummary/py2http.default_configs.html#py2http.default_configs.error_status">[docs]</a>
-</span><span id="line-114"><span class="k">def</span><span class="w"> </span><span class="nf">error_status</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-</span><span id="line-115"><span class="w">    </span><span class="sd">"""The HTTP status for an error a handler raised (500 when it is not a client's).</span>
-</span><span id="line-116">
-</span><span id="line-117"><span class="sd">    &gt;&gt;&gt; error_status(AuthorizationError()), error_status(ForbiddenError())</span>
-</span><span id="line-118"><span class="sd">    (401, 403)</span>
-</span><span id="line-119"><span class="sd">    &gt;&gt;&gt; error_status(InputError()), error_status(KeyError())</span>
-</span><span id="line-120"><span class="sd">    (400, 500)</span>
-</span><span id="line-121"><span class="sd">    """</span>
-</span><span id="line-122">    <span class="k">for</span> <span class="n">error_types</span><span class="p">,</span> <span class="n">status</span> <span class="ow">in</span> <span class="n">_CLIENT_ERROR_STATUSES</span><span class="p">:</span>
-</span><span id="line-123">        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">error_types</span><span class="p">):</span>
-</span><span id="line-124">            <span class="k">return</span> <span class="n">status</span>
-</span><span id="line-125">    <span class="k">return</span> <span class="mi">500</span></div>
+</span><span id="line-126"><span class="k">def</span><span class="w"> </span><span class="nf">error_status</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+</span><span id="line-127"><span class="w">    </span><span class="sd">"""The HTTP status for an error a handler raised (500 when it is not a client's).</span>
+</span><span id="line-128">
+</span><span id="line-129"><span class="sd">    &gt;&gt;&gt; error_status(AuthorizationError()), error_status(ForbiddenError())</span>
+</span><span id="line-130"><span class="sd">    (401, 403)</span>
+</span><span id="line-131"><span class="sd">    &gt;&gt;&gt; error_status(InputError()), error_status(KeyError())</span>
+</span><span id="line-132"><span class="sd">    (400, 500)</span>
+</span><span id="line-133"><span class="sd">    """</span>
+</span><span id="line-134">    <span class="k">for</span> <span class="n">error_types</span><span class="p">,</span> <span class="n">status</span> <span class="ow">in</span> <span class="n">_CLIENT_ERROR_STATUSES</span><span class="p">:</span>
+</span><span id="line-135">        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">error_types</span><span class="p">):</span>
+</span><span id="line-136">            <span class="k">return</span> <span class="n">status</span>
+</span><span id="line-137">    <span class="k">return</span> <span class="mi">500</span></div>
 
-</span><span id="line-126">
-</span><span id="line-127">
-</span><span id="line-128"><span class="k">def</span><span class="w"> </span><span class="nf">aiohttp_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">):</span>
-</span><span id="line-129">    <span class="n">status</span> <span class="o">=</span> <span class="n">error_status</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-</span><span id="line-130">    <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">500</span><span class="p">:</span>
-</span><span id="line-131">        <span class="n">_raise_http_client_error</span><span class="p">(</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPInternalServerError</span><span class="p">,</span> <span class="s2">"Internal server error"</span><span class="p">)</span>
-</span><span id="line-132">    <span class="n">reason</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">400</span> <span class="k">else</span> <span class="kc">None</span>
-</span><span id="line-133">    <span class="n">_raise_http_client_error</span><span class="p">(</span>
-</span><span id="line-134">        <span class="n">_AIOHTTP_ERRORS</span><span class="p">[</span><span class="n">status</span><span class="p">],</span>
-</span><span id="line-135">        <span class="nb">str</span><span class="p">(</span><span class="n">error</span><span class="p">),</span>
-</span><span id="line-136">        <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">,</span>
-</span><span id="line-137">        <span class="n">headers</span><span class="o">=</span><span class="n">_status_headers</span><span class="p">(</span><span class="n">status</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="line-138">    <span class="p">)</span>
+</span><span id="line-138">
 </span><span id="line-139">
-</span><span id="line-140">
-</span><span id="line-141"><span class="k">def</span><span class="w"> </span><span class="nf">bottle_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">):</span>
-</span><span id="line-142">    <span class="n">message</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-</span><span id="line-143">    <span class="n">status</span> <span class="o">=</span> <span class="n">error_status</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-</span><span id="line-144">    <span class="n">response</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"400 </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">400</span> <span class="k">else</span> <span class="n">status</span>
-</span><span id="line-145">    <span class="k">for</span> <span class="n">header</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">_status_headers</span><span class="p">(</span><span class="n">status</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-</span><span id="line-146">        <span class="n">response</span><span class="o">.</span><span class="n">set_header</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-</span><span id="line-147">    <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">500</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">"OPAQUE_ERRORS"</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
-</span><span id="line-148">        <span class="n">message</span> <span class="o">=</span> <span class="s2">"Internal server error"</span>
-</span><span id="line-149">    <span class="k">return</span> <span class="p">{</span><span class="s2">"error"</span><span class="p">:</span> <span class="n">message</span><span class="p">}</span>
-</span><span id="line-150">
+</span><span id="line-140"><span class="k">def</span><span class="w"> </span><span class="nf">aiohttp_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">):</span>
+</span><span id="line-141">    <span class="n">status</span> <span class="o">=</span> <span class="n">error_status</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+</span><span id="line-142">    <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">500</span><span class="p">:</span>
+</span><span id="line-143">        <span class="n">_raise_http_client_error</span><span class="p">(</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPInternalServerError</span><span class="p">,</span> <span class="s2">"Internal server error"</span><span class="p">)</span>
+</span><span id="line-144">    <span class="n">reason</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">400</span> <span class="k">else</span> <span class="kc">None</span>
+</span><span id="line-145">    <span class="n">_raise_http_client_error</span><span class="p">(</span>
+</span><span id="line-146">        <span class="n">_AIOHTTP_ERRORS</span><span class="p">[</span><span class="n">status</span><span class="p">],</span>
+</span><span id="line-147">        <span class="nb">str</span><span class="p">(</span><span class="n">error</span><span class="p">),</span>
+</span><span id="line-148">        <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">,</span>
+</span><span id="line-149">        <span class="n">headers</span><span class="o">=</span><span class="n">_status_headers</span><span class="p">(</span><span class="n">status</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="line-150">    <span class="p">)</span>
 </span><span id="line-151">
+</span><span id="line-152">
+</span><span id="line-153"><span class="k">def</span><span class="w"> </span><span class="nf">bottle_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">):</span>
+</span><span id="line-154">    <span class="n">message</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+</span><span id="line-155">    <span class="n">status</span> <span class="o">=</span> <span class="n">error_status</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+</span><span id="line-156">    <span class="n">response</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"400 </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">400</span> <span class="k">else</span> <span class="n">status</span>
+</span><span id="line-157">    <span class="k">for</span> <span class="n">header</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">_status_headers</span><span class="p">(</span><span class="n">status</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span id="line-158">        <span class="n">response</span><span class="o">.</span><span class="n">set_header</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</span><span id="line-159">    <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">500</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">"OPAQUE_ERRORS"</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+</span><span id="line-160">        <span class="n">message</span> <span class="o">=</span> <span class="s2">"Internal server error"</span>
+</span><span id="line-161">    <span class="k">return</span> <span class="p">{</span><span class="s2">"error"</span><span class="p">:</span> <span class="n">message</span><span class="p">}</span>
+</span><span id="line-162">
+</span><span id="line-163">
 <div class="viewcode-block" id="flask_error_handler">
 <a class="viewcode-back" href="../../_autosummary/py2http.default_configs.html#py2http.default_configs.flask_error_handler">[docs]</a>
-</span><span id="line-152"><span class="k">def</span><span class="w"> </span><span class="nf">flask_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">):</span>
-</span><span id="line-153"><span class="w">    </span><span class="sd">"""The ``(body, status, headers)`` a Flask view returns for an error, mapped like</span>
-</span><span id="line-154"><span class="sd">    the bottle handler (``OPAQUE_ERRORS`` hides the text of a 500)."""</span>
-</span><span id="line-155">    <span class="n">message</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-</span><span id="line-156">    <span class="n">status</span> <span class="o">=</span> <span class="n">error_status</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-</span><span id="line-157">    <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">500</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">"OPAQUE_ERRORS"</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
-</span><span id="line-158">        <span class="n">message</span> <span class="o">=</span> <span class="s2">"Internal server error"</span>
-</span><span id="line-159">    <span class="n">status_line</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"400 </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">400</span> <span class="k">else</span> <span class="n">status</span>
-</span><span id="line-160">    <span class="k">return</span> <span class="p">{</span><span class="s2">"error"</span><span class="p">:</span> <span class="n">message</span><span class="p">},</span> <span class="n">status_line</span><span class="p">,</span> <span class="n">_status_headers</span><span class="p">(</span><span class="n">status</span><span class="p">)</span></div>
+</span><span id="line-164"><span class="k">def</span><span class="w"> </span><span class="nf">flask_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">):</span>
+</span><span id="line-165"><span class="w">    </span><span class="sd">"""The ``(body, status, headers)`` a Flask view returns for an error, mapped like</span>
+</span><span id="line-166"><span class="sd">    the bottle handler (``OPAQUE_ERRORS`` hides the text of a 500)."""</span>
+</span><span id="line-167">    <span class="n">message</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+</span><span id="line-168">    <span class="n">status</span> <span class="o">=</span> <span class="n">error_status</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+</span><span id="line-169">    <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">500</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">"OPAQUE_ERRORS"</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+</span><span id="line-170">        <span class="n">message</span> <span class="o">=</span> <span class="s2">"Internal server error"</span>
+</span><span id="line-171">    <span class="n">status_line</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"400 </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">400</span> <span class="k">else</span> <span class="n">status</span>
+</span><span id="line-172">    <span class="k">return</span> <span class="p">{</span><span class="s2">"error"</span><span class="p">:</span> <span class="n">message</span><span class="p">},</span> <span class="n">status_line</span><span class="p">,</span> <span class="n">_status_headers</span><span class="p">(</span><span class="n">status</span><span class="p">)</span></div>
 
-</span><span id="line-161">
-</span><span id="line-162">
-</span><span id="line-163"><span class="k">def</span><span class="w"> </span><span class="nf">default_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">):</span>
-</span><span id="line-164">    <span class="n">framework</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">"PY2HTTP_FRAMEWORK"</span><span class="p">,</span> <span class="n">BOTTLE</span><span class="p">)</span>
-</span><span id="line-165">    <span class="k">if</span> <span class="n">framework</span> <span class="o">==</span> <span class="n">AIOHTTP</span><span class="p">:</span>
-</span><span id="line-166">        <span class="k">return</span> <span class="n">aiohttp_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-</span><span id="line-167">    <span class="k">if</span> <span class="n">framework</span> <span class="o">==</span> <span class="n">BOTTLE</span><span class="p">:</span>
-</span><span id="line-168">        <span class="k">return</span> <span class="n">bottle_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-</span><span id="line-169">    <span class="k">if</span> <span class="n">framework</span> <span class="o">==</span> <span class="n">FLASK</span><span class="p">:</span>
-</span><span id="line-170">        <span class="k">return</span> <span class="n">flask_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-</span><span id="line-171">    <span class="k">return</span> <span class="n">bottle_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-</span><span id="line-172">
 </span><span id="line-173">
-</span><span id="line-174"><span class="n">default_configs</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="line-175">    <span class="s2">"app_name"</span><span class="p">:</span> <span class="s2">"HTTP Service"</span><span class="p">,</span>
-</span><span id="line-176">    <span class="s2">"framework"</span><span class="p">:</span> <span class="n">BOTTLE</span><span class="p">,</span>
-</span><span id="line-177">    <span class="s2">"input_mapper"</span><span class="p">:</span> <span class="n">default_input_mapper</span><span class="p">,</span>
-</span><span id="line-178">    <span class="s2">"output_mapper"</span><span class="p">:</span> <span class="n">default_output_mapper</span><span class="p">,</span>
-</span><span id="line-179">    <span class="s2">"error_handler"</span><span class="p">:</span> <span class="n">default_error_handler</span><span class="p">,</span>
-</span><span id="line-180">    <span class="s2">"header_inputs"</span><span class="p">:</span> <span class="p">{},</span>
-</span><span id="line-181">    <span class="s2">"middleware"</span><span class="p">:</span> <span class="p">[],</span>
-</span><span id="line-182">    <span class="s2">"host"</span><span class="p">:</span> <span class="s2">"localhost"</span><span class="p">,</span>
-</span><span id="line-183">    <span class="s2">"port"</span><span class="p">:</span> <span class="mi">3030</span><span class="p">,</span>
-</span><span id="line-184">    <span class="s2">"server"</span><span class="p">:</span> <span class="s2">"gunicorn"</span><span class="p">,</span>
-</span><span id="line-185">    <span class="s2">"http_method"</span><span class="p">:</span> <span class="s2">"post"</span><span class="p">,</span>
-</span><span id="line-186">    <span class="s2">"openapi"</span><span class="p">:</span> <span class="p">{},</span>
-</span><span id="line-187">    <span class="s2">"logger"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="line-188">    <span class="s2">"plugins"</span><span class="p">:</span> <span class="p">[],</span>
-</span><span id="line-189">    <span class="s2">"enable_cors"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="line-190">    <span class="s2">"cors_allowed_origins"</span><span class="p">:</span> <span class="s2">"*"</span><span class="p">,</span>
-</span><span id="line-191">    <span class="s2">"publish_openapi"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="line-192">    <span class="s2">"openapi_insecure"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="line-193">    <span class="s2">"publish_swagger"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="line-194">    <span class="s2">"swagger_url"</span><span class="p">:</span> <span class="s2">"/swagger"</span><span class="p">,</span>
-</span><span id="line-195">    <span class="s2">"swagger_title"</span><span class="p">:</span> <span class="s2">"Swagger"</span><span class="p">,</span>
-</span><span id="line-196">    <span class="s2">"ssl_certfile"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="line-197">    <span class="s2">"ssl_keyfile"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="line-198"><span class="p">}</span>
+</span><span id="line-174">
+</span><span id="line-175"><span class="k">def</span><span class="w"> </span><span class="nf">default_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">):</span>
+</span><span id="line-176">    <span class="n">framework</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">"PY2HTTP_FRAMEWORK"</span><span class="p">,</span> <span class="n">BOTTLE</span><span class="p">)</span>
+</span><span id="line-177">    <span class="k">if</span> <span class="n">framework</span> <span class="o">==</span> <span class="n">AIOHTTP</span><span class="p">:</span>
+</span><span id="line-178">        <span class="k">return</span> <span class="n">aiohttp_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+</span><span id="line-179">    <span class="k">if</span> <span class="n">framework</span> <span class="o">==</span> <span class="n">BOTTLE</span><span class="p">:</span>
+</span><span id="line-180">        <span class="k">return</span> <span class="n">bottle_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+</span><span id="line-181">    <span class="k">if</span> <span class="n">framework</span> <span class="o">==</span> <span class="n">FLASK</span><span class="p">:</span>
+</span><span id="line-182">        <span class="k">return</span> <span class="n">flask_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+</span><span id="line-183">    <span class="k">return</span> <span class="n">bottle_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+</span><span id="line-184">
+</span><span id="line-185">
+</span><span id="line-186"><span class="c1"># What the default mappers become under each framework (a mapper a user gave is kept)</span>
+</span><span id="line-187"><span class="n">_DEFAULT_ERROR_HANDLERS</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="line-188">    <span class="n">AIOHTTP</span><span class="p">:</span> <span class="n">aiohttp_error_handler</span><span class="p">,</span>
+</span><span id="line-189">    <span class="n">BOTTLE</span><span class="p">:</span> <span class="n">bottle_error_handler</span><span class="p">,</span>
+</span><span id="line-190">    <span class="n">FLASK</span><span class="p">:</span> <span class="n">flask_error_handler</span><span class="p">,</span>
+</span><span id="line-191"><span class="p">}</span>
+</span><span id="line-192"><span class="n">_DEFAULT_OUTPUT_MAPPERS</span> <span class="o">=</span> <span class="p">{</span><span class="n">FLASK</span><span class="p">:</span> <span class="n">flask_json_output_mapper</span><span class="p">}</span>
+</span><span id="line-193">
+</span><span id="line-194">
+<div class="viewcode-block" id="framework_defaults">
+<a class="viewcode-back" href="../../_autosummary/py2http.default_configs.html#py2http.default_configs.framework_defaults">[docs]</a>
+</span><span id="line-195"><span class="k">def</span><span class="w"> </span><span class="nf">framework_defaults</span><span class="p">(</span><span class="n">framework</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">error_handler</span><span class="p">,</span> <span class="n">output_mapper</span><span class="p">):</span>
+</span><span id="line-196"><span class="w">    </span><span class="sd">"""The error handler and output mapper to use under ``framework``: the given ones,</span>
+</span><span id="line-197"><span class="sd">    except that the defaults (which only know of Bottle and AIOHTTP) are swapped for</span>
+</span><span id="line-198"><span class="sd">    the framework's own, so that no process-wide state decides how a response is made.</span>
+</span><span id="line-199">
+</span><span id="line-200"><span class="sd">    &gt;&gt;&gt; framework_defaults(FLASK, error_handler=default_error_handler,</span>
+</span><span id="line-201"><span class="sd">    ...     output_mapper=default_output_mapper)[0] is flask_error_handler</span>
+</span><span id="line-202"><span class="sd">    True</span>
+</span><span id="line-203"><span class="sd">    """</span>
+</span><span id="line-204">    <span class="k">if</span> <span class="n">error_handler</span> <span class="ow">is</span> <span class="n">default_error_handler</span><span class="p">:</span>
+</span><span id="line-205">        <span class="n">error_handler</span> <span class="o">=</span> <span class="n">_DEFAULT_ERROR_HANDLERS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">framework</span><span class="p">,</span> <span class="n">error_handler</span><span class="p">)</span>
+</span><span id="line-206">    <span class="k">if</span> <span class="n">output_mapper</span> <span class="ow">is</span> <span class="n">default_output_mapper</span><span class="p">:</span>
+</span><span id="line-207">        <span class="n">output_mapper</span> <span class="o">=</span> <span class="n">_DEFAULT_OUTPUT_MAPPERS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">framework</span><span class="p">,</span> <span class="n">output_mapper</span><span class="p">)</span>
+</span><span id="line-208">    <span class="k">return</span> <span class="n">error_handler</span><span class="p">,</span> <span class="n">output_mapper</span></div>
+
+</span><span id="line-209">
+</span><span id="line-210">
+</span><span id="line-211"><span class="n">default_configs</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="line-212">    <span class="s2">"app_name"</span><span class="p">:</span> <span class="s2">"HTTP Service"</span><span class="p">,</span>
+</span><span id="line-213">    <span class="s2">"framework"</span><span class="p">:</span> <span class="n">BOTTLE</span><span class="p">,</span>
+</span><span id="line-214">    <span class="s2">"input_mapper"</span><span class="p">:</span> <span class="n">default_input_mapper</span><span class="p">,</span>
+</span><span id="line-215">    <span class="s2">"output_mapper"</span><span class="p">:</span> <span class="n">default_output_mapper</span><span class="p">,</span>
+</span><span id="line-216">    <span class="s2">"error_handler"</span><span class="p">:</span> <span class="n">default_error_handler</span><span class="p">,</span>
+</span><span id="line-217">    <span class="s2">"header_inputs"</span><span class="p">:</span> <span class="p">{},</span>
+</span><span id="line-218">    <span class="s2">"middleware"</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="line-219">    <span class="s2">"host"</span><span class="p">:</span> <span class="s2">"localhost"</span><span class="p">,</span>
+</span><span id="line-220">    <span class="s2">"port"</span><span class="p">:</span> <span class="mi">3030</span><span class="p">,</span>
+</span><span id="line-221">    <span class="s2">"server"</span><span class="p">:</span> <span class="s2">"gunicorn"</span><span class="p">,</span>
+</span><span id="line-222">    <span class="s2">"http_method"</span><span class="p">:</span> <span class="s2">"post"</span><span class="p">,</span>
+</span><span id="line-223">    <span class="s2">"openapi"</span><span class="p">:</span> <span class="p">{},</span>
+</span><span id="line-224">    <span class="s2">"logger"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="line-225">    <span class="s2">"plugins"</span><span class="p">:</span> <span class="p">[],</span>
+</span><span id="line-226">    <span class="s2">"enable_cors"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="line-227">    <span class="s2">"cors_allowed_origins"</span><span class="p">:</span> <span class="s2">"*"</span><span class="p">,</span>
+</span><span id="line-228">    <span class="s2">"publish_openapi"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="line-229">    <span class="s2">"openapi_insecure"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="line-230">    <span class="s2">"publish_swagger"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="line-231">    <span class="s2">"swagger_url"</span><span class="p">:</span> <span class="s2">"/swagger"</span><span class="p">,</span>
+</span><span id="line-232">    <span class="s2">"swagger_title"</span><span class="p">:</span> <span class="s2">"Swagger"</span><span class="p">,</span>
+</span><span id="line-233">    <span class="s2">"ssl_certfile"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="line-234">    <span class="s2">"ssl_keyfile"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="line-235"><span class="p">}</span>
 </span></code></pre></div>
     </div></div>
           </main>
@@ -397,7 +440,7 @@ Otosense&nbsp;</p>
 </footer>
     </div>
     
-    <script src="../../_static/documentation_options.js?v=9f53bdf0"></script>
+    <script src="../../_static/documentation_options.js?v=a8ab379a"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

@@ -2,20 +2,18 @@
 
 # About this build
 
-This documentation was built on **2026-10-13 09:09 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/ffc3505231cceaf92485652390dae61af82c8c0f"><code>ffc3505</code></a> on branch <code>master</code>, for **py2http 0.1.71** (from <code>setup.cfg</code>).
+This documentation was built on **2026-10-13 12:44 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/f57d3c4c8b33ae8e9e7e075eaf082552a632fb45"><code>f57d3c4</code></a> on branch <code>master</code>, for **py2http 0.1.72** (from <code>setup.cfg</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.1.71) is ahead of the latest release on PyPI (0.1.69): these docs describe unreleased code.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                       |
 |---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2http/commit/ffc3505231cceaf92485652390dae61af82c8c0f"><code>ffc3505231cceaf92485652390dae61af82c8c0f</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2http/commit/f57d3c4c8b33ae8e9e7e075eaf082552a632fb45"><code>f57d3c4c8b33ae8e9e7e075eaf082552a632fb45</code></a> |
 | Branch              | <code>master</code>                                                                                                                                   |
-| Tags at this commit | <code>0.1.71</code>                                                                                                                                   |
+| Tags at this commit | <code>0.1.72</code>                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                 |
 | Remote              | <code>https://github.com/i2mint/py2http</code>                                                                                                        |
 
@@ -24,9 +22,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2http</code>                                                                |
-| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38374097798">38374097798</a>       |
+| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38399231975">38399231975</a>       |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>807c6c583b5d4025c9e01afc460065e8404033dd</code> (in the history of the built commit) |
+| Event commit | <code>72383a26bc3a1f5ba53cfca168df20e045d33375</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -51,13 +49,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2http/0.1.69/">0.1.69</a>, older than the documented version (0.1.71).
+Latest release: <a href="https://pypi.org/project/py2http/0.1.72/">0.1.72</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2http && cd py2http
-git checkout ffc3505231cceaf92485652390dae61af82c8c0f
+git checkout f57d3c4c8b33ae8e9e7e075eaf082552a632fb45
 pip install "epythet==0.2.15"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

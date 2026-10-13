@@ -16,16 +16,18 @@ up an HTTP service in Python using the py2http library.
 
 ### Functions
 
-| `aiohttp_error_handler`(error)                                                |                                                                                                                                                                                                                              |
-|-------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `bottle_error_handler`(error)                                                 |                                                                                                                                                                                                                              |
-| `bottle_output_mapper`(output, \*\*inputs)                                    |                                                                                                                                                                                                                              |
-| `default_error_handler`(error)                                                |                                                                                                                                                                                                                              |
-| `default_input_mapper`(\*\*inputs)                                            |                                                                                                                                                                                                                              |
-| [`error_status`](#py2http.default_configs.error_status)(error)          | The HTTP status for an error a handler raised (500 when it is not a client's).                                                                                                                                               |
-| [`flask_error_handler`](#py2http.default_configs.flask_error_handler)(error)   | The `(body, status, headers)` a Flask view returns for an error, mapped like the bottle handler (`OPAQUE_ERRORS` hides the text of a 500).                                                                                   |
-| `flask_output_mapper`(output, \*\*inputs)                                     |                                                                                                                                                                                                                              |
-| [`www_authenticate_challenge`](#py2http.default_configs.www_authenticate_challenge)() | The `WWW-Authenticate` value of a 401 a dispatched function raised: the `PY2HTTP_WWW_AUTHENTICATE` environment variable, else `Bearer` (also when the variable holds a line break, which would make every 401 fail to send). |
+| `aiohttp_error_handler`(error)                                                                |                                                                                                                                                                                                                                                   |
+|-----------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `bottle_error_handler`(error)                                                                 |                                                                                                                                                                                                                                                   |
+| `bottle_output_mapper`(output, \*\*inputs)                                                    |                                                                                                                                                                                                                                                   |
+| `default_error_handler`(error)                                                                |                                                                                                                                                                                                                                                   |
+| `default_input_mapper`(\*\*inputs)                                                            |                                                                                                                                                                                                                                                   |
+| [`error_status`](#py2http.default_configs.error_status)(error)                          | The HTTP status for an error a handler raised (500 when it is not a client's).                                                                                                                                                                    |
+| [`flask_error_handler`](#py2http.default_configs.flask_error_handler)(error)                   | The `(body, status, headers)` a Flask view returns for an error, mapped like the bottle handler (`OPAQUE_ERRORS` hides the text of a 500).                                                                                                        |
+| [`flask_json_output_mapper`](#py2http.default_configs.flask_json_output_mapper)(output, \*\*inputs) | The default output mapper of a Flask app: the output as a JSON response.                                                                                                                                                                          |
+| `flask_output_mapper`(output, \*\*inputs)                                                     |                                                                                                                                                                                                                                                   |
+| [`framework_defaults`](#py2http.default_configs.framework_defaults)(framework, \*, ...)       | The error handler and output mapper to use under `framework`: the given ones, except that the defaults (which only know of Bottle and AIOHTTP) are swapped for the framework's own, so that no process-wide state decides how a response is made. |
+| [`www_authenticate_challenge`](#py2http.default_configs.www_authenticate_challenge)()                 | The `WWW-Authenticate` value of a 401 a dispatched function raised: the `PY2HTTP_WWW_AUTHENTICATE` environment variable, else `Bearer` (also when the variable holds a line break, which would make every 401 fail to send).                      |
 
 ### py2http.default_configs.error_status(error)
 
@@ -45,6 +47,22 @@ The HTTP status for an error a handler raised (500 when it is not a client’s).
 
 The `(body, status, headers)` a Flask view returns for an error, mapped like
 the bottle handler (`OPAQUE_ERRORS` hides the text of a 500).
+
+### py2http.default_configs.flask_json_output_mapper(output, \*\*inputs)
+
+The default output mapper of a Flask app: the output as a JSON response.
+
+### py2http.default_configs.framework_defaults(framework, , error_handler, output_mapper)
+
+The error handler and output mapper to use under `framework`: the given ones,
+except that the defaults (which only know of Bottle and AIOHTTP) are swapped for
+the framework’s own, so that no process-wide state decides how a response is made.
+
+```pycon
+>>> framework_defaults(FLASK, error_handler=default_error_handler,
+...     output_mapper=default_output_mapper)[0] is flask_error_handler
+True
+```
 
 ### py2http.default_configs.www_authenticate_challenge()
 

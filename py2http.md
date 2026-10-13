@@ -1,4 +1,4 @@
-> built 2026-10-13 09:09 UTC from ffc3505 (master) · py2http 0.1.71. Details: build_info.json
+> built 2026-10-13 12:44 UTC from f57d3c4 (master) · py2http 0.1.72. Details: build_info.json
 
 # index.html.md
 
@@ -1151,16 +1151,18 @@ up an HTTP service in Python using the py2http library.
 
 ### Functions
 
-| `aiohttp_error_handler`(error)                                                |                                                                                                                                                                                                                              |
-|-------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `bottle_error_handler`(error)                                                 |                                                                                                                                                                                                                              |
-| `bottle_output_mapper`(output, \*\*inputs)                                    |                                                                                                                                                                                                                              |
-| `default_error_handler`(error)                                                |                                                                                                                                                                                                                              |
-| `default_input_mapper`(\*\*inputs)                                            |                                                                                                                                                                                                                              |
-| [`error_status`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.error_status)(error)          | The HTTP status for an error a handler raised (500 when it is not a client's).                                                                                                                                               |
-| [`flask_error_handler`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.flask_error_handler)(error)   | The `(body, status, headers)` a Flask view returns for an error, mapped like the bottle handler (`OPAQUE_ERRORS` hides the text of a 500).                                                                                   |
-| `flask_output_mapper`(output, \*\*inputs)                                     |                                                                                                                                                                                                                              |
-| [`www_authenticate_challenge`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.www_authenticate_challenge)() | The `WWW-Authenticate` value of a 401 a dispatched function raised: the `PY2HTTP_WWW_AUTHENTICATE` environment variable, else `Bearer` (also when the variable holds a line break, which would make every 401 fail to send). |
+| `aiohttp_error_handler`(error)                                                                |                                                                                                                                                                                                                                                   |
+|-----------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `bottle_error_handler`(error)                                                                 |                                                                                                                                                                                                                                                   |
+| `bottle_output_mapper`(output, \*\*inputs)                                                    |                                                                                                                                                                                                                                                   |
+| `default_error_handler`(error)                                                                |                                                                                                                                                                                                                                                   |
+| `default_input_mapper`(\*\*inputs)                                                            |                                                                                                                                                                                                                                                   |
+| [`error_status`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.error_status)(error)                          | The HTTP status for an error a handler raised (500 when it is not a client's).                                                                                                                                                                    |
+| [`flask_error_handler`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.flask_error_handler)(error)                   | The `(body, status, headers)` a Flask view returns for an error, mapped like the bottle handler (`OPAQUE_ERRORS` hides the text of a 500).                                                                                                        |
+| [`flask_json_output_mapper`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.flask_json_output_mapper)(output, \*\*inputs) | The default output mapper of a Flask app: the output as a JSON response.                                                                                                                                                                          |
+| `flask_output_mapper`(output, \*\*inputs)                                                     |                                                                                                                                                                                                                                                   |
+| [`framework_defaults`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.framework_defaults)(framework, \*, ...)       | The error handler and output mapper to use under `framework`: the given ones, except that the defaults (which only know of Bottle and AIOHTTP) are swapped for the framework's own, so that no process-wide state decides how a response is made. |
+| [`www_authenticate_challenge`](_autosummary/py2http.default_configs.html.md#py2http.default_configs.www_authenticate_challenge)()                 | The `WWW-Authenticate` value of a 401 a dispatched function raised: the `PY2HTTP_WWW_AUTHENTICATE` environment variable, else `Bearer` (also when the variable holds a line break, which would make every 401 fail to send).                      |
 
 ### py2http.default_configs.error_status(error)
 
@@ -1180,6 +1182,22 @@ The HTTP status for an error a handler raised (500 when it is not a client’s).
 
 The `(body, status, headers)` a Flask view returns for an error, mapped like
 the bottle handler (`OPAQUE_ERRORS` hides the text of a 500).
+
+### py2http.default_configs.flask_json_output_mapper(output, \*\*inputs)
+
+The default output mapper of a Flask app: the output as a JSON response.
+
+### py2http.default_configs.framework_defaults(framework, , error_handler, output_mapper)
+
+The error handler and output mapper to use under `framework`: the given ones,
+except that the defaults (which only know of Bottle and AIOHTTP) are swapped for
+the framework’s own, so that no process-wide state decides how a response is made.
+
+```pycon
+>>> framework_defaults(FLASK, error_handler=default_error_handler,
+...     output_mapper=default_output_mapper)[0] is flask_error_handler
+True
+```
 
 ### py2http.default_configs.www_authenticate_challenge()
 
@@ -1650,10 +1668,11 @@ with minimal setup.
 | `mk_aiohttp_app`(funcs, \*\*configs)                                                              |                                                                                                                   |
 | [`mk_app`](_autosummary/py2http.service.html.md#py2http.service.mk_app)(app_spec, \*[, app_name, framework, ...]) | Generates an application which exposes web services created from the given python functions to remotely run them. |
 | `mk_bottle_app`(funcs, \*\*configs)                                                               |                                                                                                                   |
-| `mk_flask_app`(funcs, \*\*configs)                                                                |                                                                                                                   |
+| [`mk_flask_app`](_autosummary/py2http.service.html.md#py2http.service.mk_flask_app)(funcs, \*\*configs)                 | A Flask app serving `funcs`.                                                                                      |
 | [`mk_route`](_autosummary/py2http.service.html.md#py2http.service.mk_route)(func, \*\*configs)                      | Generate a route object and an OpenAPI path specification for a function                                          |
 | `mk_routes_and_openapi_specs`(funcs, \*\*configs)                                                 |                                                                                                                   |
 | [`run_app`](_autosummary/py2http.service.html.md#py2http.service.run_app)(app_obj, \*[, app_name, framework, ...]) | Run an application which exposes web services created from the given python functions to remotely run them.       |
+| [`run_flask`](_autosummary/py2http.service.html.md#py2http.service.run_flask)(app, \*, host, port[, certfile, ...])  | Run a Flask app with Flask's own server (`server` does not apply to it).                                          |
 
 ### Classes
 
@@ -1756,6 +1775,13 @@ API with a list of handlers for each API.
   * **\*\*configs** ([*dict*](https://docs.python.org/3/builtins/stdtypes.html#dict)) – The configuration for the application. See config.yaml for
     configuration documentation.
 
+### py2http.service.mk_flask_app(funcs, \*\*configs)
+
+A Flask app serving `funcs`. JSON request bodies only (the raw, binary and
+form input mappers read Bottle’s request); `middleware` is a list of WSGI
+wrappers; `plugins`, `enable_cors`, `publish_swagger` and
+`openapi_insecure` are Bottle’s, and raise `NotImplementedError` here.
+
 ### py2http.service.mk_route(func, \*\*configs)
 
 Generate a route object and an OpenAPI path specification for a function
@@ -1780,6 +1806,10 @@ You can also generate the application first, then run it using this function.
   * **\*\*configs** ([*dict*](https://docs.python.org/3/builtins/stdtypes.html#dict)) – The configuration for the application. See
     `py2http.default_configs:default_configs` for defaults and config.yaml for
     configuration documentation.
+
+### py2http.service.run_flask(app, , host, port, certfile=None, keyfile=None, \*\*\_)
+
+Run a Flask app with Flask’s own server (`server` does not apply to it).
 
 
 # _autosummary/py2http.sizeof.html.md
@@ -2158,20 +2188,18 @@ so that it can be jsonizable.
 
 # About this build
 
-This documentation was built on **2026-10-13 09:09 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/ffc3505231cceaf92485652390dae61af82c8c0f"><code>ffc3505</code></a> on branch <code>master</code>, for **py2http 0.1.71** (from <code>setup.cfg</code>).
+This documentation was built on **2026-10-13 12:44 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/f57d3c4c8b33ae8e9e7e075eaf082552a632fb45"><code>f57d3c4</code></a> on branch <code>master</code>, for **py2http 0.1.72** (from <code>setup.cfg</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.1.71) is ahead of the latest release on PyPI (0.1.69): these docs describe unreleased code.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                       |
 |---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2http/commit/ffc3505231cceaf92485652390dae61af82c8c0f"><code>ffc3505231cceaf92485652390dae61af82c8c0f</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2http/commit/f57d3c4c8b33ae8e9e7e075eaf082552a632fb45"><code>f57d3c4c8b33ae8e9e7e075eaf082552a632fb45</code></a> |
 | Branch              | <code>master</code>                                                                                                                                   |
-| Tags at this commit | <code>0.1.71</code>                                                                                                                                   |
+| Tags at this commit | <code>0.1.72</code>                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                 |
 | Remote              | <code>https://github.com/i2mint/py2http</code>                                                                                                        |
 
@@ -2180,9 +2208,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2http</code>                                                                |
-| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38374097798">38374097798</a>       |
+| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38399231975">38399231975</a>       |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>807c6c583b5d4025c9e01afc460065e8404033dd</code> (in the history of the built commit) |
+| Event commit | <code>72383a26bc3a1f5ba53cfca168df20e045d33375</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -2207,13 +2235,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2http/0.1.69/">0.1.69</a>, older than the documented version (0.1.71).
+Latest release: <a href="https://pypi.org/project/py2http/0.1.72/">0.1.72</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2http && cd py2http
-git checkout ffc3505231cceaf92485652390dae61af82c8c0f
+git checkout f57d3c4c8b33ae8e9e7e075eaf082552a632fb45
 pip install "epythet==0.2.15"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
