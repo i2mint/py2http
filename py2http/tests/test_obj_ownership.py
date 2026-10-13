@@ -164,3 +164,90 @@ def test_owner_hook_reads_the_real_request():
     assert not status.startswith("2")
     status, _ = _post(app, "/bag", {}, "")
     assert not status.startswith("2")
+
+
+# ------------------------------------------------- adversarial-review findings (#29)
+
+
+class Validating(Bag):
+    def extend(self, items=()):
+        for x in items:
+            if x is None:
+                raise ValueError("bad item")
+            self.items.append(x)
+
+
+def _validating(**extras):
+    extras.setdefault("obj_owner", lambda req: req)
+    return _get_func_to_dispatch_handler(
+        dict(endpoint=Validating, name="v", attr_names="*", **extras)
+    )
+
+
+def test_a_call_that_grows_the_object_then_raises_is_still_measured():
+    func = _validating(max_obj_size=10_000)
+    bag = _as("ann", func)
+    with pytest.raises(InputError, match="size limit"):
+        _as("ann", func, _obj_id=bag, _attr_name="extend", items=["y" * 20_000, None])
+    with pytest.raises(InputError, match="No object found"):
+        _as("ann", func, _obj_id=bag, _attr_name="add")
+
+
+def test_owner_byte_budget():
+    func = _owned(max_obj_size=50_000, max_owner_bytes=100_000)
+    bags = [_as("ann", func) for _ in range(3)]
+    for bag in bags[:2]:
+        _as("ann", func, _obj_id=bag, _attr_name="add", item="y" * 40_000)
+    with pytest.raises(InputError, match="its owner past"):
+        _as("ann", func, _obj_id=bags[2], _attr_name="add", item="y" * 40_000)
+    bob = _as("bob", func)  # another owner is unaffected
+    assert _as("bob", func, _obj_id=bob, _attr_name="add", item="y" * 40_000) == 1
+
+
+def test_endpoint_byte_budget():
+    func = _owned(max_obj_size=50_000, max_total_bytes=100_000)
+    for who in ("ann", "bob"):
+        _as(who, func, _obj_id=_as(who, func), _attr_name="add", item="y" * 40_000)
+    cat = _as("cat", func)
+    with pytest.raises(InputError, match="the endpoint past"):
+        _as("cat", func, _obj_id=cat, _attr_name="add", item="y" * 40_000)
+
+
+def test_evicted_objects_release_their_bytes():
+    store = OwnedObjStore(quota=1, max_owners=1)
+    store.put("ann", "a1", 1)
+    store.record("ann", "a1", 100)
+    store.put("ann", "a2", 2)  # quota evicts a1
+    assert store.total_bytes == 0
+    store.record("ann", "a2", 7)
+    store.put("bob", "b1", 3)  # max_owners evicts ann
+    assert store.total_bytes == 0 and store.owner_bytes("ann") == 0
+
+
+@pytest.mark.parametrize("who", ["", None])
+def test_empty_owner_is_refused(who):
+    with pytest.raises(AuthorizationError):
+        _as(who, _owned())
+
+
+def test_unhashable_owner_names_the_hook():
+    with pytest.raises(TypeError, match="hashable"):
+        _as({"user": 1}, _owned())
+
+
+def test_store_is_thread_safe():
+    from concurrent.futures import ThreadPoolExecutor
+
+    store = OwnedObjStore(quota=2, max_owners=4)
+
+    def churn(i):
+        for j in range(300):
+            owner = (i + j) % 9
+            store.put(owner, f"{i}-{j}", j)
+            store.record(owner, f"{i}-{j}", 1)
+            store.get(owner, f"{i}-{j}")
+            store.owner_bytes(owner)
+
+    with ThreadPoolExecutor(8) as pool:
+        list(pool.map(churn, range(8)))
+    assert store.total_bytes == sum(store.owner_bytes(o) for o in range(9))
