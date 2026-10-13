@@ -97,5 +97,7 @@ def test_flask_opaque_errors_hides_500_text(monkeypatch):
     from py2http.default_configs import flask_error_handler
 
     app = flask.Flask(__name__)
-    app.add_url_rule("/f", "f", lambda: flask_error_handler(KeyError("internal detail")))
+    app.add_url_rule(
+        "/f", "f", lambda: flask_error_handler(KeyError("internal detail"))
+    )
     assert app.test_client().get("/f").get_json() == {"error": "Internal server error"}
