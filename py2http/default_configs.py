@@ -75,8 +75,8 @@ def flask_response_mapper(output_mapper):
     A mapper that declares a ``content_type`` and returns a ``str``/``bytes`` body gets
     that content type; anything else (a ``Response``, a dict, a tuple) is kept as is.
 
-    >>> from py2http.decorators import send_raw_resp
-    >>> flask_response_mapper(send_raw_resp(lambda o: o))(b"x").content_type
+    >>> from py2http.decorators import send_raw_resp  # (needs flask)
+    >>> flask_response_mapper(send_raw_resp(lambda o: o))(b"x").content_type  # doctest: +SKIP
     'text/plain'
     """
     content_type = getattr(output_mapper, "content_type", None)
