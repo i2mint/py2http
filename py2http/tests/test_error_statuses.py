@@ -12,6 +12,7 @@ from i2.errors import (
 )
 
 from py2http import mk_app
+from py2http.service import mk_flask_app
 from py2http.default_configs import aiohttp_error_handler, error_status
 from py2http.tests.utils_for_testing import call_wsgi
 
@@ -101,3 +102,53 @@ def test_flask_opaque_errors_hides_500_text(monkeypatch):
         "/f", "f", lambda: flask_error_handler(KeyError("internal detail"))
     )
     assert app.test_client().get("/f").get_json() == {"error": "Internal server error"}
+
+
+@pytest.mark.parametrize("error, status", CASES)
+def test_flask_app_statuses(error, status, monkeypatch, capsys):
+    """``mk_app(framework='flask')``: statuses and challenges, end to end."""
+    pytest.importorskip("flask")
+    monkeypatch.delenv("PY2HTTP_WWW_AUTHENTICATE", raising=False)
+
+    def fail():
+        raise error
+
+    app = mk_app([fail], framework="flask")
+    response = app.test_client().post("/fail", json={})
+    assert response.status_code == status
+    assert set(response.get_json()) == {"error"}
+    if status == 400:
+        assert response.status == f"400 {type(error).__name__}"
+    if status == 401:
+        assert response.headers["WWW-Authenticate"] == "Bearer"
+    else:
+        assert "WWW-Authenticate" not in response.headers
+
+
+def test_flask_app_answers_json():
+    pytest.importorskip("flask")
+
+    def add(a, b: int = 0):
+        return {"sum": a + b}
+
+    for app in (
+        mk_app([add], framework="flask"),
+        mk_flask_app([add]),  # called directly: still flask routes
+    ):
+        response = app.test_client().post("/add", json={"a": 1, "b": 2})
+        assert response.status_code == 200
+        assert response.content_type.startswith("application/json")
+        assert response.get_json() == {"sum": 3}
+
+
+def test_flask_does_not_leak_into_a_bottle_app(capsys):
+    pytest.importorskip("flask")
+    bottle_app = _app_raising(NotFoundError("x"))
+    mk_app([_app_raising], framework="flask")  # sets the process-wide framework
+    got, _ = call_wsgi(bottle_app, "/fail", {})
+    assert got.startswith("404")  # still bottle's way of answering
+
+
+def test_unsupported_framework_is_refused():
+    with pytest.raises(NotImplementedError):
+        mk_app([_app_raising], framework="django")
