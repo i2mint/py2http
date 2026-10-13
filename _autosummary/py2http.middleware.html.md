@@ -1,30 +1,17 @@
 # py2http.middleware
 
-py2http is a Python module that allows you to dispatch Python functions as HTTP
-services.
-By running a basic HTTP service from a list of functions, you can access OpenAPI
-specifications, Swagger documentation, and utilize the HTTP service’s routes.
-Additionally, Py2http provides features for method transformation, input mapping,
-output mapping, error handling, and client generation.
-
-The code snippet provided below is a part of Py2http module and includes middleware
-functions for handling JWT authentication and superadmin authorization.
-These middleware functions are designed to be used within the Py2http framework to
-ensure secure and authenticated access to HTTP routes.
-
-Include the following docstring to describe this module:
-“Middleware functions for handling JWT authentication and superadmin authorization
-within the Py2http framework. These functions ensure secure access to HTTP routes
-by verifying credentials and permissions. Use these middleware functions to enforce
-authentication and control access to web resources.
+aiohttp middleware that guards every route of an app: `mk_jwt_middleware`
+(a verified `Authorization: Bearer` JWT) and `mk_superadmin_middleware` (one
+shared key). The checks themselves live in `py2http.auth`, shared with the Bottle
+plugins of `py2http.bottle_plugins`.
 
 ### Functions
 
 | [`mk_jwt_middleware`](#py2http.middleware.mk_jwt_middleware)(secret[, verify, ...])   | Make an aiohttp middleware that requires a valid `Authorization: Bearer` JWT on every request, and puts the decoded claims on `request.token`.   |
 |---------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| `mk_superadmin_middleware`(secret)                                                          |                                                                                                                                                  |
+| [`mk_superadmin_middleware`](#py2http.middleware.mk_superadmin_middleware)(secret)           | Make an aiohttp middleware that only lets through requests whose `Authorization` header is exactly `secret` (compared in constant time).         |
 
-### py2http.middleware.mk_jwt_middleware(secret, verify=True, , algorithms=('HS256',), public_routes=('ping', 'openapi'), allow_mixed_algorithm_families=False)
+### py2http.middleware.mk_jwt_middleware(secret, verify=True, , algorithms=('HS256',), public_routes=('ping', 'openapi'), allow_mixed_algorithm_families=False, decode_kwargs=None)
 
 Make an aiohttp middleware that requires a valid `Authorization: Bearer`
 JWT on every request, and puts the decoded claims on `request.token`.
@@ -51,3 +38,12 @@ JWT on every request, and puts the decoded claims on `request.token`.
     public key as the HMAC secret), so it raises `ValueError` unless
     this is True. The middleware used to accept `["HS256", "RS256"]`;
     pass that list with this flag to restore it.
+  * **decode_kwargs** ([`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)) – Extra `jwt.decode` arguments, such as `audience`,
+    `issuer` or `leeway` (without them a token carrying an `aud`
+    claim is always refused).
+
+### py2http.middleware.mk_superadmin_middleware(secret)
+
+Make an aiohttp middleware that only lets through requests whose
+`Authorization` header is exactly `secret` (compared in constant time).
+An empty `secret` is refused, since it would let header-less requests through.

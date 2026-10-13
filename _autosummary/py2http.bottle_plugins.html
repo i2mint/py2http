@@ -35,7 +35,7 @@
 <link href="../search.html" rel="search" title="Search"/>
 <link href="../genindex.html" rel="index" title="Index"/>
 <link href="py2http.config.html" rel="next" title="py2http.config"/>
-<link href="py2http.html" rel="prev" title="py2http"/>
+<link href="py2http.auth.html" rel="prev" title="py2http.auth"/>
 </head>
 <body :class="{ 'overflow-hidden': showSidebar }" class="min-h-screen font-sans antialiased bg-background text-foreground" x-data="{ showSidebar: false, showScrollTop: false }">
 <div @click.self="showSidebar = false" class="fixed inset-0 z-50 overflow-hidden bg-background/80 backdrop-blur-sm md:hidden" x-cloak="" x-show="showSidebar"></div><div class="relative flex flex-col min-h-screen" id="page"><a class="absolute top-0 left-0 z-[100] block bg-background p-4 text-xl transition -translate-x-full opacity-0 focus:translate-x-0 focus:opacity-100" href="#content">
@@ -83,6 +83,7 @@
 <ul class="current">
 <li class="toctree-l1 current" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="../api.html">API reference<button @click.prevent.stop="expanded = !expanded" type="button" x-cloak=""><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul class="current" x-show="expanded">
 <li class="toctree-l2 current" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="py2http.html">py2http<button @click.prevent.stop="expanded = !expanded" type="button" x-cloak=""><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul class="current" x-show="expanded">
+<li class="toctree-l3"><a class="reference internal" href="py2http.auth.html">py2http.auth</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">py2http.bottle_plugins</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.config.html">py2http.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.constants.html">py2http.constants</a></li>
@@ -90,10 +91,12 @@
 <li class="toctree-l3"><a class="reference internal" href="py2http.default_configs.html">py2http.default_configs</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.diagnosis.html">py2http.diagnosis</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.middleware.html">py2http.middleware</a></li>
+<li class="toctree-l3"><a class="reference internal" href="py2http.obj_dispatch.html">py2http.obj_dispatch</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.openapi_utils.html">py2http.openapi_utils</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.route_utils.html">py2http.route_utils</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.schema_tools.html">py2http.schema_tools</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.service.html">py2http.service</a></li>
+<li class="toctree-l3"><a class="reference internal" href="py2http.sizeof.html">py2http.sizeof</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.types.html">py2http.types</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.util.html">py2http.util</a></li>
 </ul>
@@ -130,8 +133,8 @@
 <p class="rubric">Classes</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ApiKeyAuthPlugin</span></code>(api_key)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#py2http.bottle_plugins.ApiKeyAuthPlugin" title="py2http.bottle_plugins.ApiKeyAuthPlugin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ApiKeyAuthPlugin</span></code></a>(api_key)</p></td>
+<td><p>A plugin letting through only requests whose <code class="docutils literal notranslate"><span class="pre">Authorization</span></code> header is exactly <code class="docutils literal notranslate"><span class="pre">api_key</span></code> (compared in constant time; an empty key is refused).</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">CorsPlugin</span></code>([origins])</p></td>
 <td><p></p></td>
@@ -142,8 +145,17 @@
 </tbody>
 </table>
 <dl class="py class">
+<dt class="sig sig-object py" id="py2http.bottle_plugins.ApiKeyAuthPlugin">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2http.bottle_plugins.</span></span><span class="sig-name descname"><span class="pre">ApiKeyAuthPlugin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/bottle_plugins.html#ApiKeyAuthPlugin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.bottle_plugins.ApiKeyAuthPlugin" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.bottle_plugins.ApiKeyAuthPlugin'">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" rel="nofollow noopener" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code><svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a></p>
+<p>A plugin letting through only requests whose <code class="docutils literal notranslate"><span class="pre">Authorization</span></code> header is
+exactly <code class="docutils literal notranslate"><span class="pre">api_key</span></code> (compared in constant time; an empty key is refused).</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+<dl class="py class">
 <dt class="sig sig-object py" id="py2http.bottle_plugins.JWTPlugin">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2http.bottle_plugins.</span></span><span class="sig-name descname"><span class="pre">JWTPlugin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">secret</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_methods</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/bottle_plugins.html#JWTPlugin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.bottle_plugins.JWTPlugin" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.bottle_plugins.JWTPlugin'">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2http.bottle_plugins.</span></span><span class="sig-name descname"><span class="pre">JWTPlugin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">secret</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_methods</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_mixed_algorithm_families</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decode_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/bottle_plugins.html#JWTPlugin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.bottle_plugins.JWTPlugin" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.bottle_plugins.JWTPlugin'">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" rel="nofollow noopener" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code><svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a></p>
 <p>A plugin for validating JWTs and extracting their payloads.</p>
 <p>After optionally validating a JWT found in the request header, will assign a dict with the JWT claims
@@ -155,6 +167,7 @@ to request.token.</p>
 </div></div><aside class="hidden text-sm xl:block" id="right-sidebar">
 <div class="sticky top-16 -mt-10 max-h-[calc(100vh-5rem)] h-full overflow-y-auto pt-6 space-y-2"><p class="font-medium">On this page</p>
 <ul>
+<li><a :data-current="activeSection === '#py2http.bottle_plugins.ApiKeyAuthPlugin'" class="reference internal" href="#py2http.bottle_plugins.ApiKeyAuthPlugin"><code class="docutils literal notranslate"><span class="pre">ApiKeyAuthPlugin</span></code></a></li>
 <li><a :data-current="activeSection === '#py2http.bottle_plugins.JWTPlugin'" class="reference internal" href="#py2http.bottle_plugins.JWTPlugin"><code class="docutils literal notranslate"><span class="pre">JWTPlugin</span></code></a></li>
 </ul>
 </div>
@@ -171,7 +184,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=7c77daa2"></script>
+<script src="../_static/documentation_options.js?v=d80f5ebb"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

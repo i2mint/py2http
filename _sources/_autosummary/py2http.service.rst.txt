@@ -4,18 +4,10 @@ py2http.service
 .. automodule:: py2http.service
 
    
-   .. rubric:: Module Attributes
-
-   .. autosummary::
-   
-      current_request
-      ObjOwner
-   
    .. rubric:: Functions
 
    .. autosummary::
    
-      bounded_deep_sizeof
       func_copy
       method_not_found
       mk_aiohttp_app
@@ -24,15 +16,11 @@ py2http.service
       mk_flask_app
       mk_route
       mk_routes_and_openapi_specs
-      public_attr
       run_app
-      unsafe_any_attr
    
    .. rubric:: Classes
 
    .. autosummary::
    
-      LRUObjStore
-      OwnedObjStore
       SubAppSpec
    

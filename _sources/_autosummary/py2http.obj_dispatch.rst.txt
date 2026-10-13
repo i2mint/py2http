@@ -1,0 +1,27 @@
+py2http.obj\_dispatch
+=====================
+
+.. automodule:: py2http.obj_dispatch
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      current_request
+      ObjOwner
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      public_attr
+      unsafe_any_attr
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      LRUObjStore
+      OwnedObjStore
+   

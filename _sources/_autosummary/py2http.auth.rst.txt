@@ -1,0 +1,23 @@
+py2http.auth
+============
+
+.. automodule:: py2http.auth
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      bearer_token
+      decode_jwt
+      jwt_algorithms
+      jwt_decode_kwargs
+      key_matches
+      required_key
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      CredentialsRejected
+   

@@ -10,6 +10,7 @@
    :toctree:
    :recursive:
 
+   auth
    bottle_plugins
    config
    constants
@@ -17,9 +18,11 @@
    default_configs
    diagnosis
    middleware
+   obj_dispatch
    openapi_utils
    route_utils
    schema_tools
    service
+   sizeof
    types
    util

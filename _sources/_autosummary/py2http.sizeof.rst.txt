@@ -1,0 +1,12 @@
+py2http.sizeof
+==============
+
+.. automodule:: py2http.sizeof
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      bounded_deep_sizeof
+   

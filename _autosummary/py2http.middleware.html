@@ -34,7 +34,7 @@
 <link href="../_static/epythet.css?v=681d3bae" rel="stylesheet" type="text/css"/>
 <link href="../search.html" rel="search" title="Search"/>
 <link href="../genindex.html" rel="index" title="Index"/>
-<link href="py2http.openapi_utils.html" rel="next" title="py2http.openapi_utils"/>
+<link href="py2http.obj_dispatch.html" rel="next" title="py2http.obj_dispatch"/>
 <link href="py2http.diagnosis.html" rel="prev" title="py2http.diagnosis"/>
 </head>
 <body :class="{ 'overflow-hidden': showSidebar }" class="min-h-screen font-sans antialiased bg-background text-foreground" x-data="{ showSidebar: false, showScrollTop: false }">
@@ -83,6 +83,7 @@
 <ul class="current">
 <li class="toctree-l1 current" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="../api.html">API reference<button @click.prevent.stop="expanded = !expanded" type="button" x-cloak=""><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul class="current" x-show="expanded">
 <li class="toctree-l2 current" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="py2http.html">py2http<button @click.prevent.stop="expanded = !expanded" type="button" x-cloak=""><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul class="current" x-show="expanded">
+<li class="toctree-l3"><a class="reference internal" href="py2http.auth.html">py2http.auth</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.bottle_plugins.html">py2http.bottle_plugins</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.config.html">py2http.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.constants.html">py2http.constants</a></li>
@@ -90,10 +91,12 @@
 <li class="toctree-l3"><a class="reference internal" href="py2http.default_configs.html">py2http.default_configs</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.diagnosis.html">py2http.diagnosis</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">py2http.middleware</a></li>
+<li class="toctree-l3"><a class="reference internal" href="py2http.obj_dispatch.html">py2http.obj_dispatch</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.openapi_utils.html">py2http.openapi_utils</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.route_utils.html">py2http.route_utils</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.schema_tools.html">py2http.schema_tools</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.service.html">py2http.service</a></li>
+<li class="toctree-l3"><a class="reference internal" href="py2http.sizeof.html">py2http.sizeof</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.types.html">py2http.types</a></li>
 <li class="toctree-l3"><a class="reference internal" href="py2http.util.html">py2http.util</a></li>
 </ul>
@@ -126,35 +129,24 @@
 <div id="content" role="main">
 <section id="module-py2http.middleware">
 <span id="py2http-middleware"></span><h1>py2http.middleware<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#module-py2http.middleware">¶</a></h1>
-<p>py2http is a Python module that allows you to dispatch Python functions as HTTP
-services.
-By running a basic HTTP service from a list of functions, you can access OpenAPI
-specifications, Swagger documentation, and utilize the HTTP service’s routes.
-Additionally, Py2http provides features for method transformation, input mapping,
-output mapping, error handling, and client generation.</p>
-<p>The code snippet provided below is a part of Py2http module and includes middleware
-functions for handling JWT authentication and superadmin authorization.
-These middleware functions are designed to be used within the Py2http framework to
-ensure secure and authenticated access to HTTP routes.</p>
-<p>Include the following docstring to describe this module:
-“Middleware functions for handling JWT authentication and superadmin authorization
-within the Py2http framework. These functions ensure secure access to HTTP routes
-by verifying credentials and permissions. Use these middleware functions to enforce
-authentication and control access to web resources.</p>
+<p>aiohttp middleware that guards every route of an app: <code class="docutils literal notranslate"><span class="pre">mk_jwt_middleware</span></code>
+(a verified <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span></code> JWT) and <code class="docutils literal notranslate"><span class="pre">mk_superadmin_middleware</span></code> (one
+shared key). The checks themselves live in <code class="docutils literal notranslate"><span class="pre">py2http.auth</span></code>, shared with the Bottle
+plugins of <code class="docutils literal notranslate"><span class="pre">py2http.bottle_plugins</span></code>.</p>
 <p class="rubric">Functions</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#py2http.middleware.mk_jwt_middleware" title="py2http.middleware.mk_jwt_middleware"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_jwt_middleware</span></code></a>(secret[, verify, ...])</p></td>
 <td><p>Make an aiohttp middleware that requires a valid <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span></code> JWT on every request, and puts the decoded claims on <code class="docutils literal notranslate"><span class="pre">request.token</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_superadmin_middleware</span></code>(secret)</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#py2http.middleware.mk_superadmin_middleware" title="py2http.middleware.mk_superadmin_middleware"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_superadmin_middleware</span></code></a>(secret)</p></td>
+<td><p>Make an aiohttp middleware that only lets through requests whose <code class="docutils literal notranslate"><span class="pre">Authorization</span></code> header is exactly <code class="docutils literal notranslate"><span class="pre">secret</span></code> (compared in constant time).</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py function">
 <dt class="sig sig-object py" id="py2http.middleware.mk_jwt_middleware">
-<span class="sig-prename descclassname"><span class="pre">py2http.middleware.</span></span><span class="sig-name descname"><span class="pre">mk_jwt_middleware</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">secret</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('HS256',)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">public_routes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('ping',</span> <span class="pre">'openapi')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_mixed_algorithm_families</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/middleware.html#mk_jwt_middleware"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.middleware.mk_jwt_middleware" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.middleware.mk_jwt_middleware'">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">py2http.middleware.</span></span><span class="sig-name descname"><span class="pre">mk_jwt_middleware</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">secret</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('HS256',)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">public_routes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('ping',</span> <span class="pre">'openapi')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_mixed_algorithm_families</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decode_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/middleware.html#mk_jwt_middleware"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.middleware.mk_jwt_middleware" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.middleware.mk_jwt_middleware'">¶</a></dt>
 <dd><p>Make an aiohttp middleware that requires a valid <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span></code>
 JWT on every request, and puts the decoded claims on <code class="docutils literal notranslate"><span class="pre">request.token</span></code>.</p>
 <dl class="field-list simple">
@@ -181,15 +173,26 @@ algorithm-confusion setup (a token “signed” with HS256 using the
 public key as the HMAC secret), so it raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> unless
 this is True. The middleware used to accept <code class="docutils literal notranslate"><span class="pre">["HS256",</span> <span class="pre">"RS256"]</span></code>;
 pass that list with this flag to restore it.</p></li>
+<li><p><strong>decode_kwargs</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" rel="nofollow noopener" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code><svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a></span>) – Extra <code class="docutils literal notranslate"><span class="pre">jwt.decode</span></code> arguments, such as <code class="docutils literal notranslate"><span class="pre">audience</span></code>,
+<code class="docutils literal notranslate"><span class="pre">issuer</span></code> or <code class="docutils literal notranslate"><span class="pre">leeway</span></code> (without them a token carrying an <code class="docutils literal notranslate"><span class="pre">aud</span></code>
+claim is always refused).</p></li>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="py2http.middleware.mk_superadmin_middleware">
+<span class="sig-prename descclassname"><span class="pre">py2http.middleware.</span></span><span class="sig-name descname"><span class="pre">mk_superadmin_middleware</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">secret</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/middleware.html#mk_superadmin_middleware"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.middleware.mk_superadmin_middleware" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.middleware.mk_superadmin_middleware'">¶</a></dt>
+<dd><p>Make an aiohttp middleware that only lets through requests whose
+<code class="docutils literal notranslate"><span class="pre">Authorization</span></code> header is exactly <code class="docutils literal notranslate"><span class="pre">secret</span></code> (compared in constant time).
+An empty <code class="docutils literal notranslate"><span class="pre">secret</span></code> is refused, since it would let header-less requests through.</p>
 </dd></dl>
 </section>
 </div></div><aside class="hidden text-sm xl:block" id="right-sidebar">
 <div class="sticky top-16 -mt-10 max-h-[calc(100vh-5rem)] h-full overflow-y-auto pt-6 space-y-2"><p class="font-medium">On this page</p>
 <ul>
 <li><a :data-current="activeSection === '#py2http.middleware.mk_jwt_middleware'" class="reference internal" href="#py2http.middleware.mk_jwt_middleware"><code class="docutils literal notranslate"><span class="pre">mk_jwt_middleware()</span></code></a></li>
+<li><a :data-current="activeSection === '#py2http.middleware.mk_superadmin_middleware'" class="reference internal" href="#py2http.middleware.mk_superadmin_middleware"><code class="docutils literal notranslate"><span class="pre">mk_superadmin_middleware()</span></code></a></li>
 </ul>
 </div>
 </aside>
@@ -205,7 +208,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=7c77daa2"></script>
+<script src="../_static/documentation_options.js?v=d80f5ebb"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

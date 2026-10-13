@@ -113,6 +113,7 @@
   <ul>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="_autosummary/py2http.html">py2http</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.auth.html">py2http.auth</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.bottle_plugins.html">py2http.bottle_plugins</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.config.html">py2http.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.constants.html">py2http.constants</a></li>
@@ -120,10 +121,12 @@
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.default_configs.html">py2http.default_configs</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.diagnosis.html">py2http.diagnosis</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.middleware.html">py2http.middleware</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.obj_dispatch.html">py2http.obj_dispatch</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.openapi_utils.html">py2http.openapi_utils</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.route_utils.html">py2http.route_utils</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.schema_tools.html">py2http.schema_tools</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.service.html">py2http.service</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.sizeof.html">py2http.sizeof</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.types.html">py2http.types</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.util.html">py2http.util</a></li>
 </ul>
@@ -176,13 +179,21 @@
       <li><a href="_autosummary/py2http.decorators.html#py2http.decorators.add_attrs">add_attrs() (in module py2http.decorators)</a>
 </li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
+      <li><a href="_autosummary/py2http.bottle_plugins.html#py2http.bottle_plugins.ApiKeyAuthPlugin">ApiKeyAuthPlugin (class in py2http.bottle_plugins)</a>
+</li>
+  </ul></td>
   </tr>
       </table>
   
   <h2 id="B">B</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
-      <li><a href="_autosummary/py2http.service.html#py2http.service.bounded_deep_sizeof">bounded_deep_sizeof() (in module py2http.service)</a>
+      <li><a href="_autosummary/py2http.auth.html#py2http.auth.bearer_token">bearer_token() (in module py2http.auth)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
+      <li><a href="_autosummary/py2http.sizeof.html#py2http.sizeof.bounded_deep_sizeof">bounded_deep_sizeof() (in module py2http.sizeof)</a>
 </li>
   </ul></td>
   </tr>
@@ -193,11 +204,13 @@
   <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
       <li><a href="_autosummary/py2http.util.html#py2http.util.call_with_inputs">call_with_inputs() (in module py2http.util)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
       <li><a href="_autosummary/py2http.util.html#py2http.util.CreateProcess">CreateProcess (class in py2http.util)</a>
 </li>
-      <li><a href="_autosummary/py2http.service.html#py2http.service.current_request">current_request (in module py2http.service)</a>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
+      <li><a href="_autosummary/py2http.auth.html#py2http.auth.CredentialsRejected">CredentialsRejected</a>
+</li>
+      <li><a href="_autosummary/py2http.obj_dispatch.html#py2http.obj_dispatch.current_request">current_request (in module py2http.obj_dispatch)</a>
 </li>
   </ul></td>
   </tr>
@@ -206,14 +219,16 @@
   <h2 id="D">D</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
+      <li><a href="_autosummary/py2http.auth.html#py2http.auth.decode_jwt">decode_jwt() (in module py2http.auth)</a>
+</li>
       <li><a href="_autosummary/py2http.decorators.html#py2http.decorators.DecoParameter">DecoParameter (class in py2http.decorators)</a>
 </li>
       <li><a href="_autosummary/py2http.decorators.html#py2http.decorators.Decora">Decora (class in py2http.decorators)</a>
 </li>
-      <li><a href="_autosummary/py2http.decorators.html#py2http.decorators.Decorator">Decorator (class in py2http.decorators)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
+      <li><a href="_autosummary/py2http.decorators.html#py2http.decorators.Decorator">Decorator (class in py2http.decorators)</a>
+</li>
       <li><a href="_autosummary/py2http.decorators.html#py2http.decorators.JsonRespEncoder.default">default() (py2http.decorators.JsonRespEncoder method)</a>
 
       <ul style="list-style-type:none">
@@ -280,9 +295,22 @@
   <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
       <li><a href="_autosummary/py2http.decorators.html#py2http.decorators.JsonRespEncoder">JsonRespEncoder (class in py2http.decorators)</a>
 </li>
+      <li><a href="_autosummary/py2http.auth.html#py2http.auth.jwt_algorithms">jwt_algorithms() (in module py2http.auth)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
+      <li><a href="_autosummary/py2http.auth.html#py2http.auth.jwt_decode_kwargs">jwt_decode_kwargs() (in module py2http.auth)</a>
+</li>
       <li><a href="_autosummary/py2http.bottle_plugins.html#py2http.bottle_plugins.JWTPlugin">JWTPlugin (class in py2http.bottle_plugins)</a>
+</li>
+  </ul></td>
+  </tr>
+      </table>
+  
+  <h2 id="K">K</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
+      <li><a href="_autosummary/py2http.auth.html#py2http.auth.key_matches">key_matches() (in module py2http.auth)</a>
 </li>
   </ul></td>
   </tr>
@@ -297,7 +325,7 @@
   <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
       <li><a href="_autosummary/py2http.decorators.html#py2http.decorators.Literal">Literal (class in py2http.decorators)</a>
 </li>
-      <li><a href="_autosummary/py2http.service.html#py2http.service.LRUObjStore">LRUObjStore (class in py2http.service)</a>
+      <li><a href="_autosummary/py2http.obj_dispatch.html#py2http.obj_dispatch.LRUObjStore">LRUObjStore (class in py2http.obj_dispatch)</a>
 </li>
   </ul></td>
   </tr>
@@ -322,11 +350,15 @@
 </li>
       <li><a href="_autosummary/py2http.service.html#py2http.service.mk_route">mk_route() (in module py2http.service)</a>
 </li>
+      <li><a href="_autosummary/py2http.middleware.html#py2http.middleware.mk_superadmin_middleware">mk_superadmin_middleware() (in module py2http.middleware)</a>
+</li>
       <li>
     module
 
       <ul style="list-style-type:none">
         <li><a href="_autosummary/py2http.html#module-py2http">py2http</a>
+</li>
+        <li><a href="_autosummary/py2http.auth.html#module-py2http.auth">py2http.auth</a>
 </li>
         <li><a href="_autosummary/py2http.bottle_plugins.html#module-py2http.bottle_plugins">py2http.bottle_plugins</a>
 </li>
@@ -342,6 +374,8 @@
 </li>
         <li><a href="_autosummary/py2http.middleware.html#module-py2http.middleware">py2http.middleware</a>
 </li>
+        <li><a href="_autosummary/py2http.obj_dispatch.html#module-py2http.obj_dispatch">py2http.obj_dispatch</a>
+</li>
         <li><a href="_autosummary/py2http.openapi_utils.html#module-py2http.openapi_utils">py2http.openapi_utils</a>
 </li>
         <li><a href="_autosummary/py2http.route_utils.html#module-py2http.route_utils">py2http.route_utils</a>
@@ -349,6 +383,8 @@
         <li><a href="_autosummary/py2http.schema_tools.html#module-py2http.schema_tools">py2http.schema_tools</a>
 </li>
         <li><a href="_autosummary/py2http.service.html#module-py2http.service">py2http.service</a>
+</li>
+        <li><a href="_autosummary/py2http.sizeof.html#module-py2http.sizeof">py2http.sizeof</a>
 </li>
         <li><a href="_autosummary/py2http.types.html#module-py2http.types">py2http.types</a>
 </li>
@@ -372,9 +408,9 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
-      <li><a href="_autosummary/py2http.service.html#py2http.service.ObjOwner">ObjOwner (in module py2http.service)</a>
+      <li><a href="_autosummary/py2http.obj_dispatch.html#py2http.obj_dispatch.ObjOwner">ObjOwner (in module py2http.obj_dispatch)</a>
 </li>
-      <li><a href="_autosummary/py2http.service.html#py2http.service.OwnedObjStore">OwnedObjStore (class in py2http.service)</a>
+      <li><a href="_autosummary/py2http.obj_dispatch.html#py2http.obj_dispatch.OwnedObjStore">OwnedObjStore (class in py2http.obj_dispatch)</a>
 </li>
   </ul></td>
   </tr>
@@ -391,15 +427,24 @@
 </li>
       <li><a href="_autosummary/py2http.util.html#py2http.util.path_to_obj">path_to_obj() (in module py2http.util)</a>
 </li>
+      <li><a href="_autosummary/py2http.obj_dispatch.html#py2http.obj_dispatch.LRUObjStore.peek">peek() (py2http.obj_dispatch.LRUObjStore method)</a>
+</li>
       <li><a href="_autosummary/py2http.decorators.html#py2http.decorators.ProposalJsonRespEncoder">ProposalJsonRespEncoder (class in py2http.decorators)</a>
 </li>
-      <li><a href="_autosummary/py2http.service.html#py2http.service.public_attr">public_attr() (in module py2http.service)</a>
+      <li><a href="_autosummary/py2http.obj_dispatch.html#py2http.obj_dispatch.public_attr">public_attr() (in module py2http.obj_dispatch)</a>
 </li>
       <li>
     py2http
 
       <ul style="list-style-type:none">
         <li><a href="_autosummary/py2http.html#module-py2http">module</a>
+</li>
+      </ul></li>
+      <li>
+    py2http.auth
+
+      <ul style="list-style-type:none">
+        <li><a href="_autosummary/py2http.auth.html#module-py2http.auth">module</a>
 </li>
       </ul></li>
       <li>
@@ -454,6 +499,13 @@
 </li>
       </ul></li>
       <li>
+    py2http.obj_dispatch
+
+      <ul style="list-style-type:none">
+        <li><a href="_autosummary/py2http.obj_dispatch.html#module-py2http.obj_dispatch">module</a>
+</li>
+      </ul></li>
+      <li>
     py2http.openapi_utils
 
       <ul style="list-style-type:none">
@@ -479,6 +531,13 @@
 
       <ul style="list-style-type:none">
         <li><a href="_autosummary/py2http.service.html#module-py2http.service">module</a>
+</li>
+      </ul></li>
+      <li>
+    py2http.sizeof
+
+      <ul style="list-style-type:none">
+        <li><a href="_autosummary/py2http.sizeof.html#module-py2http.sizeof">module</a>
 </li>
       </ul></li>
       <li>
@@ -508,6 +567,8 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
+      <li><a href="_autosummary/py2http.auth.html#py2http.auth.required_key">required_key() (in module py2http.auth)</a>
+</li>
       <li><a href="_autosummary/py2http.service.html#py2http.service.run_app">run_app() (in module py2http.service)</a>
 </li>
   </ul></td>
@@ -541,7 +602,7 @@
   <h2 id="U">U</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
-      <li><a href="_autosummary/py2http.service.html#py2http.service.unsafe_any_attr">unsafe_any_attr() (in module py2http.service)</a>
+      <li><a href="_autosummary/py2http.obj_dispatch.html#py2http.obj_dispatch.unsafe_any_attr">unsafe_any_attr() (in module py2http.obj_dispatch)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul style="margin-left:0;list-style-type:none">
@@ -564,7 +625,7 @@
 </div></div>
 <aside id="right-sidebar" class="hidden text-sm xl:block">
 <div class="sticky top-16 -mt-10 max-h-[calc(var(--vh)-4rem)] overflow-y-auto pt-6 space-y-2">
-<a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#A">A</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#B">B</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#C">C</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#D">D</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#E">E</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#F">F</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#G">G</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#H">H</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#I">I</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#J">J</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#L">L</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#M">M</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#O">O</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#P">P</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#R">R</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#S">S</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#T">T</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#U">U</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#W">W</a>
+<a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#A">A</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#B">B</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#C">C</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#D">D</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#E">E</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#F">F</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#G">G</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#H">H</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#I">I</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#J">J</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#K">K</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#L">L</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#M">M</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#O">O</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#P">P</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#R">R</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#S">S</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#T">T</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#U">U</a><a class="pt-2 block text-muted-foreground no-underline transition-colors hover:text-foreground focus-visible:outline-offset-[-1px]" href="#W">W</a>
 </div>
 </aside>
           </main>
@@ -580,7 +641,7 @@ Otosense&nbsp;</p>
 </footer>
     </div>
     
-    <script src="_static/documentation_options.js?v=7c77daa2"></script>
+    <script src="_static/documentation_options.js?v=d80f5ebb"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/clipboard.min.js?v=a7894cd8"></script>

@@ -81,6 +81,7 @@
 <ul>
 <li class="toctree-l1" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="api.html">API reference<button @click.prevent.stop="expanded = !expanded" type="button" x-cloak=""><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-cloak="" x-show="expanded">
 <li class="toctree-l2" x-data="{ expanded: $el.classList.contains('current') ? true : false }"><a :class="{ 'expanded' : expanded }" @click="expanded = !expanded" class="reference internal expandable" href="_autosummary/py2http.html">py2http<button @click.prevent.stop="expanded = !expanded" type="button" x-cloak=""><span class="sr-only"></span><svg fill="currentColor" height="18px" stroke="none" viewbox="0 0 24 24" width="18px" xmlns="http://www.w3.org/2000/svg"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"></path></svg></button></a><ul x-cloak="" x-show="expanded">
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.auth.html">py2http.auth</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.bottle_plugins.html">py2http.bottle_plugins</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.config.html">py2http.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.constants.html">py2http.constants</a></li>
@@ -88,10 +89,12 @@
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.default_configs.html">py2http.default_configs</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.diagnosis.html">py2http.diagnosis</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.middleware.html">py2http.middleware</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.obj_dispatch.html">py2http.obj_dispatch</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.openapi_utils.html">py2http.openapi_utils</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.route_utils.html">py2http.route_utils</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.schema_tools.html">py2http.schema_tools</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.service.html">py2http.service</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.sizeof.html">py2http.sizeof</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.types.html">py2http.types</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/py2http.util.html">py2http.util</a></li>
 </ul>
@@ -123,7 +126,7 @@
 
 <section id="about-this-build">
 <h1>About this build<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#about-this-build">¶</a></h1>
-<p>This documentation was built on <strong>2026-10-13 06:24 UTC</strong> from commit <a href="https://github.com/i2mint/py2http/commit/39111310fa6df8a9c687dbc582b2d2f769cb50eb"><code>3911131</code></a> on branch <code>master</code>, for <strong>py2http 0.1.68</strong> (from <code>setup.cfg</code>).</p>
+<p>This documentation was built on <strong>2026-10-13 06:41 UTC</strong> from commit <a href="https://github.com/i2mint/py2http/commit/76f661f67c33dd8afaa074b65ae98bf2a592c603"><code>76f661f</code></a> on branch <code>master</code>, for <strong>py2http 0.1.69</strong> (from <code>setup.cfg</code>).</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.</p>
@@ -138,13 +141,13 @@
 </thead>
 <tbody>
 <tr class="row-even"><td><p>Commit</p></td>
-<td><p><a href="https://github.com/i2mint/py2http/commit/39111310fa6df8a9c687dbc582b2d2f769cb50eb"><code>39111310fa6df8a9c687dbc582b2d2f769cb50eb</code></a></p></td>
+<td><p><a href="https://github.com/i2mint/py2http/commit/76f661f67c33dd8afaa074b65ae98bf2a592c603"><code>76f661f67c33dd8afaa074b65ae98bf2a592c603</code></a></p></td>
 </tr>
 <tr class="row-odd"><td><p>Branch</p></td>
 <td><p><code>master</code></p></td>
 </tr>
 <tr class="row-even"><td><p>Tags at this commit</p></td>
-<td><p><code>0.1.68</code></p></td>
+<td><p><code>0.1.69</code></p></td>
 </tr>
 <tr class="row-odd"><td><p>Working tree</p></td>
 <td><p>clean</p></td>
@@ -168,13 +171,13 @@
 <td><p><code>i2mint/py2http</code></p></td>
 </tr>
 <tr class="row-odd"><td><p>Run</p></td>
-<td><p><a href="https://github.com/i2mint/py2http/actions/runs/38356345284">38356345284</a></p></td>
+<td><p><a href="https://github.com/i2mint/py2http/actions/runs/38357975435">38357975435</a></p></td>
 </tr>
 <tr class="row-even"><td><p>Ref</p></td>
 <td><p><code>refs/heads/master</code></p></td>
 </tr>
 <tr class="row-odd"><td><p>Event commit</p></td>
-<td><p><code>3866d3ada75b633aac5d1d158ef6c91a87352a68</code> (in the history of the built commit)</p></td>
+<td><p><code>2b747078e5c71278a5724da99b9986ad75d25407</code> (in the history of the built commit)</p></td>
 </tr>
 </tbody>
 </table>
@@ -238,13 +241,13 @@
 </section>
 <section id="package-on-pypi">
 <h2>Package on PyPI<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#package-on-pypi" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#package-on-pypi'">¶</a></h2>
-<p>Latest release: <a href="https://pypi.org/project/py2http/0.1.68/">0.1.68</a>, the same as the documented version.</p>
+<p>Latest release: <a href="https://pypi.org/project/py2http/0.1.69/">0.1.69</a>, the same as the documented version.</p>
 </section>
-<section id="site"><h2>Site</h2><table class="docutils align-default"><tbody><tr><td><p>Modules documented</p></td><td><p>14</p></td></tr><tr><td><p>Objects documented</p></td><td><p>51</p></td></tr></tbody></table></section>
+<section id="site"><h2>Site</h2><table class="docutils align-default"><tbody><tr><td><p>Modules documented</p></td><td><p>17</p></td></tr><tr><td><p>Objects documented</p></td><td><p>61</p></td></tr></tbody></table></section>
 <section id="reproduce">
 <h2>Reproduce<a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#reproduce" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#reproduce'">¶</a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><code><span id="line-1">git<span class="w"> </span>clone<span class="w"> </span>https://github.com/i2mint/py2http<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>py2http
-</span><span id="line-2">git<span class="w"> </span>checkout<span class="w"> </span>39111310fa6df8a9c687dbc582b2d2f769cb50eb
+</span><span id="line-2">git<span class="w"> </span>checkout<span class="w"> </span>76f661f67c33dd8afaa074b65ae98bf2a592c603
 </span><span id="line-3">pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"epythet==0.2.14"</span>
 </span><span id="line-4">epythet<span class="w"> </span>quickstart<span class="w"> </span>.<span class="w"> </span>--ignore<span class="w"> </span>tests/<span class="w"> </span>scrap/<span class="w"> </span>examples/
 </span></code></pre></div>
@@ -276,7 +279,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="_static/documentation_options.js?v=7c77daa2"></script>
+<script src="_static/documentation_options.js?v=d80f5ebb"></script>
 <script src="_static/doctools.js?v=fd6eb6e6"></script>
 <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="_static/clipboard.min.js?v=a7894cd8"></script>

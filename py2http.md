@@ -1,4 +1,4 @@
-> built 2026-10-13 06:24 UTC from 3911131 (master) · py2http 0.1.68. Details: build_info.json
+> built 2026-10-13 06:41 UTC from 76f661f (master) · py2http 0.1.69. Details: build_info.json
 
 # index.html.md
 
@@ -252,6 +252,116 @@ These values will be put in the OpenAPI specification document. All values are o
 <p class="epythet-aggregates">This documentation as a single file: <a href="py2http.md">py2http.md</a> (Markdown, for agents).</p>
 
 
+# _autosummary/py2http.auth.html.md
+
+# py2http.auth
+
+Framework-independent credential checks, shared by the aiohttp middleware
+(`py2http.middleware`) and the Bottle plugins (`py2http.bottle_plugins`), so that
+both refuse the same tokens and keys for the same reasons.
+
+```pycon
+>>> bearer_token('Bearer abc'), bearer_token('bearer abc'), bearer_token('Basic abc')
+('abc', 'abc', '')
+>>> key_matches('k-123', 'k-123'), key_matches('k-12', 'k-123'), key_matches(None, 'k')
+(True, False, False)
+```
+
+### Functions
+
+| [`bearer_token`](_autosummary/py2http.auth.html.md#py2http.auth.bearer_token)(authorization_header)               | The token of an `Authorization: Bearer <token>` header, or `''`.                                                       |
+|---------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| [`decode_jwt`](_autosummary/py2http.auth.html.md#py2http.auth.decode_jwt)(token, secret, \*, algorithms[, ...]) | The claims of `token`, or `CredentialsRejected` with a client-safe reason.                                             |
+| [`jwt_algorithms`](_autosummary/py2http.auth.html.md#py2http.auth.jwt_algorithms)(secret, \*[, verify, ...])        | Validate a JWT verification setup, returning the algorithms as a list.                                                 |
+| [`jwt_decode_kwargs`](_autosummary/py2http.auth.html.md#py2http.auth.jwt_decode_kwargs)([decode_kwargs])               | Validate extra `jwt.decode` arguments (`audience`, `issuer`, `leeway`...), refusing those the verification setup owns. |
+| [`key_matches`](_autosummary/py2http.auth.html.md#py2http.auth.key_matches)(given, expected)                     | Whether the `given` credential equals `expected`, in constant time.                                                    |
+| [`required_key`](_autosummary/py2http.auth.html.md#py2http.auth.required_key)(key, \*[, name])                    | `key`, refused when empty: an empty key would let a request with no `Authorization` header through.                    |
+
+### Exceptions
+
+| [`CredentialsRejected`](_autosummary/py2http.auth.html.md#py2http.auth.CredentialsRejected)   | A request's credentials were refused.   |
+|------------------------------------------------------------------------|-----------------------------------------|
+
+### *exception* py2http.auth.CredentialsRejected
+
+Bases: [`Exception`](https://docs.python.org/3/builtins/exceptions.html#Exception)
+
+A request’s credentials were refused. The message is safe to show the client:
+it never contains the token, nor anything about the server’s key.
+
+### py2http.auth.bearer_token(authorization_header)
+
+The token of an `Authorization: Bearer <token>` header, or `''`.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### py2http.auth.decode_jwt(token, secret, , algorithms, verify=True, decode_kwargs=None)
+
+The claims of `token`, or `CredentialsRejected` with a client-safe reason.
+
+With `verify=False` neither the signature nor the claims (`exp`…) are checked.
+`decode_kwargs` (`audience`, `issuer`, `leeway`…) go to `jwt.decode`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### py2http.auth.jwt_algorithms(secret, , verify=True, algorithms=('HS256',), allow_mixed_algorithm_families=False)
+
+Validate a JWT verification setup, returning the algorithms as a list.
+
+Raises at construction time, rather than accepting forgeries at request time, when:
+
+- `algorithms` is empty, a bare string, or names an unknown or unsigned (`none`)
+  algorithm (PyJWT names are case-sensitive);
+- `verify` is True and `secret` is empty (an empty HMAC secret lets anyone sign
+  tokens), or an HMAC algorithm is asked for with a non-`str`/`bytes` secret;
+- `verify` is True and HMAC and public-key algorithms are mixed with one
+  `secret` (the classic algorithm-confusion setup), unless
+  `allow_mixed_algorithm_families` is True.
+
+```pycon
+>>> jwt_algorithms('s3cret')
+['HS256']
+>>> jwt_algorithms('', algorithms=['HS256'])
+Traceback (most recent call last):
+  ...
+ValueError: secret must be a non-empty key when verify=True
+```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)
+
+### py2http.auth.jwt_decode_kwargs(decode_kwargs=None)
+
+Validate extra `jwt.decode` arguments (`audience`, `issuer`,
+`leeway`…), refusing those the verification setup owns.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+```pycon
+>>> jwt_decode_kwargs({'audience': 'my-api'})
+{'audience': 'my-api'}
+>>> jwt_decode_kwargs({'options': {'verify_signature': False}})
+Traceback (most recent call last):
+  ...
+ValueError: decode_kwargs may not set ['options']; use verify= and algorithms=
+```
+
+### py2http.auth.key_matches(given, expected)
+
+Whether the `given` credential equals `expected`, in constant time.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+### py2http.auth.required_key(key, , name='api_key')
+
+`key`, refused when empty: an empty key would let a request with no
+`Authorization` header through.
+
+
 # _autosummary/py2http.bottle_plugins.html.md
 
 # py2http.bottle_plugins
@@ -260,12 +370,19 @@ Plugins for adding middleware functionality to Bottle apps.
 
 ### Classes
 
-| `ApiKeyAuthPlugin`(api_key)                                                               |                                                             |
-|-------------------------------------------------------------------------------------------|-------------------------------------------------------------|
-| `CorsPlugin`([origins])                                                                   |                                                             |
-| [`JWTPlugin`](_autosummary/py2http.bottle_plugins.html.md#py2http.bottle_plugins.JWTPlugin)([secret, verify, mapper, ...]) | A plugin for validating JWTs and extracting their payloads. |
+| [`ApiKeyAuthPlugin`](_autosummary/py2http.bottle_plugins.html.md#py2http.bottle_plugins.ApiKeyAuthPlugin)(api_key)                | A plugin letting through only requests whose `Authorization` header is exactly `api_key` (compared in constant time; an empty key is refused).   |
+|-------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| `CorsPlugin`([origins])                                                                   |                                                                                                                                                  |
+| [`JWTPlugin`](_autosummary/py2http.bottle_plugins.html.md#py2http.bottle_plugins.JWTPlugin)([secret, verify, mapper, ...]) | A plugin for validating JWTs and extracting their payloads.                                                                                      |
 
-### *class* py2http.bottle_plugins.JWTPlugin(secret='', verify=True, mapper=None, ignore_methods=None, algorithms=None)
+### *class* py2http.bottle_plugins.ApiKeyAuthPlugin(api_key)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+A plugin letting through only requests whose `Authorization` header is
+exactly `api_key` (compared in constant time; an empty key is refused).
+
+### *class* py2http.bottle_plugins.JWTPlugin(secret='', verify=True, mapper=None, ignore_methods=None, algorithms=None, , allow_mixed_algorithm_families=False, decode_kwargs=None)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -1075,18 +1192,21 @@ the functionality of the HTTP services.
 
 ### Modules
 
-| [`bottle_plugins`](_autosummary/py2http.bottle_plugins.html.md#module-py2http.bottle_plugins)   | Plugins for adding middleware functionality to Bottle apps.                                                                                                                                                                                                               |
+| [`auth`](_autosummary/py2http.auth.html.md#module-py2http.auth)                       | Framework-independent credential checks, shared by the aiohttp middleware (`py2http.middleware`) and the Bottle plugins (`py2http.bottle_plugins`), so that both refuse the same tokens and keys for the same reasons.                                                    |
 |-------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`bottle_plugins`](_autosummary/py2http.bottle_plugins.html.md#module-py2http.bottle_plugins)   | Plugins for adding middleware functionality to Bottle apps.                                                                                                                                                                                                               |
 | [`config`](_autosummary/py2http.config.html.md#module-py2http.config)                   | The code module provides functions for retrieving configuration values for a function based on a hierarchy of sources, including function properties, configuration dictionaries, and default values.                                                                     |
 | [`constants`](_autosummary/py2http.constants.html.md#module-py2http.constants)             | This module provides functionality for dispatching Python functions as HTTP services.                                                                                                                                                                                     |
 | [`decorators`](_autosummary/py2http.decorators.html.md#module-py2http.decorators)           | Decorator tools for py2http.                                                                                                                                                                                                                                              |
 | [`default_configs`](_autosummary/py2http.default_configs.html.md#module-py2http.default_configs) | This module provides default configurations, input mappers, output mappers, and error handlers for an HTTP service implemented in Python using the py2http library.                                                                                                       |
 | [`diagnosis`](_autosummary/py2http.diagnosis.html.md#module-py2http.diagnosis)             | This module is meant to contain diagnosis and validation tools.                                                                                                                                                                                                           |
-| [`middleware`](_autosummary/py2http.middleware.html.md#module-py2http.middleware)           | py2http is a Python module that allows you to dispatch Python functions as HTTP services.                                                                                                                                                                                 |
+| [`middleware`](_autosummary/py2http.middleware.html.md#module-py2http.middleware)           | aiohttp middleware that guards every route of an app: `mk_jwt_middleware` (a verified `Authorization: Bearer` JWT) and `mk_superadmin_middleware` (one shared key).                                                                                                       |
+| [`obj_dispatch`](_autosummary/py2http.obj_dispatch.html.md#module-py2http.obj_dispatch)       | Dispatching HTTP requests to the attributes of objects, classes and modules.                                                                                                                                                                                              |
 | [`openapi_utils`](_autosummary/py2http.openapi_utils.html.md#module-py2http.openapi_utils)     | This module is designed to generate OpenAPI specifications based on Python functions.                                                                                                                                                                                     |
 | [`route_utils`](_autosummary/py2http.route_utils.html.md#module-py2http.route_utils)         | This module provides functionality to create handlers for class methods, based on input classes and method names.                                                                                                                                                         |
 | [`schema_tools`](_autosummary/py2http.schema_tools.html.md#module-py2http.schema_tools)       | This module provides functions for generating OpenAPI input and output schemas from Python functions, as well as validating input against a schema.                                                                                                                       |
 | [`service`](_autosummary/py2http.service.html.md#module-py2http.service)                 | This Python module provides a framework for dispatching Python functions as HTTP services and generating OpenAPI specifications for these services.                                                                                                                       |
+| [`sizeof`](_autosummary/py2http.sizeof.html.md#module-py2http.sizeof)                   | Approximate the memory an object holds, without walking more of it than a budget.                                                                                                                                                                                         |
 | [`types`](_autosummary/py2http.types.html.md#module-py2http.types)                     | This module defines several type aliases and constants related to function parameters and signatures.                                                                                                                                                                     |
 | [`util`](_autosummary/py2http.util.html.md#module-py2http.util)                       | This module contains various utilities including a `lazyprop` descriptor for lazy loading properties, a `CreateProcess` context manager for running functions in parallel processes, a `ModuleFoundIgnore` context manager for ignoring `ModuleNotFoundErrors`, and more. |
 
@@ -1095,31 +1215,18 @@ the functionality of the HTTP services.
 
 # py2http.middleware
 
-py2http is a Python module that allows you to dispatch Python functions as HTTP
-services.
-By running a basic HTTP service from a list of functions, you can access OpenAPI
-specifications, Swagger documentation, and utilize the HTTP service’s routes.
-Additionally, Py2http provides features for method transformation, input mapping,
-output mapping, error handling, and client generation.
-
-The code snippet provided below is a part of Py2http module and includes middleware
-functions for handling JWT authentication and superadmin authorization.
-These middleware functions are designed to be used within the Py2http framework to
-ensure secure and authenticated access to HTTP routes.
-
-Include the following docstring to describe this module:
-“Middleware functions for handling JWT authentication and superadmin authorization
-within the Py2http framework. These functions ensure secure access to HTTP routes
-by verifying credentials and permissions. Use these middleware functions to enforce
-authentication and control access to web resources.
+aiohttp middleware that guards every route of an app: `mk_jwt_middleware`
+(a verified `Authorization: Bearer` JWT) and `mk_superadmin_middleware` (one
+shared key). The checks themselves live in `py2http.auth`, shared with the Bottle
+plugins of `py2http.bottle_plugins`.
 
 ### Functions
 
 | [`mk_jwt_middleware`](_autosummary/py2http.middleware.html.md#py2http.middleware.mk_jwt_middleware)(secret[, verify, ...])   | Make an aiohttp middleware that requires a valid `Authorization: Bearer` JWT on every request, and puts the decoded claims on `request.token`.   |
 |---------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| `mk_superadmin_middleware`(secret)                                                          |                                                                                                                                                  |
+| [`mk_superadmin_middleware`](_autosummary/py2http.middleware.html.md#py2http.middleware.mk_superadmin_middleware)(secret)           | Make an aiohttp middleware that only lets through requests whose `Authorization` header is exactly `secret` (compared in constant time).         |
 
-### py2http.middleware.mk_jwt_middleware(secret, verify=True, , algorithms=('HS256',), public_routes=('ping', 'openapi'), allow_mixed_algorithm_families=False)
+### py2http.middleware.mk_jwt_middleware(secret, verify=True, , algorithms=('HS256',), public_routes=('ping', 'openapi'), allow_mixed_algorithm_families=False, decode_kwargs=None)
 
 Make an aiohttp middleware that requires a valid `Authorization: Bearer`
 JWT on every request, and puts the decoded claims on `request.token`.
@@ -1146,6 +1253,164 @@ JWT on every request, and puts the decoded claims on `request.token`.
     public key as the HMAC secret), so it raises `ValueError` unless
     this is True. The middleware used to accept `["HS256", "RS256"]`;
     pass that list with this flag to restore it.
+  * **decode_kwargs** ([`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)) – Extra `jwt.decode` arguments, such as `audience`,
+    `issuer` or `leeway` (without them a token carrying an `aud`
+    claim is always refused).
+
+### py2http.middleware.mk_superadmin_middleware(secret)
+
+Make an aiohttp middleware that only lets through requests whose
+`Authorization` header is exactly `secret` (compared in constant time).
+An empty `secret` is refused, since it would let header-less requests through.
+
+
+# _autosummary/py2http.obj_dispatch.html.md
+
+# py2http.obj_dispatch
+
+Dispatching HTTP requests to the attributes of objects, classes and modules.
+
+A handler whose `endpoint` is not a function names the attributes clients may call
+with `attr_names` (see `public_attr` for `'*'`):
+
+- a **module**: its functions are called by name;
+- an **instance** (one object every client shares): `_instance_endpoint_dispatcher`;
+- a **class** (each client creates and uses its own objects):
+  `_class_endpoint_dispatcher`.
+
+Instances and classes need an `obj_owner`, a `(request) -> owner` hook reading
+`current_request`, and are bounded in size (`py2http.sizeof`).
+
+### Module Attributes
+
+| [`current_request`](_autosummary/py2http.obj_dispatch.html.md#py2http.obj_dispatch.current_request)   | The request being handled (set around every handler call), so per-request hooks such as `obj_owner` can read it without the dispatched function taking it.   |
+|--------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`ObjOwner`](_autosummary/py2http.obj_dispatch.html.md#py2http.obj_dispatch.ObjOwner)          | `(request) -> owner`, a hashable that identifies an *authenticated* client (e.g. a user id from a verified token).                                           |
+
+### Functions
+
+| [`public_attr`](_autosummary/py2http.obj_dispatch.html.md#py2http.obj_dispatch.public_attr)(obj, attr_name)     | The attribute policy `attr_names='*'` stands for: only public methods.    |
+|----------------------------------------------------------------------------------|---------------------------------------------------------------------------|
+| [`unsafe_any_attr`](_autosummary/py2http.obj_dispatch.html.md#py2http.obj_dispatch.unsafe_any_attr)(obj, attr_name) | Dispatch ANY attribute of the object, including private ones and dunders. |
+
+### Classes
+
+| [`LRUObjStore`](_autosummary/py2http.obj_dispatch.html.md#py2http.obj_dispatch.LRUObjStore)(\*[, max_size, on_evict])   | A mapping that keeps at most `max_size` items, evicting the least recently used one when a new key would exceed it (`on_evict(k, v)` is told).   |
+|------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`OwnedObjStore`](_autosummary/py2http.obj_dispatch.html.md#py2http.obj_dispatch.OwnedObjStore)(\*[, quota, max_owners])  | Objects kept per owner, with object and byte budgets.                                                                                            |
+
+### *class* py2http.obj_dispatch.LRUObjStore(, max_size=1000, on_evict=None)
+
+Bases: [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping)
+
+A mapping that keeps at most `max_size` items, evicting the least recently
+used one when a new key would exceed it (`on_evict(k, v)` is told).
+
+Used as the default store of objects created through a class endpoint, so that
+clients cannot grow server memory without bound by creating objects.
+
+```pycon
+>>> s = LRUObjStore(max_size=2)
+>>> s['a'], s['b'] = 1, 2
+>>> _ = s['a']  # 'a' is now the most recently used
+>>> s['c'] = 3
+>>> sorted(s)
+['a', 'c']
+```
+
+#### peek(k, default=None)
+
+`self.get(k, default)`, without making `k` the most recently used.
+
+### py2http.obj_dispatch.ObjOwner
+
+`(request) -> owner`, a hashable that identifies an
+*authenticated* client (e.g. a user id from a verified token). `None` and `""`
+mean “not identified” and are refused. A client-chosen value (a session cookie the
+client mints, an IP) lets one client create owners until others are evicted.
+
+* **Type:**
+  `obj_owner` hook
+
+alias of `Callable`[[[`Any`](https://docs.python.org/3/library/typing.html#typing.Any)], [`Any`](https://docs.python.org/3/library/typing.html#typing.Any) | [`None`](https://docs.python.org/3/builtins/constants.html#None)]
+
+### *class* py2http.obj_dispatch.OwnedObjStore(, quota=100, max_owners=1000)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+Objects kept per owner, with object and byte budgets. Thread-safe.
+
+- `quota` objects per owner: an owner’s own least recently used object is evicted
+  beyond it, never someone else’s;
+- `max_owners` owners at once: the least recently active owner’s objects go;
+- byte accounting: `record()` the size of an object; `owner_bytes()` and
+  `total_bytes` sum what is currently stored.
+
+```pycon
+>>> s = OwnedObjStore(quota=2, max_owners=2)
+>>> s.put('ann', 'a1', 1); s.put('ann', 'a2', 2); s.put('bob', 'b1', 3)
+>>> s.put('ann', 'a3', 4)  # ann's quota: her least recently used object goes
+>>> s.get('ann', 'a1') is None, s.get('ann', 'a3'), s.get('bob', 'b1')
+(True, 4, 3)
+>>> s.get('bob', 'a3') is None  # another owner's id is simply not found
+True
+>>> s.record('ann', 'a3', 100); s.record('bob', 'b1', 5)
+>>> s.owner_bytes('ann'), s.total_bytes
+(100, 105)
+```
+
+### py2http.obj_dispatch.current_request *: [ContextVar](https://docs.python.org/3/library/contextvars.html#contextvars.ContextVar)* *= <ContextVar name='py2http_current_request' default=None>*
+
+The request being handled (set around every handler call), so per-request hooks such
+as `obj_owner` can read it without the dispatched function taking it.
+
+### py2http.obj_dispatch.public_attr(obj, attr_name)
+
+The attribute policy `attr_names='*'` stands for: only public methods.
+
+A name is dispatchable if it does not start with `_` and
+
+- for a module: it is a function that the module defines (or lists in its
+  `__all__`), never something it merely imports, nor plain data;
+- otherwise: it is a plain Python function, `staticmethod`,
+  `classmethod` or `property` defined in the object’s class (or a base
+  class), and the instance does not shadow it.
+
+This keeps private helpers, dunders (`__dict__`, `__init__`, …),
+per-instance state (`__dict__` entries, `__slots__`, dataclass and
+namedtuple fields) and callables merely assigned as class attributes
+(`opener = open`) out of reach of HTTP clients.
+
+Note that every public method is exposed, inherited ones included (e.g. a
+pydantic model’s `model_dump`). For anything holding secrets, or a mapping
+whose mutators should stay private (`MutableMapping` mixins such as
+`clear` and `pop` are plain functions), list the names explicitly instead.
+
+```pycon
+>>> class A:
+...     data = 0
+...     opener = open
+...     def f(self): ...
+...     def _g(self): ...
+...     def __init__(self): self.secret = 1
+>>> [public_attr(A(), name)
+...  for name in ('f', '_g', '__init__', '__dict__', 'secret', 'data', 'opener')]
+[True, False, False, False, False, False, False]
+```
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+### py2http.obj_dispatch.unsafe_any_attr(obj, attr_name)
+
+Dispatch ANY attribute of the object, including private ones and dunders.
+
+This was the behaviour of `attr_names='*'` before `public_attr`: it lets a
+client read `__dict__`, call `__init__` with arguments of its choosing, and so
+on. Use `attr_names=unsafe_any_attr` only when every client is trusted.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
 
 # _autosummary/py2http.openapi_utils.html.md
@@ -1339,121 +1604,27 @@ Overall, this module offers a comprehensive approach to creating HTTP services f
 Python functions, enabling developers to easily expose their functions as remote APIs
 with minimal setup.
 
-### Module Attributes
-
-| [`current_request`](_autosummary/py2http.service.html.md#py2http.service.current_request)   | The request being handled (set around every handler call), so per-request hooks such as `obj_owner` can read it without the dispatched function taking it.   |
-|--------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`ObjOwner`](_autosummary/py2http.service.html.md#py2http.service.ObjOwner)          | `(request) -> owner`, a hashable that identifies an *authenticated* client (e.g. a user id from a verified token).                                           |
-
 ### Functions
 
-| [`bounded_deep_sizeof`](_autosummary/py2http.service.html.md#py2http.service.bounded_deep_sizeof)(obj[, limit])                | Approximate memory held by `obj` and everything it references (containers, instance `__dict__` and `__slots__`, what a bound method, a `partial` or a function's closure, attributes and defaults hold), counting each object once.   |
-|---------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `func_copy`(func)                                                                                 |                                                                                                                                                                                                                                       |
-| `method_not_found`(method_name)                                                                   |                                                                                                                                                                                                                                       |
-| `mk_aiohttp_app`(funcs, \*\*configs)                                                              |                                                                                                                                                                                                                                       |
-| [`mk_app`](_autosummary/py2http.service.html.md#py2http.service.mk_app)(app_spec, \*[, app_name, framework, ...]) | Generates an application which exposes web services created from the given python functions to remotely run them.                                                                                                                     |
-| `mk_bottle_app`(funcs, \*\*configs)                                                               |                                                                                                                                                                                                                                       |
-| `mk_flask_app`(funcs, \*\*configs)                                                                |                                                                                                                                                                                                                                       |
-| [`mk_route`](_autosummary/py2http.service.html.md#py2http.service.mk_route)(func, \*\*configs)                      | Generate a route object and an OpenAPI path specification for a function                                                                                                                                                              |
-| `mk_routes_and_openapi_specs`(funcs, \*\*configs)                                                 |                                                                                                                                                                                                                                       |
-| [`public_attr`](_autosummary/py2http.service.html.md#py2http.service.public_attr)(obj, attr_name)                      | The attribute policy `attr_names='*'` stands for: only public methods.                                                                                                                                                                |
-| [`run_app`](_autosummary/py2http.service.html.md#py2http.service.run_app)(app_obj, \*[, app_name, framework, ...]) | Run an application which exposes web services created from the given python functions to remotely run them.                                                                                                                           |
-| [`unsafe_any_attr`](_autosummary/py2http.service.html.md#py2http.service.unsafe_any_attr)(obj, attr_name)                  | Dispatch ANY attribute of the object, including private ones and dunders.                                                                                                                                                             |
+| `func_copy`(func)                                                                                 |                                                                                                                   |
+|---------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| `method_not_found`(method_name)                                                                   |                                                                                                                   |
+| `mk_aiohttp_app`(funcs, \*\*configs)                                                              |                                                                                                                   |
+| [`mk_app`](_autosummary/py2http.service.html.md#py2http.service.mk_app)(app_spec, \*[, app_name, framework, ...]) | Generates an application which exposes web services created from the given python functions to remotely run them. |
+| `mk_bottle_app`(funcs, \*\*configs)                                                               |                                                                                                                   |
+| `mk_flask_app`(funcs, \*\*configs)                                                                |                                                                                                                   |
+| [`mk_route`](_autosummary/py2http.service.html.md#py2http.service.mk_route)(func, \*\*configs)                      | Generate a route object and an OpenAPI path specification for a function                                          |
+| `mk_routes_and_openapi_specs`(funcs, \*\*configs)                                                 |                                                                                                                   |
+| [`run_app`](_autosummary/py2http.service.html.md#py2http.service.run_app)(app_obj, \*[, app_name, framework, ...]) | Run an application which exposes web services created from the given python functions to remotely run them.       |
 
 ### Classes
 
-| [`LRUObjStore`](_autosummary/py2http.service.html.md#py2http.service.LRUObjStore)(\*[, max_size, on_evict])   | A mapping that keeps at most `max_size` items, evicting the least recently used one when a new key would exceed it (`on_evict(k, v)` is told).   |
-|------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`OwnedObjStore`](_autosummary/py2http.service.html.md#py2http.service.OwnedObjStore)(\*[, quota, max_owners])  | Objects kept per owner, with object and byte budgets.                                                                                            |
-| [`SubAppSpec`](_autosummary/py2http.service.html.md#py2http.service.SubAppSpec)                              |                                                                                                                                                  |
-
-### *class* py2http.service.LRUObjStore(, max_size=1000, on_evict=None)
-
-Bases: [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping)
-
-A mapping that keeps at most `max_size` items, evicting the least recently
-used one when a new key would exceed it (`on_evict(k, v)` is told).
-
-Used as the default store of objects created through a class endpoint, so that
-clients cannot grow server memory without bound by creating objects.
-
-```pycon
->>> s = LRUObjStore(max_size=2)
->>> s['a'], s['b'] = 1, 2
->>> _ = s['a']  # 'a' is now the most recently used
->>> s['c'] = 3
->>> sorted(s)
-['a', 'c']
-```
-
-### py2http.service.ObjOwner
-
-`(request) -> owner`, a hashable that identifies an
-*authenticated* client (e.g. a user id from a verified token). `None` and `""`
-mean “not identified” and are refused. A client-chosen value (a session cookie the
-client mints, an IP) lets one client create owners until others are evicted.
-
-* **Type:**
-  `obj_owner` hook
-
-alias of `Callable`[[[`Any`](https://docs.python.org/3/library/typing.html#typing.Any)], [`Any`](https://docs.python.org/3/library/typing.html#typing.Any) | [`None`](https://docs.python.org/3/builtins/constants.html#None)]
-
-### *class* py2http.service.OwnedObjStore(, quota=100, max_owners=1000)
-
-Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
-
-Objects kept per owner, with object and byte budgets. Thread-safe.
-
-- `quota` objects per owner: an owner’s own least recently used object is evicted
-  beyond it, never someone else’s;
-- `max_owners` owners at once: the least recently active owner’s objects go;
-- byte accounting: `record()` the size of an object; `owner_bytes()` and
-  `total_bytes` sum what is currently stored.
-
-```pycon
->>> s = OwnedObjStore(quota=2, max_owners=2)
->>> s.put('ann', 'a1', 1); s.put('ann', 'a2', 2); s.put('bob', 'b1', 3)
->>> s.put('ann', 'a3', 4)  # ann's quota: her least recently used object goes
->>> s.get('ann', 'a1') is None, s.get('ann', 'a3'), s.get('bob', 'b1')
-(True, 4, 3)
->>> s.get('bob', 'a3') is None  # another owner's id is simply not found
-True
->>> s.record('ann', 'a3', 100); s.record('bob', 'b1', 5)
->>> s.owner_bytes('ann'), s.total_bytes
-(100, 105)
-```
+| [`SubAppSpec`](_autosummary/py2http.service.html.md#py2http.service.SubAppSpec)   |    |
+|---------------------------------------------------------------|----|
 
 ### *class* py2http.service.SubAppSpec
 
 Bases: [`TypedDict`](https://docs.python.org/3/library/typing.html#typing.TypedDict)
-
-### py2http.service.bounded_deep_sizeof(obj, limit=None)
-
-Approximate memory held by `obj` and everything it references (containers,
-instance `__dict__` and `__slots__`, what a bound method, a `partial` or a
-function’s closure, attributes and defaults hold), counting each object once. Stops
-as soon as the total exceeds `limit`, so measuring costs at most about `limit`
-bytes’ worth of objects. Classes, modules and the code of functions are shared, so
-not counted, and neither is what classes and modules hold (class attributes, module
-globals), nor caches kept in C (`lru_cache`). Holding a bound method of another
-object counts that whole object, as holding the object itself would.
-
-* **Return type:**
-  [`int`](https://docs.python.org/3/builtins/functions.html#int)
-
-```pycon
->>> small, big = bounded_deep_sizeof([1, 2]), bounded_deep_sizeof(list(range(1000)))
->>> small < big
-True
->>> bounded_deep_sizeof(list(range(10**6)), limit=1000) > 1000
-True
-```
-
-### py2http.service.current_request *: [ContextVar](https://docs.python.org/3/library/contextvars.html#contextvars.ContextVar)* *= <ContextVar name='py2http_current_request' default=None>*
-
-The request being handled (set around every handler call), so per-request hooks such
-as `obj_owner` can read it without the dispatched function taking it.
 
 ### py2http.service.mk_app(app_spec, \*, app_name='HTTP Service', framework='bottle', input_mapper=<function default_input_mapper>, output_mapper=<function send_json_resp.<locals>.output_mapper>, error_handler=<function default_error_handler>, header_inputs={}, middleware=[], host='localhost', port=3030, server='gunicorn', http_method='post', openapi={}, logger=None, plugins=[], enable_cors=False, cors_allowed_origins='\*', publish_openapi=False, openapi_insecure=False, publish_swagger=False, swagger_url='/swagger', swagger_title='Swagger', ssl_certfile=None, ssl_keyfile=None, \*\*configs)
 
@@ -1556,43 +1727,6 @@ Generate a route object and an OpenAPI path specification for a function
 * **Keyword Arguments:**
   The configuration settings
 
-### py2http.service.public_attr(obj, attr_name)
-
-The attribute policy `attr_names='*'` stands for: only public methods.
-
-A name is dispatchable if it does not start with `_` and
-
-- for a module: it is a function that the module defines (or lists in its
-  `__all__`), never something it merely imports, nor plain data;
-- otherwise: it is a plain Python function, `staticmethod`,
-  `classmethod` or `property` defined in the object’s class (or a base
-  class), and the instance does not shadow it.
-
-This keeps private helpers, dunders (`__dict__`, `__init__`, …),
-per-instance state (`__dict__` entries, `__slots__`, dataclass and
-namedtuple fields) and callables merely assigned as class attributes
-(`opener = open`) out of reach of HTTP clients.
-
-Note that every public method is exposed, inherited ones included (e.g. a
-pydantic model’s `model_dump`). For anything holding secrets, or a mapping
-whose mutators should stay private (`MutableMapping` mixins such as
-`clear` and `pop` are plain functions), list the names explicitly instead.
-
-```pycon
->>> class A:
-...     data = 0
-...     opener = open
-...     def f(self): ...
-...     def _g(self): ...
-...     def __init__(self): self.secret = 1
->>> [public_attr(A(), name)
-...  for name in ('f', '_g', '__init__', '__dict__', 'secret', 'data', 'opener')]
-[True, False, False, False, False, False, False]
-```
-
-* **Return type:**
-  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
-
 ### py2http.service.run_app(app_obj, \*, app_name='HTTP Service', framework='bottle', input_mapper=<function default_input_mapper>, output_mapper=<function send_json_resp.<locals>.output_mapper>, error_handler=<function default_error_handler>, header_inputs={}, middleware=[], host='localhost', port=3030, server='gunicorn', http_method='post', openapi={}, logger=None, plugins=[], enable_cors=False, cors_allowed_origins='\*', publish_openapi=False, openapi_insecure=False, publish_swagger=False, swagger_url='/swagger', swagger_title='Swagger', ssl_certfile=None, ssl_keyfile=None, \*\*configs)
 
 Run an application which exposes web services created from the given python
@@ -1609,16 +1743,42 @@ You can also generate the application first, then run it using this function.
     `py2http.default_configs:default_configs` for defaults and config.yaml for
     configuration documentation.
 
-### py2http.service.unsafe_any_attr(obj, attr_name)
 
-Dispatch ANY attribute of the object, including private ones and dunders.
+# _autosummary/py2http.sizeof.html.md
 
-This was the behaviour of `attr_names='*'` before `public_attr`: it lets a
-client read `__dict__`, call `__init__` with arguments of its choosing, and so
-on. Use `attr_names=unsafe_any_attr` only when every client is trusted.
+# py2http.sizeof
+
+Approximate the memory an object holds, without walking more of it than a budget.
+
+`bounded_deep_sizeof` is how py2http bounds the objects clients create or grow
+through class and instance endpoints (`py2http.obj_dispatch`).
+
+### Functions
+
+| [`bounded_deep_sizeof`](_autosummary/py2http.sizeof.html.md#py2http.sizeof.bounded_deep_sizeof)(obj[, limit])   | Approximate memory held by `obj` and everything it references (containers, instance `__dict__` and `__slots__`, what a bound method, a `partial` or a function's closure, attributes and defaults hold), counting each object once.   |
+|--------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+
+### py2http.sizeof.bounded_deep_sizeof(obj, limit=None)
+
+Approximate memory held by `obj` and everything it references (containers,
+instance `__dict__` and `__slots__`, what a bound method, a `partial` or a
+function’s closure, attributes and defaults hold), counting each object once. Stops
+as soon as the total exceeds `limit`, so measuring costs at most about `limit`
+bytes’ worth of objects. Classes, modules and the code of functions are shared, so
+not counted, and neither is what classes and modules hold (class attributes, module
+globals), nor caches kept in C (`lru_cache`). Holding a bound method of another
+object counts that whole object, as holding the object itself would.
 
 * **Return type:**
-  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+  [`int`](https://docs.python.org/3/builtins/functions.html#int)
+
+```pycon
+>>> small, big = bounded_deep_sizeof([1, 2]), bounded_deep_sizeof(list(range(1000)))
+>>> small < big
+True
+>>> bounded_deep_sizeof(list(range(10**6)), limit=1000) > 1000
+True
+```
 
 
 # _autosummary/py2http.types.html.md
@@ -1960,7 +2120,7 @@ so that it can be jsonizable.
 
 # About this build
 
-This documentation was built on **2026-10-13 06:24 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/39111310fa6df8a9c687dbc582b2d2f769cb50eb"><code>3911131</code></a> on branch <code>master</code>, for **py2http 0.1.68** (from <code>setup.cfg</code>).
+This documentation was built on **2026-10-13 06:41 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/76f661f67c33dd8afaa074b65ae98bf2a592c603"><code>76f661f</code></a> on branch <code>master</code>, for **py2http 0.1.69** (from <code>setup.cfg</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -1969,9 +2129,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                       |
 |---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2http/commit/39111310fa6df8a9c687dbc582b2d2f769cb50eb"><code>39111310fa6df8a9c687dbc582b2d2f769cb50eb</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2http/commit/76f661f67c33dd8afaa074b65ae98bf2a592c603"><code>76f661f67c33dd8afaa074b65ae98bf2a592c603</code></a> |
 | Branch              | <code>master</code>                                                                                                                                   |
-| Tags at this commit | <code>0.1.68</code>                                                                                                                                   |
+| Tags at this commit | <code>0.1.69</code>                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                 |
 | Remote              | <code>https://github.com/i2mint/py2http</code>                                                                                                        |
 
@@ -1980,9 +2140,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2http</code>                                                                |
-| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38356345284">38356345284</a>       |
+| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38357975435">38357975435</a>       |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>3866d3ada75b633aac5d1d158ef6c91a87352a68</code> (in the history of the built commit) |
+| Event commit | <code>2b747078e5c71278a5724da99b9986ad75d25407</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -2007,13 +2167,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2http/0.1.68/">0.1.68</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/py2http/0.1.69/">0.1.69</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2http && cd py2http
-git checkout 39111310fa6df8a9c687dbc582b2d2f769cb50eb
+git checkout 76f661f67c33dd8afaa074b65ae98bf2a592c603
 pip install "epythet==0.2.14"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
