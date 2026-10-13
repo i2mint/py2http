@@ -169,8 +169,10 @@ def whoami():
 
 @pytest.mark.parametrize(
     "plugin, challenge",
-    [(JWTPlugin("s3cret-for-tests-only-0123456789abcdef"), "Bearer"),
-     (ApiKeyAuthPlugin("api-key-for-tests-only"), "ApiKey")],
+    [
+        (JWTPlugin("s3cret-for-tests-only-0123456789abcdef"), "Bearer"),
+        (ApiKeyAuthPlugin("api-key-for-tests-only"), "ApiKey"),
+    ],
     ids=["jwt", "api-key"],
 )
 def test_auth_plugins_name_their_challenge(plugin, challenge):
