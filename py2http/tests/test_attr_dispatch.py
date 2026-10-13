@@ -57,6 +57,7 @@ def test_star_on_class_endpoint():
 
 def test_explicit_list_unaffected():
     """An explicit allow-list may name dunders on purpose (see examples/object_dispatch)."""
+
     class Store(dict):
         def __getitem__(self, key):
             return super().__getitem__(key)
