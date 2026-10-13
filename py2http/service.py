@@ -334,10 +334,13 @@ def mk_flask_app(funcs, **configs):
         app.wsgi_app = wrap(app.wsgi_app)
     enable_cors = get_config("enable_cors")
     publish_openapi = get_config("publish_openapi")
+    ping_view = lambda: {"ping": "pong"}  # noqa: E731
+    openapi_view = lambda: openapi_spec  # noqa: E731
     if plugins:
-        public = ["ping"] + (["openapi"] if get_config("openapi_insecure") else [])
+        # the view functions, not their endpoint names: a user's `openapi` stays guarded
+        public = [ping_view] + ([openapi_view] if get_config("openapi_insecure") else [])
         app.before_request(
-            mk_auth_hook(plugins, public_endpoints=public, cors=bool(enable_cors))
+            mk_auth_hook(plugins, public_views=public, cors=bool(enable_cors))
         )
     if enable_cors:
         app.after_request(mk_cors_hook(get_config("cors_allowed_origins")))
@@ -348,9 +351,9 @@ def mk_flask_app(funcs, **configs):
             route,
             methods=[route.http_method.upper()],
         )
-    app.add_url_rule("/ping", "ping", lambda: {"ping": "pong"})
+    app.add_url_rule("/ping", "ping", ping_view)
     if publish_openapi:
-        app.add_url_rule("/openapi", "openapi", lambda: openapi_spec)
+        app.add_url_rule("/openapi", "openapi", openapi_view)
     app.openapi_spec = openapi_spec
     if get_config("publish_swagger"):
         api_doc(

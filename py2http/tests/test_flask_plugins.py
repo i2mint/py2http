@@ -115,6 +115,9 @@ def test_a_bottle_only_plugin_is_refused_under_flask():
         def __call__(self, handler):
             return handler
 
+        def authenticate(self, header, *, method, endpoint):  # not an AuthPlugin
+            return False
+
     with pytest.raises(NotImplementedError, match="Bottle-only"):
         _app("flask", plugins=[Mine()])
 
@@ -169,3 +172,18 @@ def test_swagger_is_guarded_by_the_plugins(framework):
         swagger_url="/docs",
     )
     assert _status(app, "/docs/", method="GET") == "401"
+
+
+@frameworks
+def test_a_user_function_named_openapi_stays_guarded(framework):
+    def openapi():
+        return "mine"
+
+    app = mk_app(
+        [openapi],
+        framework=framework,
+        plugins=[ApiKeyAuthPlugin(API_KEY)],
+        openapi_insecure=True,
+    )
+    assert _status(app, "/openapi") == "401"
+    assert _status(app, "/openapi", headers={"Authorization": API_KEY}) == "200"

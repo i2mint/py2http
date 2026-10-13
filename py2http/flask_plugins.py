@@ -11,7 +11,7 @@ dropped, because a silently dropped auth plugin would leave its routes open.
 import json
 from collections.abc import Iterable
 
-from py2http.auth import CredentialsRejected
+from py2http.auth import AuthPlugin, CredentialsRejected
 from py2http.constants import JSON_CONTENT_TYPE
 
 OPTIONS = "OPTIONS"
@@ -33,11 +33,10 @@ def check_flask_plugins(plugins: Iterable | None) -> list:
     """
     plugins = list(plugins or ())
     for plugin in plugins:
-        if not callable(getattr(plugin, "authenticate", None)):
+        if not isinstance(plugin, AuthPlugin):
             raise NotImplementedError(
                 f"The plugin {plugin!r} is Bottle-only: under the framework 'flask' only "
-                "plugins with an `authenticate(authorization_header, *, method, "
-                "endpoint)` method (JWTPlugin, ApiKeyAuthPlugin) are supported"
+                "`py2http.auth.AuthPlugin`s (JWTPlugin, ApiKeyAuthPlugin) are supported"
             )
     return plugins
 
@@ -52,22 +51,26 @@ def _unauthorized(message: str, challenge: str):
     return response
 
 
-def mk_auth_hook(plugins: list, *, public_endpoints: Iterable[str], cors: bool = False):
+def mk_auth_hook(plugins: list, *, public_views: Iterable, cors: bool = False):
     """A ``before_request`` function running ``plugins`` (outermost first, as under Bottle).
 
-    Everything is guarded except: the ``public_endpoints``; a request that matched no
+    Everything is guarded except: the ``public_views`` (the view *functions* themselves,
+    not endpoint names: a user function named ``openapi`` must stay guarded); a request that matched no
     route (it answers 404/405, as under Bottle, and runs no view); and, with ``cors``,
     the ``OPTIONS`` preflight, which Bottle's CORS plugin answers before any auth runs.
     A plugin's claims go on ``request.token``, where the endpoint finds them through
     ``current_request``.
     """
-    from flask import request
+    from flask import current_app, request
 
-    public = frozenset(public_endpoints)
+    public = list(public_views)
 
     def authenticate_request():
         endpoint = request.endpoint
-        if endpoint is None or endpoint in public:
+        if endpoint is None:
+            return None
+        view = current_app.view_functions.get(endpoint)
+        if any(view is public_view for public_view in public):
             return None
         if cors and request.method == OPTIONS:
             return None

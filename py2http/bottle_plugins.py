@@ -8,6 +8,7 @@ from warnings import warn
 from bottle import request, response
 
 from py2http.auth import (
+    AuthPlugin,
     DFLT_JWT_ALGORITHMS,
     CredentialsRejected,
     bearer_token,
@@ -38,7 +39,7 @@ def _unauthorized(message, challenge=BEARER_CHALLENGE):
     return json.dumps({"error": message})
 
 
-class JWTPlugin:
+class JWTPlugin(AuthPlugin):
     """A plugin for validating JWTs and extracting their payloads.
 
     After optionally validating a JWT found in the request header, will assign a dict with the JWT claims
@@ -133,7 +134,7 @@ class JWTPlugin:
         return wrapped_handler
 
 
-class ApiKeyAuthPlugin:
+class ApiKeyAuthPlugin(AuthPlugin):
     """A plugin letting through only requests whose ``Authorization`` header is
     exactly ``api_key`` (compared in constant time; an empty key is refused)."""
 
