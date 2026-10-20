@@ -1,34 +1,34 @@
 {
   "schema_version": 1,
-  "built_at": "2026-10-20T04:28:18Z",
+  "built_at": "2026-10-20T05:00:15Z",
   "package": {
     "name": "py2http",
-    "version": "0.1.76",
+    "version": "0.1.77",
     "display_name": "Py2http",
     "source": "setup.cfg"
   },
   "git": {
     "available": true,
-    "commit": "65270bfabdf485775cb1446dd2de697fb9b26356",
-    "short_commit": "65270bf",
+    "commit": "04e0a24b2cce4d9dabfe9a6796e1352db8118e19",
+    "short_commit": "04e0a24",
     "branch": "master",
     "tags": [
-      "0.1.76"
+      "0.1.77"
     ],
     "dirty": false,
     "remote_url": "https://github.com/i2mint/py2http",
-    "commit_url": "https://github.com/i2mint/py2http/commit/65270bfabdf485775cb1446dd2de697fb9b26356",
+    "commit_url": "https://github.com/i2mint/py2http/commit/04e0a24b2cce4d9dabfe9a6796e1352db8118e19",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "i2mint/py2http",
-    "sha": "b9ff98a3996cb4a2bd423455ba5ed8785ebcfc7b",
+    "sha": "c7f5b8199c952254075eff8a1576d1016ed5a9da",
     "sha_in_history": true,
     "ref": "refs/heads/master",
     "ref_name": "master",
-    "run_id": "39369536142",
-    "run_url": "https://github.com/i2mint/py2http/actions/runs/39369536142",
+    "run_id": "39372330900",
+    "run_url": "https://github.com/i2mint/py2http/actions/runs/39372330900",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -62,16 +62,14 @@
   },
   "pypi": {
     "checked": true,
-    "latest": "0.1.75",
-    "relation": "ahead",
+    "latest": "0.1.77",
+    "relation": "same",
     "error": null
   },
-  "reproduce": "git clone https://github.com/i2mint/py2http && cd py2http\ngit checkout 65270bfabdf485775cb1446dd2de697fb9b26356\npip install \"epythet==0.2.18\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/i2mint/py2http && cd py2http\ngit checkout 04e0a24b2cce4d9dabfe9a6796e1352db8118e19\npip install \"epythet==0.2.18\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
-    "aligned": false,
-    "notes": [
-      "The documented version (0.1.76) is ahead of the latest release on PyPI (0.1.75): these docs describe unreleased code."
-    ]
+    "aligned": true,
+    "notes": []
   }
 }
