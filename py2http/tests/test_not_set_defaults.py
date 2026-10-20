@@ -110,3 +110,15 @@ def test_methodize_default_from_placeholder_is_no_default():
 
     specifier = ParamsSpecifier.from_func(method, _dflt_default="dflt")
     assert specifier._name_and_dflts == {"y": "dflt", "z": "dflt", "d": 1.5}
+
+
+def test_params_specifier_annotations_do_not_leak_between_instances():
+    """An instance's annotations used to be written into the class's own dict."""
+
+    def g(y: int, z: float = 0.0): ...
+
+    def f(a, b: int): ...
+
+    ParamsSpecifier.__annotations__  # as on 3.10, where the class dict then exists
+    ParamsSpecifier.from_func(g)
+    assert [p["name"] for p in ParamsSpecifier.from_func(f)()] == ["a", "b"]

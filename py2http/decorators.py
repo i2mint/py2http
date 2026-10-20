@@ -357,10 +357,9 @@ class ParamsSpecifier:
         self._dflt_default = _dflt_default
         self._kind = _kind
 
-        if hasattr(self, "__annotations__"):
-            self.__annotations__.update(_annotations)
-        else:
-            self.__annotations__ = _annotations
+        # A new dict on the instance: updating ``self.__annotations__`` in place would
+        # mutate the class's dict, leaking these annotations into every later instance.
+        self.__annotations__ = {**getattr(self, "__annotations__", {}), **_annotations}
 
         reserved = {
             "_annotations",
