@@ -255,6 +255,9 @@ default_configs = {
     "logger": None,
     "plugins": [],
     "enable_cors": False,
+    # Bottle only: max bytes of an in-memory request body (None keeps bottle's 100 KiB).
+    # A bigger request is answered "413 Request entity too large".
+    "max_request_size": None,
     "cors_allowed_origins": "*",
     "publish_openapi": False,
     "openapi_insecure": False,
