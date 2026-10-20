@@ -1,34 +1,34 @@
 {
   "schema_version": 1,
-  "built_at": "2026-10-20T03:02:06Z",
+  "built_at": "2026-10-20T04:28:18Z",
   "package": {
     "name": "py2http",
-    "version": "0.1.75",
+    "version": "0.1.76",
     "display_name": "Py2http",
     "source": "setup.cfg"
   },
   "git": {
     "available": true,
-    "commit": "68dba2bb2161419b45308154ab105f98db646ffc",
-    "short_commit": "68dba2b",
+    "commit": "65270bfabdf485775cb1446dd2de697fb9b26356",
+    "short_commit": "65270bf",
     "branch": "master",
     "tags": [
-      "0.1.75"
+      "0.1.76"
     ],
     "dirty": false,
     "remote_url": "https://github.com/i2mint/py2http",
-    "commit_url": "https://github.com/i2mint/py2http/commit/68dba2bb2161419b45308154ab105f98db646ffc",
+    "commit_url": "https://github.com/i2mint/py2http/commit/65270bfabdf485775cb1446dd2de697fb9b26356",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "i2mint/py2http",
-    "sha": "f9be940f7103143da12b3cf3721fcf3e5e2de647",
+    "sha": "b9ff98a3996cb4a2bd423455ba5ed8785ebcfc7b",
     "sha_in_history": true,
     "ref": "refs/heads/master",
     "ref_name": "master",
-    "run_id": "39361911761",
-    "run_url": "https://github.com/i2mint/py2http/actions/runs/39361911761",
+    "run_id": "39369536142",
+    "run_url": "https://github.com/i2mint/py2http/actions/runs/39369536142",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -63,13 +63,15 @@
   "pypi": {
     "checked": true,
     "latest": "0.1.75",
-    "relation": "same",
+    "relation": "ahead",
     "error": null
   },
-  "reproduce": "git clone https://github.com/i2mint/py2http && cd py2http\ngit checkout 68dba2bb2161419b45308154ab105f98db646ffc\npip install \"epythet==0.2.18\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/i2mint/py2http && cd py2http\ngit checkout 65270bfabdf485775cb1446dd2de697fb9b26356\npip install \"epythet==0.2.18\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
-    "aligned": true,
-    "notes": []
+    "aligned": false,
+    "notes": [
+      "The documented version (0.1.76) is ahead of the latest release on PyPI (0.1.75): these docs describe unreleased code."
+    ]
   }
 }

@@ -59,8 +59,10 @@ Make a Flask view’s response of what an output mapper returns.
 
 The `send_*_resp` decorators set Bottle’s `response.content_type` and return
 the body (`str` or `bytes`); Flask ignores that and would answer `text/html`.
-A mapper that declares a `content_type` and returns a `str`/`bytes` body gets
-that content type; anything else (a `Response`, a dict, a tuple) is kept as is.
+A mapper that declares a `content_type` and returns a `str`/`bytes` body, or a
+`(body, status[, headers])` tuple of one, gets that content type (unless the tuple’s
+headers set their own); an `async` mapper is awaited first. Anything else (a
+`Response`, a dict) is kept as is.
 
 ```pycon
 >>> from py2http.decorators import send_raw_resp  # (needs flask)

@@ -1461,96 +1461,108 @@
 </span><span id="line-1225">
 </span><span id="line-1226">
 </span><span id="line-1227"><span class="k">def</span><span class="w"> </span><span class="nf">_request_files</span><span class="p">(</span><span class="n">request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span id="line-1228"><span class="w">    </span><span class="sd">"""``{field name: bytes}`` of the uploaded files of a Bottle or Flask request."""</span>
-</span><span id="line-1229">    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">"get_data"</span><span class="p">):</span>  <span class="c1"># Flask: werkzeug FileStorage</span>
-</span><span id="line-1230">        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">read</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">files</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-</span><span id="line-1231">    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">files</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-</span><span id="line-1232">
-</span><span id="line-1233">
-</span><span id="line-1234"><span class="k">def</span><span class="w"> </span><span class="nf">_loads_mapping</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">what</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span id="line-1235"><span class="w">    </span><span class="sd">"""Decode a JSON object from ``data``; an ``InputError`` (a 400) when it is empty,</span>
-</span><span id="line-1236"><span class="sd">    not JSON or not an object.</span>
-</span><span id="line-1237">
-</span><span id="line-1238"><span class="sd">    &gt;&gt;&gt; _loads_mapping(b'{"x": 1}', "body")</span>
-</span><span id="line-1239"><span class="sd">    {'x': 1}</span>
-</span><span id="line-1240"><span class="sd">    &gt;&gt;&gt; _loads_mapping(b'', "body")</span>
-</span><span id="line-1241"><span class="sd">    Traceback (most recent call last):</span>
-</span><span id="line-1242"><span class="sd">      ...</span>
-</span><span id="line-1243"><span class="sd">    i2.errors.InputError: The request body is empty; expected a JSON object.</span>
-</span><span id="line-1244"><span class="sd">    """</span>
-</span><span id="line-1245">    <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-</span><span id="line-1246">        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The request </span><span class="si">{</span><span class="n">what</span><span class="si">}</span><span class="s2"> is empty; expected a JSON object."</span><span class="p">)</span>
-</span><span id="line-1247">    <span class="k">try</span><span class="p">:</span>
-</span><span id="line-1248">        <span class="n">inputs</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  <span class="c1"># bytes: json detects UTF-8/BOM, UTF-16, UTF-32</span>
-</span><span id="line-1249">    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># includes UnicodeDecodeError and JSONDecodeError</span>
-</span><span id="line-1250">        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The request </span><span class="si">{</span><span class="n">what</span><span class="si">}</span><span class="s2"> is not valid JSON: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
-</span><span id="line-1251">    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
-</span><span id="line-1252">        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span>
-</span><span id="line-1253">            <span class="sa">f</span><span class="s2">"The request </span><span class="si">{</span><span class="n">what</span><span class="si">}</span><span class="s2"> must be a JSON object, not a </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">."</span>
-</span><span id="line-1254">        <span class="p">)</span>
-</span><span id="line-1255">    <span class="k">return</span> <span class="n">inputs</span>
-</span><span id="line-1256">
-</span><span id="line-1257">
-</span><span id="line-1258"><span class="k">def</span><span class="w"> </span><span class="nf">_get_inputs_from_request</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">content_type</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">binary_loads</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-</span><span id="line-1259">    <span class="n">defaults</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">"defaults"</span><span class="p">,</span> <span class="p">{})</span>
-</span><span id="line-1260">    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">"POST"</span><span class="p">:</span>
-</span><span id="line-1261">        <span class="k">if</span> <span class="n">content_type</span> <span class="ow">in</span> <span class="p">(</span><span class="n">JSON_CONTENT_TYPE</span><span class="p">,</span> <span class="n">RAW_CONTENT_TYPE</span><span class="p">):</span>
-</span><span id="line-1262">            <span class="n">inputs</span> <span class="o">=</span> <span class="n">_loads_mapping</span><span class="p">(</span><span class="n">_request_body</span><span class="p">(</span><span class="n">request</span><span class="p">),</span> <span class="s2">"body"</span><span class="p">)</span>
-</span><span id="line-1263">        <span class="k">elif</span> <span class="n">content_type</span> <span class="o">==</span> <span class="n">BINARY_CONTENT_TYPE</span><span class="p">:</span>
-</span><span id="line-1264">            <span class="k">if</span> <span class="n">binary_loads</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="line-1265">                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-</span><span id="line-1266">                    <span class="s2">"No decoder given for a binary request body; see handle_binary_req."</span>
-</span><span id="line-1267">                <span class="p">)</span>
-</span><span id="line-1268">            <span class="n">inputs</span> <span class="o">=</span> <span class="n">binary_loads</span><span class="p">(</span><span class="n">_request_body</span><span class="p">(</span><span class="n">request</span><span class="p">))</span>
-</span><span id="line-1269">            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
-</span><span id="line-1270">                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-</span><span id="line-1271">                    <span class="sa">f</span><span class="s2">"The binary request body decoded to a </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, "</span>
-</span><span id="line-1272">                    <span class="s2">"not a mapping of inputs."</span>
-</span><span id="line-1273">                <span class="p">)</span>
-</span><span id="line-1274">        <span class="k">elif</span> <span class="n">content_type</span> <span class="o">==</span> <span class="n">FORM_CONTENT_TYPE</span><span class="p">:</span>
-</span><span id="line-1275">            <span class="n">binaries</span> <span class="o">=</span> <span class="n">_request_files</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
-</span><span id="line-1276">            <span class="k">if</span> <span class="s2">"__fields"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">binaries</span><span class="p">:</span>
-</span><span id="line-1277">                <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="s2">"The form request has no '__fields' part."</span><span class="p">)</span>
-</span><span id="line-1278">            <span class="n">fields</span> <span class="o">=</span> <span class="n">_loads_mapping</span><span class="p">(</span><span class="n">binaries</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"__fields"</span><span class="p">),</span> <span class="s2">"'__fields' part"</span><span class="p">)</span>
-</span><span id="line-1279">            <span class="n">inputs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="o">**</span><span class="n">binaries</span><span class="p">)</span>
-</span><span id="line-1280">        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">defaults</span><span class="p">,</span> <span class="o">**</span><span class="n">inputs</span><span class="p">)</span>
-</span><span id="line-1281">    <span class="k">else</span><span class="p">:</span>
-</span><span id="line-1282">        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"Only POST is supported for now"</span><span class="p">)</span>
-</span><span id="line-1283">
-</span><span id="line-1284">
-</span><span id="line-1285"><span class="k">def</span><span class="w"> </span><span class="nf">mk_handlers</span><span class="p">(</span><span class="n">methods</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">decorator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cls_cache_key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-</span><span id="line-1286">    <span class="k">def</span><span class="w"> </span><span class="nf">get_class_that_defined_method</span><span class="p">(</span><span class="n">meth</span><span class="p">):</span>
-</span><span id="line-1287">        <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">ismethod</span><span class="p">(</span><span class="n">meth</span><span class="p">):</span>
-</span><span id="line-1288">            <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmro</span><span class="p">(</span><span class="n">meth</span><span class="o">.</span><span class="vm">__self__</span><span class="o">.</span><span class="vm">__class__</span><span class="p">):</span>
-</span><span id="line-1289">                <span class="k">if</span> <span class="n">meth</span><span class="o">.</span><span class="vm">__name__</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
-</span><span id="line-1290">                    <span class="k">return</span> <span class="bp">cls</span>
-</span><span id="line-1291">            <span class="n">meth</span> <span class="o">=</span> <span class="n">meth</span><span class="o">.</span><span class="vm">__func__</span>  <span class="c1"># fallback to __qualname__ parsing</span>
-</span><span id="line-1292">        <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isfunction</span><span class="p">(</span><span class="n">meth</span><span class="p">):</span>
-</span><span id="line-1293">            <span class="bp">cls</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
-</span><span id="line-1294">                <span class="n">inspect</span><span class="o">.</span><span class="n">getmodule</span><span class="p">(</span><span class="n">meth</span><span class="p">),</span>
-</span><span id="line-1295">                <span class="n">meth</span><span class="o">.</span><span class="vm">__qualname__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">".&lt;locals&gt;"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">"."</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
-</span><span id="line-1296">                <span class="kc">None</span><span class="p">,</span>
-</span><span id="line-1297">            <span class="p">)</span>
-</span><span id="line-1298">            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
-</span><span id="line-1299">                <span class="n">sub_classes</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__subclasses__</span><span class="p">()</span>
-</span><span id="line-1300">                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sub_classes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-</span><span id="line-1301">                    <span class="k">return</span> <span class="n">sub_classes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-</span><span id="line-1302">                <span class="k">return</span> <span class="bp">cls</span>
-</span><span id="line-1303">        <span class="k">return</span> <span class="kc">None</span>
-</span><span id="line-1304">
-</span><span id="line-1305">    <span class="k">if</span> <span class="ow">not</span> <span class="n">decorator</span><span class="p">:</span>
-</span><span id="line-1306">        <span class="n">decorator</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span>
-</span><span id="line-1307">    <span class="n">handlers</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span id="line-1308">    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">methods</span><span class="p">:</span>
-</span><span id="line-1309">        <span class="n">has_mappers</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
-</span><span id="line-1310">        <span class="n">method</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">"endpoint"</span><span class="p">]</span> <span class="k">if</span> <span class="n">has_mappers</span> <span class="k">else</span> <span class="n">item</span>
-</span><span id="line-1311">        <span class="bp">cls</span> <span class="o">=</span> <span class="n">get_class_that_defined_method</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
-</span><span id="line-1312">        <span class="n">endpoint</span> <span class="o">=</span> <span class="n">decorator</span><span class="p">(</span>
-</span><span id="line-1313">            <span class="n">mk_flat</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">func_name</span><span class="o">=</span><span class="n">method</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">cls_cache_key</span><span class="o">=</span><span class="n">cls_cache_key</span><span class="p">)</span>
-</span><span id="line-1314">        <span class="p">)</span>
-</span><span id="line-1315">        <span class="n">handler</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="n">endpoint</span><span class="p">)</span> <span class="k">if</span> <span class="n">has_mappers</span> <span class="k">else</span> <span class="n">endpoint</span>
-</span><span id="line-1316">        <span class="n">handlers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
-</span><span id="line-1317">    <span class="k">return</span> <span class="n">handlers</span>
+</span><span id="line-1228"><span class="w">    </span><span class="sd">"""``{field name: bytes}`` of the uploaded files of a Bottle or Flask request. A field</span>
+</span><span id="line-1229"><span class="sd">    with several files gives the ``list`` of their bytes, in upload order."""</span>
+</span><span id="line-1230">    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">"get_data"</span><span class="p">):</span>  <span class="c1"># Flask: werkzeug FileStorage</span>
+</span><span id="line-1231">        <span class="n">groups</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="line-1232">            <span class="n">k</span><span class="p">:</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">files</span><span class="o">.</span><span class="n">getlist</span><span class="p">(</span><span class="n">k</span><span class="p">)]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">files</span>
+</span><span id="line-1233">        <span class="p">}</span>
+</span><span id="line-1234">    <span class="k">else</span><span class="p">:</span>
+</span><span id="line-1235">        <span class="n">groups</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="line-1236">            <span class="n">k</span><span class="p">:</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">files</span><span class="o">.</span><span class="n">getall</span><span class="p">(</span><span class="n">k</span><span class="p">)]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">files</span>
+</span><span id="line-1237">        <span class="p">}</span>
+</span><span id="line-1238">    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">groups</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+</span><span id="line-1239">
+</span><span id="line-1240">
+</span><span id="line-1241"><span class="k">def</span><span class="w"> </span><span class="nf">_loads_mapping</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">what</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span id="line-1242"><span class="w">    </span><span class="sd">"""Decode a JSON object from ``data``; an ``InputError`` (a 400) when it is empty,</span>
+</span><span id="line-1243"><span class="sd">    not JSON or not an object.</span>
+</span><span id="line-1244">
+</span><span id="line-1245"><span class="sd">    &gt;&gt;&gt; _loads_mapping(b'{"x": 1}', "body")</span>
+</span><span id="line-1246"><span class="sd">    {'x': 1}</span>
+</span><span id="line-1247"><span class="sd">    &gt;&gt;&gt; _loads_mapping(b'', "body")</span>
+</span><span id="line-1248"><span class="sd">    Traceback (most recent call last):</span>
+</span><span id="line-1249"><span class="sd">      ...</span>
+</span><span id="line-1250"><span class="sd">    i2.errors.InputError: The request body is empty; expected a JSON object.</span>
+</span><span id="line-1251"><span class="sd">    """</span>
+</span><span id="line-1252">    <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+</span><span id="line-1253">        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The request </span><span class="si">{</span><span class="n">what</span><span class="si">}</span><span class="s2"> is empty; expected a JSON object."</span><span class="p">)</span>
+</span><span id="line-1254">    <span class="k">try</span><span class="p">:</span>
+</span><span id="line-1255">        <span class="n">inputs</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  <span class="c1"># bytes: json detects UTF-8/BOM, UTF-16, UTF-32</span>
+</span><span id="line-1256">    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># includes UnicodeDecodeError and JSONDecodeError</span>
+</span><span id="line-1257">        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The request </span><span class="si">{</span><span class="n">what</span><span class="si">}</span><span class="s2"> is not valid JSON: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+</span><span id="line-1258">    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+</span><span id="line-1259">        <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span>
+</span><span id="line-1260">            <span class="sa">f</span><span class="s2">"The request </span><span class="si">{</span><span class="n">what</span><span class="si">}</span><span class="s2"> must be a JSON object, not a </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">."</span>
+</span><span id="line-1261">        <span class="p">)</span>
+</span><span id="line-1262">    <span class="k">return</span> <span class="n">inputs</span>
+</span><span id="line-1263">
+</span><span id="line-1264">
+</span><span id="line-1265"><span class="k">def</span><span class="w"> </span><span class="nf">_get_inputs_from_request</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">content_type</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">binary_loads</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+</span><span id="line-1266">    <span class="n">defaults</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">"defaults"</span><span class="p">,</span> <span class="p">{})</span>
+</span><span id="line-1267">    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">"POST"</span><span class="p">:</span>
+</span><span id="line-1268">        <span class="k">if</span> <span class="n">content_type</span> <span class="ow">in</span> <span class="p">(</span><span class="n">JSON_CONTENT_TYPE</span><span class="p">,</span> <span class="n">RAW_CONTENT_TYPE</span><span class="p">):</span>
+</span><span id="line-1269">            <span class="n">inputs</span> <span class="o">=</span> <span class="n">_loads_mapping</span><span class="p">(</span><span class="n">_request_body</span><span class="p">(</span><span class="n">request</span><span class="p">),</span> <span class="s2">"body"</span><span class="p">)</span>
+</span><span id="line-1270">        <span class="k">elif</span> <span class="n">content_type</span> <span class="o">==</span> <span class="n">BINARY_CONTENT_TYPE</span><span class="p">:</span>
+</span><span id="line-1271">            <span class="k">if</span> <span class="n">binary_loads</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="line-1272">                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+</span><span id="line-1273">                    <span class="s2">"No decoder given for a binary request body; see handle_binary_req."</span>
+</span><span id="line-1274">                <span class="p">)</span>
+</span><span id="line-1275">            <span class="n">inputs</span> <span class="o">=</span> <span class="n">binary_loads</span><span class="p">(</span><span class="n">_request_body</span><span class="p">(</span><span class="n">request</span><span class="p">))</span>
+</span><span id="line-1276">            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+</span><span id="line-1277">                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+</span><span id="line-1278">                    <span class="sa">f</span><span class="s2">"The binary request body decoded to a </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, "</span>
+</span><span id="line-1279">                    <span class="s2">"not a mapping of inputs."</span>
+</span><span id="line-1280">                <span class="p">)</span>
+</span><span id="line-1281">        <span class="k">elif</span> <span class="n">content_type</span> <span class="o">==</span> <span class="n">FORM_CONTENT_TYPE</span><span class="p">:</span>
+</span><span id="line-1282">            <span class="n">binaries</span> <span class="o">=</span> <span class="n">_request_files</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+</span><span id="line-1283">            <span class="k">if</span> <span class="s2">"__fields"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">binaries</span><span class="p">:</span>
+</span><span id="line-1284">                <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span><span class="s2">"The form request has no '__fields' part."</span><span class="p">)</span>
+</span><span id="line-1285">            <span class="n">fields_part</span> <span class="o">=</span> <span class="n">binaries</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"__fields"</span><span class="p">)</span>
+</span><span id="line-1286">            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fields_part</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+</span><span id="line-1287">                <span class="k">raise</span> <span class="n">InputError</span><span class="p">(</span>
+</span><span id="line-1288">                    <span class="s2">"The form request has several '__fields' parts; expected one."</span>
+</span><span id="line-1289">                <span class="p">)</span>
+</span><span id="line-1290">            <span class="n">fields</span> <span class="o">=</span> <span class="n">_loads_mapping</span><span class="p">(</span><span class="n">fields_part</span><span class="p">,</span> <span class="s2">"'__fields' part"</span><span class="p">)</span>
+</span><span id="line-1291">            <span class="n">inputs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="o">**</span><span class="n">binaries</span><span class="p">)</span>
+</span><span id="line-1292">        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">defaults</span><span class="p">,</span> <span class="o">**</span><span class="n">inputs</span><span class="p">)</span>
+</span><span id="line-1293">    <span class="k">else</span><span class="p">:</span>
+</span><span id="line-1294">        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"Only POST is supported for now"</span><span class="p">)</span>
+</span><span id="line-1295">
+</span><span id="line-1296">
+</span><span id="line-1297"><span class="k">def</span><span class="w"> </span><span class="nf">mk_handlers</span><span class="p">(</span><span class="n">methods</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">decorator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cls_cache_key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+</span><span id="line-1298">    <span class="k">def</span><span class="w"> </span><span class="nf">get_class_that_defined_method</span><span class="p">(</span><span class="n">meth</span><span class="p">):</span>
+</span><span id="line-1299">        <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">ismethod</span><span class="p">(</span><span class="n">meth</span><span class="p">):</span>
+</span><span id="line-1300">            <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmro</span><span class="p">(</span><span class="n">meth</span><span class="o">.</span><span class="vm">__self__</span><span class="o">.</span><span class="vm">__class__</span><span class="p">):</span>
+</span><span id="line-1301">                <span class="k">if</span> <span class="n">meth</span><span class="o">.</span><span class="vm">__name__</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
+</span><span id="line-1302">                    <span class="k">return</span> <span class="bp">cls</span>
+</span><span id="line-1303">            <span class="n">meth</span> <span class="o">=</span> <span class="n">meth</span><span class="o">.</span><span class="vm">__func__</span>  <span class="c1"># fallback to __qualname__ parsing</span>
+</span><span id="line-1304">        <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isfunction</span><span class="p">(</span><span class="n">meth</span><span class="p">):</span>
+</span><span id="line-1305">            <span class="bp">cls</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
+</span><span id="line-1306">                <span class="n">inspect</span><span class="o">.</span><span class="n">getmodule</span><span class="p">(</span><span class="n">meth</span><span class="p">),</span>
+</span><span id="line-1307">                <span class="n">meth</span><span class="o">.</span><span class="vm">__qualname__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">".&lt;locals&gt;"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">"."</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+</span><span id="line-1308">                <span class="kc">None</span><span class="p">,</span>
+</span><span id="line-1309">            <span class="p">)</span>
+</span><span id="line-1310">            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+</span><span id="line-1311">                <span class="n">sub_classes</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__subclasses__</span><span class="p">()</span>
+</span><span id="line-1312">                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sub_classes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+</span><span id="line-1313">                    <span class="k">return</span> <span class="n">sub_classes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span id="line-1314">                <span class="k">return</span> <span class="bp">cls</span>
+</span><span id="line-1315">        <span class="k">return</span> <span class="kc">None</span>
+</span><span id="line-1316">
+</span><span id="line-1317">    <span class="k">if</span> <span class="ow">not</span> <span class="n">decorator</span><span class="p">:</span>
+</span><span id="line-1318">        <span class="n">decorator</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span>
+</span><span id="line-1319">    <span class="n">handlers</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="line-1320">    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">methods</span><span class="p">:</span>
+</span><span id="line-1321">        <span class="n">has_mappers</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+</span><span id="line-1322">        <span class="n">method</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">"endpoint"</span><span class="p">]</span> <span class="k">if</span> <span class="n">has_mappers</span> <span class="k">else</span> <span class="n">item</span>
+</span><span id="line-1323">        <span class="bp">cls</span> <span class="o">=</span> <span class="n">get_class_that_defined_method</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+</span><span id="line-1324">        <span class="n">endpoint</span> <span class="o">=</span> <span class="n">decorator</span><span class="p">(</span>
+</span><span id="line-1325">            <span class="n">mk_flat</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">func_name</span><span class="o">=</span><span class="n">method</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">cls_cache_key</span><span class="o">=</span><span class="n">cls_cache_key</span><span class="p">)</span>
+</span><span id="line-1326">        <span class="p">)</span>
+</span><span id="line-1327">        <span class="n">handler</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="n">endpoint</span><span class="p">)</span> <span class="k">if</span> <span class="n">has_mappers</span> <span class="k">else</span> <span class="n">endpoint</span>
+</span><span id="line-1328">        <span class="n">handlers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
+</span><span id="line-1329">    <span class="k">return</span> <span class="n">handlers</span>
 </span></code></pre></div>
     </div></div>
           </main>
@@ -1566,7 +1578,7 @@ Otosense&nbsp;</p>
 </footer>
     </div>
     
-    <script src="../../_static/documentation_options.js?v=6322a757"></script>
+    <script src="../../_static/documentation_options.js?v=54da2d3d"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

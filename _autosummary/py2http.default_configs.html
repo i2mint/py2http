@@ -218,8 +218,10 @@ the bottle handler (<code class="docutils literal notranslate"><span class="pre"
 <dd><p>Make a Flask view’s response of what an output mapper returns.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">send_*_resp</span></code> decorators set Bottle’s <code class="docutils literal notranslate"><span class="pre">response.content_type</span></code> and return
 the body (<code class="docutils literal notranslate"><span class="pre">str</span></code> or <code class="docutils literal notranslate"><span class="pre">bytes</span></code>); Flask ignores that and would answer <code class="docutils literal notranslate"><span class="pre">text/html</span></code>.
-A mapper that declares a <code class="docutils literal notranslate"><span class="pre">content_type</span></code> and returns a <code class="docutils literal notranslate"><span class="pre">str</span></code>/<code class="docutils literal notranslate"><span class="pre">bytes</span></code> body gets
-that content type; anything else (a <code class="docutils literal notranslate"><span class="pre">Response</span></code>, a dict, a tuple) is kept as is.</p>
+A mapper that declares a <code class="docutils literal notranslate"><span class="pre">content_type</span></code> and returns a <code class="docutils literal notranslate"><span class="pre">str</span></code>/<code class="docutils literal notranslate"><span class="pre">bytes</span></code> body, or a
+<code class="docutils literal notranslate"><span class="pre">(body,</span> <span class="pre">status[,</span> <span class="pre">headers])</span></code> tuple of one, gets that content type (unless the tuple’s
+headers set their own); an <code class="docutils literal notranslate"><span class="pre">async</span></code> mapper is awaited first. Anything else (a
+<code class="docutils literal notranslate"><span class="pre">Response</span></code>, a dict) is kept as is.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">py2http.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">send_raw_resp</span>  <span class="c1"># (needs flask)</span>
 </span><span id="line-2"><span class="gp">&gt;&gt;&gt; </span><span class="n">flask_response_mapper</span><span class="p">(</span><span class="n">send_raw_resp</span><span class="p">(</span><span class="k">lambda</span> <span class="n">o</span><span class="p">:</span> <span class="n">o</span><span class="p">))(</span><span class="sa">b</span><span class="s2">"x"</span><span class="p">)</span><span class="o">.</span><span class="n">content_type</span>
 </span><span id="line-3"><span class="go">'text/plain'</span>
@@ -280,7 +282,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=6322a757"></script>
+<script src="../_static/documentation_options.js?v=54da2d3d"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
