@@ -371,6 +371,11 @@ def mk_bottle_app(funcs, **configs):
     configs = dict(configs, framework=BOTTLE)
     routes, openapi_spec = mk_routes_and_openapi_specs(funcs, **configs)
     app = Bottle(catchall=False)
+    max_request_size = mk_config("max_request_size", None, configs, default_configs)
+    if max_request_size is not None:
+        from bottle import BaseRequest
+
+        BaseRequest.MEMFILE_MAX = int(max_request_size)  # bottle: process-wide
     enable_cors = mk_config("enable_cors", None, configs, default_configs)
     plugins = mk_config("plugins", None, configs, default_configs)
     if enable_cors:
