@@ -34,8 +34,12 @@ def openapi_type_mapping(obj_type):
         return oatype_for_pytype.get(obj_type, None)
 
 
+from py2http.default_configs import default_configs
+
 BINARY = "binary"
-DFLT_SERVER_URL = "http://localhost:3030"
+# Where `run_app` serves unless told otherwise: the spec's server URL must match it, or
+# Swagger's "Try it out" calls a port nothing listens on (i2mint/py2http#13).
+DFLT_SERVER_URL = f"http://{default_configs['host']}:{default_configs['port']}"
 
 
 class OpenApiExtractor:
