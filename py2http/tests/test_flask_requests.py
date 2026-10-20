@@ -157,7 +157,11 @@ def _mapper_with_content_type(fn, content_type=RAW_CONTENT_TYPE, *, is_async=Fal
 @pytest.mark.parametrize("is_async", [False, True])
 @pytest.mark.parametrize(
     "returned, status, expected",
-    [("hi", 200, b"hi"), (("hi", 201), 201, b"hi"), ((b"hi", 202, {"X-A": "1"}), 202, b"hi")],
+    [
+        ("hi", 200, b"hi"),
+        (("hi", 201), 201, b"hi"),
+        ((b"hi", 202, {"X-A": "1"}), 202, b"hi"),
+    ],
 )
 def test_output_mapper_content_type_survives_async_and_status_tuples(
     is_async, returned, status, expected
@@ -169,7 +173,9 @@ def test_output_mapper_content_type_survives_async_and_status_tuples(
 
 
 def test_a_tuple_with_its_own_content_type_header_keeps_it():
-    mapper = _mapper_with_content_type(lambda out: ("hi", 200, {"Content-Type": "text/csv"}))
+    mapper = _mapper_with_content_type(
+        lambda out: ("hi", 200, {"Content-Type": "text/csv"})
+    )
     r = _client(add, output_mapper=mapper).post("/add", json={"x": 1})
     assert r.content_type.split(";")[0] == "text/csv"
 
@@ -183,8 +189,14 @@ def _post_files(*files):
 
     mapper = handle_form_req(lambda data: dict(data=data))
     data = {"__fields": (io.BytesIO(b"{}"), "__fields")}
-    data["data"] = [(io.BytesIO(b), "data") for b in files] if len(files) > 1 else (io.BytesIO(files[0]), "data")
-    return _client(sizes, input_mapper=mapper).post("/sizes", data=data, content_type="multipart/form-data")
+    data["data"] = (
+        [(io.BytesIO(b), "data") for b in files]
+        if len(files) > 1
+        else (io.BytesIO(files[0]), "data")
+    )
+    return _client(sizes, input_mapper=mapper).post(
+        "/sizes", data=data, content_type="multipart/form-data"
+    )
 
 
 def test_several_files_under_one_form_field_are_all_kept():

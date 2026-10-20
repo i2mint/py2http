@@ -1228,9 +1228,13 @@ def _request_files(request) -> dict:
     """``{field name: bytes}`` of the uploaded files of a Bottle or Flask request. A field
     with several files gives the ``list`` of their bytes, in upload order."""
     if hasattr(request, "get_data"):  # Flask: werkzeug FileStorage
-        groups = {k: [f.read() for f in request.files.getlist(k)] for k in request.files}
+        groups = {
+            k: [f.read() for f in request.files.getlist(k)] for k in request.files
+        }
     else:
-        groups = {k: [f.file.read() for f in request.files.getall(k)] for k in request.files}
+        groups = {
+            k: [f.file.read() for f in request.files.getall(k)] for k in request.files
+        }
     return {k: v[0] if len(v) == 1 else v for k, v in groups.items()}
 
 
@@ -1280,7 +1284,9 @@ def _get_inputs_from_request(request, content_type, *, binary_loads=None):
                 raise InputError("The form request has no '__fields' part.")
             fields_part = binaries.pop("__fields")
             if isinstance(fields_part, list):
-                raise InputError("The form request has several '__fields' parts; expected one.")
+                raise InputError(
+                    "The form request has several '__fields' parts; expected one."
+                )
             fields = _loads_mapping(fields_part, "'__fields' part")
             inputs = dict(fields, **binaries)
         return dict(defaults, **inputs)

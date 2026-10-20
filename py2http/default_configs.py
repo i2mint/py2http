@@ -70,7 +70,8 @@ flask_json_output_mapper.content_type = JSON_CONTENT_TYPE
 
 def _flask_response(result, content_type):
     """``result`` as a Flask response of ``content_type`` if it is a ``str``/``bytes`` body, or
-    a ``(body, status[, headers])`` tuple of one; anything else (a ``Response``, a dict) is kept."""
+    a ``(body, status[, headers])`` tuple of one; anything else (a ``Response``, a dict) is kept.
+    """
     from flask import Response
     from werkzeug.datastructures import Headers
 
@@ -79,9 +80,13 @@ def _flask_response(result, content_type):
     if isinstance(result, tuple) and result and isinstance(result[0], (str, bytes)):
         body, *rest = result
         status = rest[0] if rest and isinstance(rest[0], (int, str)) else None
-        headers = next((r for r in rest if r is not None and not isinstance(r, (int, str))), None)
+        headers = next(
+            (r for r in rest if r is not None and not isinstance(r, (int, str))), None
+        )
         response = Response(body, status=status, headers=headers)
-        if not any(k.lower() == "content-type" for k, _ in Headers(headers or {}).items()):
+        if not any(
+            k.lower() == "content-type" for k, _ in Headers(headers or {}).items()
+        ):
             response.content_type = content_type
         return response
     return result
@@ -227,8 +232,15 @@ def flask_error_handler(error: Exception):
     the bottle handler (``OPAQUE_ERRORS`` hides the text of a 500)."""
     message = str(error)
     status = error_status(error)
-    code = getattr(error, "code", None)  # werkzeug's own 4xx, e.g. 413 past MAX_CONTENT_LENGTH
-    if status == 500 and isinstance(code, int) and 400 <= code < 500 and hasattr(error, "get_response"):
+    code = getattr(
+        error, "code", None
+    )  # werkzeug's own 4xx, e.g. 413 past MAX_CONTENT_LENGTH
+    if (
+        status == 500
+        and isinstance(code, int)
+        and 400 <= code < 500
+        and hasattr(error, "get_response")
+    ):
         status, message = code, getattr(error, "description", None) or message
     if status == 500 and os.getenv("OPAQUE_ERRORS", None):
         message = "Internal server error"
