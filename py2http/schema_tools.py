@@ -11,20 +11,25 @@ from typing import Any, _TypedDictMeta, T_co, Union, _GenericAlias
 from i2.errors import InputError
 
 try:
-    from i2 import is_not_set
-except ImportError:  # older i2: same sentinel, not exported from the root yet
-    from i2.deco import NotSet as _NotSet
+    from i2 import is_placeholder_default
+except ImportError:  # older i2: no DefaultPlaceholder yet, so only NotSet is a placeholder
+    try:
+        from i2 import is_not_set as is_placeholder_default
+    except ImportError:  # older still: same sentinel, not exported from the root yet
+        from i2.deco import NotSet as _NotSet
 
-    def is_not_set(x) -> bool:
-        """Return True iff ``x`` is ``i2``'s ``NotSet`` sentinel."""
-        return x is _NotSet
+        def is_placeholder_default(x) -> bool:
+            """Return True iff ``x`` is ``i2``'s ``NotSet`` sentinel."""
+            return x is _NotSet
 
 
 def param_default(param: Parameter):
-    """Return ``param.default``, or ``Parameter.empty`` if it is ``i2``'s ``NotSet``.
+    """Return ``param.default``, or ``Parameter.empty`` if it is a placeholder default.
 
-    ``NotSet`` in a signature means "no value given", not a real default, so schema
-    builders treat that param as required, with no default (it is not JSON
+    A placeholder default is ``i2``'s ``NotSet`` sentinel or any
+    ``i2.DefaultPlaceholder`` (such as the marker ``methodize(..., default_from=...)``
+    puts in a signature). It means "no concrete value here", not a real default, so
+    schema builders treat that param as required, with no default (it is not JSON
     serializable either).
 
     >>> from i2.deco import NotSet
@@ -34,7 +39,7 @@ def param_default(param: Parameter):
     <class 'inspect._empty'>
     """
     default = param.default
-    return Parameter.empty if is_not_set(default) else default
+    return Parameter.empty if is_placeholder_default(default) else default
 
 
 COMPLEX_TYPE_MAPPING = {}
@@ -164,7 +169,7 @@ def mk_input_schema_from_func(func, exclude_keys=None, include_func_params=False
 
         default_type = Any
         p = {}
-        default = param_default(param)  # i2's NotSet sentinel counts as "no default"
+        default = param_default(param)  # i2 placeholder defaults (e.g. NotSet) count as "no default"
         if default is not Parameter.empty:
             if type(default) in JSON_TYPES:
                 default_type = type(default)
