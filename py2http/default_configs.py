@@ -14,6 +14,7 @@ up an HTTP service in Python using the py2http library."""
 
 from aiohttp import web
 from bottle import response
+import inspect
 import json
 import logging
 import os
@@ -67,13 +68,34 @@ def flask_json_output_mapper(output, **inputs):
 flask_json_output_mapper.content_type = JSON_CONTENT_TYPE
 
 
+def _flask_response(result, content_type):
+    """``result`` as a Flask response of ``content_type`` if it is a ``str``/``bytes`` body, or
+    a ``(body, status[, headers])`` tuple of one; anything else (a ``Response``, a dict) is kept."""
+    from flask import Response
+    from werkzeug.datastructures import Headers
+
+    if isinstance(result, (str, bytes)):
+        return Response(result, content_type=content_type)
+    if isinstance(result, tuple) and result and isinstance(result[0], (str, bytes)):
+        body, *rest = result
+        status = rest[0] if rest and isinstance(rest[0], (int, str)) else None
+        headers = next((r for r in rest if r is not None and not isinstance(r, (int, str))), None)
+        response = Response(body, status=status, headers=headers)
+        if not any(k.lower() == "content-type" for k, _ in Headers(headers or {}).items()):
+            response.content_type = content_type
+        return response
+    return result
+
+
 def flask_response_mapper(output_mapper):
     """Make a Flask view's response of what an output mapper returns.
 
     The ``send_*_resp`` decorators set Bottle's ``response.content_type`` and return
     the body (``str`` or ``bytes``); Flask ignores that and would answer ``text/html``.
-    A mapper that declares a ``content_type`` and returns a ``str``/``bytes`` body gets
-    that content type; anything else (a ``Response``, a dict, a tuple) is kept as is.
+    A mapper that declares a ``content_type`` and returns a ``str``/``bytes`` body, or a
+    ``(body, status[, headers])`` tuple of one, gets that content type (unless the tuple's
+    headers set their own); an ``async`` mapper is awaited first. Anything else (a
+    ``Response``, a dict) is kept as is.
 
     >>> from py2http.decorators import send_raw_resp  # (needs flask)
     >>> flask_response_mapper(send_raw_resp(lambda o: o))(b"x").content_type  # doctest: +SKIP
@@ -83,14 +105,24 @@ def flask_response_mapper(output_mapper):
     if content_type is None:
         return output_mapper
 
-    @wraps(output_mapper)
-    def mapper(output, **inputs):
-        result = output_mapper(output, **inputs)
-        if isinstance(result, (str, bytes)):
-            from flask import Response
+    if inspect.iscoroutinefunction(output_mapper):
 
-            return Response(result, content_type=content_type)
-        return result
+        @wraps(output_mapper)
+        async def mapper(output, **inputs):
+            return _flask_response(await output_mapper(output, **inputs), content_type)
+
+    else:
+
+        @wraps(output_mapper)
+        def mapper(output, **inputs):
+            result = output_mapper(output, **inputs)
+            if inspect.isawaitable(result):  # a sync wrapper around an async mapper
+
+                async def settle():
+                    return _flask_response(await result, content_type)
+
+                return settle()
+            return _flask_response(result, content_type)
 
     return mapper
 
@@ -195,10 +227,20 @@ def flask_error_handler(error: Exception):
     the bottle handler (``OPAQUE_ERRORS`` hides the text of a 500)."""
     message = str(error)
     status = error_status(error)
+    code = getattr(error, "code", None)  # werkzeug's own 4xx, e.g. 413 past MAX_CONTENT_LENGTH
+    if status == 500 and isinstance(code, int) and 400 <= code < 500 and hasattr(error, "get_response"):
+        status, message = code, getattr(error, "description", None) or message
     if status == 500 and os.getenv("OPAQUE_ERRORS", None):
         message = "Internal server error"
     status_line = f"400 {type(error).__name__}" if status == 400 else status
-    return {"error": message}, status_line, _status_headers(status)
+    headers = _status_headers(status)
+    if hasattr(error, "get_response") and status == code:  # e.g. the ``Allow`` of a 405
+        headers.update(
+            (k, v)
+            for k, v in error.get_response().headers
+            if k.lower() not in ("content-type", "content-length")
+        )
+    return {"error": message}, status_line, headers
 
 
 def default_error_handler(error: Exception):
@@ -255,7 +297,8 @@ default_configs = {
     "logger": None,
     "plugins": [],
     "enable_cors": False,
-    # Bottle only: max bytes of an in-memory request body (None keeps bottle's 100 KiB).
+    # Max bytes of a request body. Bottle: the in-memory limit (None keeps bottle's 100 KiB).
+    # Flask: sets MAX_CONTENT_LENGTH (None keeps Flask's default: no limit).
     # A bigger request is answered "413 Request entity too large".
     "max_request_size": None,
     "cors_allowed_origins": "*",

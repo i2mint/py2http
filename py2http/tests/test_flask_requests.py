@@ -134,3 +134,84 @@ def test_bottle_bad_body_is_400():
 def test_json_encodings_and_content_type_case(body, content_type):
     r = _client(add).post("/add", data=body, content_type=content_type)
     assert (r.status_code, r.get_json()) == (200, 3)
+
+
+# --- i2mint/py2http#44 -----------------------------------------------------------------
+
+
+def _mapper_with_content_type(fn, content_type=RAW_CONTENT_TYPE, *, is_async=False):
+    if is_async:
+
+        async def mapper(output, **inputs):
+            return fn(output)
+
+    else:
+
+        def mapper(output, **inputs):
+            return fn(output)
+
+    mapper.content_type = content_type
+    return mapper
+
+
+@pytest.mark.parametrize("is_async", [False, True])
+@pytest.mark.parametrize(
+    "returned, status, expected",
+    [("hi", 200, b"hi"), (("hi", 201), 201, b"hi"), ((b"hi", 202, {"X-A": "1"}), 202, b"hi")],
+)
+def test_output_mapper_content_type_survives_async_and_status_tuples(
+    is_async, returned, status, expected
+):
+    mapper = _mapper_with_content_type(lambda out: returned, is_async=is_async)
+    r = _client(add, output_mapper=mapper).post("/add", json={"x": 1})
+    assert (r.status_code, r.data) == (status, expected)
+    assert r.content_type.split(";")[0] == RAW_CONTENT_TYPE
+
+
+def test_a_tuple_with_its_own_content_type_header_keeps_it():
+    mapper = _mapper_with_content_type(lambda out: ("hi", 200, {"Content-Type": "text/csv"}))
+    r = _client(add, output_mapper=mapper).post("/add", json={"x": 1})
+    assert r.content_type.split(";")[0] == "text/csv"
+
+
+def sizes(data: bytes):
+    return [len(d) for d in data] if isinstance(data, list) else len(data)
+
+
+def _post_files(*files):
+    import io
+
+    mapper = handle_form_req(lambda data: dict(data=data))
+    data = {"__fields": (io.BytesIO(b"{}"), "__fields")}
+    data["data"] = [(io.BytesIO(b), "data") for b in files] if len(files) > 1 else (io.BytesIO(files[0]), "data")
+    return _client(sizes, input_mapper=mapper).post("/sizes", data=data, content_type="multipart/form-data")
+
+
+def test_several_files_under_one_form_field_are_all_kept():
+    assert _post_files(b"a", b"bb", b"ccc").get_json() == [1, 2, 3]
+    assert _post_files(b"abcd").get_json() == 4  # one file stays a bare bytes
+
+
+def test_max_request_size_sets_flask_max_content_length():
+    app = mk_app([add], framework="flask", max_request_size=1000)
+    assert app.config["MAX_CONTENT_LENGTH"] == 1000
+    r = app.test_client().post("/add", data=b"x" * 2000, content_type=JSON_CONTENT_TYPE)
+    assert r.status_code == 413
+    assert app.test_client().post("/add", json={"x": 1}).status_code == 200
+    assert mk_app([add], framework="flask").config["MAX_CONTENT_LENGTH"] is None
+
+
+def test_a_tuple_with_werkzeug_headers_keeps_them():
+    from werkzeug.datastructures import Headers
+
+    mapper = _mapper_with_content_type(lambda out: ("hi", 201, Headers([("X-A", "1")])))
+    r = _client(add, output_mapper=mapper).post("/add", json={"x": 1})
+    assert (r.status_code, r.headers["X-A"]) == (201, "1")
+
+
+def test_a_werkzeug_4xx_keeps_the_headers_it_carries():
+    from werkzeug.exceptions import MethodNotAllowed
+    from py2http.default_configs import flask_error_handler
+
+    _, status, headers = flask_error_handler(MethodNotAllowed(["POST"]))
+    assert status == 405 and headers["Allow"] == "POST"
