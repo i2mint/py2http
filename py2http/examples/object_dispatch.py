@@ -11,7 +11,7 @@ and its ecosystem (mongodol, s3dol, etc.).
 
 from typing import MutableMapping
 
-from py2http.service import shared_objects
+from py2http.service import run_app, shared_objects
 
 
 class BackendStore(MutableMapping):
@@ -60,7 +60,7 @@ from py2http import mk_app
 app = mk_app(handlers, publish_openapi=True, publish_swagger=True)
 
 
-def test_service(rooturl="http://localhost:8080"):
+def test_service(rooturl="http://localhost:3030"):
     import requests
 
     url = f"{rooturl}/backend_store"
@@ -75,7 +75,9 @@ def test_service(rooturl="http://localhost:8080"):
 
 
 if __name__ == "__main__":
-    app.run()
+    # Not `app.run()`: that is bottle's own runner (port 8080), while the OpenAPI spec (and
+    # so Swagger's "Try it out") points at the port `run_app` serves on, 3030 by default.
+    run_app(app)
 
 
 # old code (with errors)
