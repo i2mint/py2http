@@ -5,7 +5,9 @@ from py2http.openapi_utils import DFLT_SERVER_URL, mk_openapi_template
 
 
 def test_openapi_server_url_is_where_run_app_serves():
-    assert DFLT_SERVER_URL == f"http://{default_configs['host']}:{default_configs['port']}"
+    assert (
+        DFLT_SERVER_URL == f"http://{default_configs['host']}:{default_configs['port']}"
+    )
     assert mk_openapi_template()["servers"] == [{"url": DFLT_SERVER_URL}]
 
 
