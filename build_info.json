@@ -1,39 +1,39 @@
 {
   "schema_version": 1,
-  "built_at": "2026-10-13T16:33:22Z",
+  "built_at": "2026-10-20T03:02:06Z",
   "package": {
     "name": "py2http",
-    "version": "0.1.74",
+    "version": "0.1.75",
     "display_name": "Py2http",
     "source": "setup.cfg"
   },
   "git": {
     "available": true,
-    "commit": "fd0bbc027a138234d0c57527cff24f20fc9a09fb",
-    "short_commit": "fd0bbc0",
+    "commit": "68dba2bb2161419b45308154ab105f98db646ffc",
+    "short_commit": "68dba2b",
     "branch": "master",
     "tags": [
-      "0.1.74"
+      "0.1.75"
     ],
     "dirty": false,
     "remote_url": "https://github.com/i2mint/py2http",
-    "commit_url": "https://github.com/i2mint/py2http/commit/fd0bbc027a138234d0c57527cff24f20fc9a09fb",
+    "commit_url": "https://github.com/i2mint/py2http/commit/68dba2bb2161419b45308154ab105f98db646ffc",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "i2mint/py2http",
-    "sha": "06f773d058ff02939f05ee53f6736ec887ab9830",
+    "sha": "f9be940f7103143da12b3cf3721fcf3e5e2de647",
     "sha_in_history": true,
     "ref": "refs/heads/master",
     "ref_name": "master",
-    "run_id": "38431191298",
-    "run_url": "https://github.com/i2mint/py2http/actions/runs/38431191298",
+    "run_id": "39361911761",
+    "run_url": "https://github.com/i2mint/py2http/actions/runs/39361911761",
     "server_url": "https://github.com"
   },
   "tools": {
-    "epythet": "0.2.17",
-    "sphinx": "9.1.0",
+    "epythet": "0.2.18",
+    "sphinx": "9.1.1",
     "docutils": "0.22.4",
     "python": "3.12.15"
   },
@@ -62,11 +62,11 @@
   },
   "pypi": {
     "checked": true,
-    "latest": "0.1.74",
+    "latest": "0.1.75",
     "relation": "same",
     "error": null
   },
-  "reproduce": "git clone https://github.com/i2mint/py2http && cd py2http\ngit checkout fd0bbc027a138234d0c57527cff24f20fc9a09fb\npip install \"epythet==0.2.17\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/i2mint/py2http && cd py2http\ngit checkout 68dba2bb2161419b45308154ab105f98db646ffc\npip install \"epythet==0.2.18\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
     "aligned": true,

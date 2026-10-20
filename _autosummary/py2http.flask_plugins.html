@@ -30,6 +30,7 @@
 <meta content="py2http.flask_plugins | Py2http" name="twitter:title"/>
 <link href="../_static/pygments.css?v=d75fae25" rel="stylesheet" type="text/css"/>
 <link href="../_static/theme.css?v=d6d7c91b" rel="stylesheet" type="text/css"/>
+<link href="../_static/sphinx_autodoc_typehints.css?v=057ac668" rel="stylesheet" type="text/css"/>
 <link href="../_static/copybutton.css?v=76b2166b" rel="stylesheet" type="text/css"/>
 <link href="../_static/epythet.css?v=681d3bae" rel="stylesheet" type="text/css"/>
 <link href="../search.html" rel="search" title="Search"/>
@@ -155,11 +156,6 @@ dropped, because a silently dropped auth plugin would leave its routes open.</p>
 <dt class="sig sig-object py" id="py2http.flask_plugins.check_flask_plugins">
 <span class="sig-prename descclassname"><span class="pre">py2http.flask_plugins.</span></span><span class="sig-name descname"><span class="pre">check_flask_plugins</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plugins</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/flask_plugins.html#check_flask_plugins"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.flask_plugins.check_flask_plugins" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.flask_plugins.check_flask_plugins'">¶</a></dt>
 <dd><p>The <code class="docutils literal notranslate"><span class="pre">plugins</span></code> as a list, each known to work under Flask; else <code class="docutils literal notranslate"><span class="pre">NotImplementedError</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" rel="nofollow noopener" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code><svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a></span></p>
-</dd>
-</dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="gp">&gt;&gt;&gt; </span><span class="n">check_flask_plugins</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
 </span><span id="line-2"><span class="go">[]</span>
 </span><span id="line-3"><span class="gp">&gt;&gt;&gt; </span><span class="n">check_flask_plugins</span><span class="p">([</span><span class="nb">object</span><span class="p">()])</span>
@@ -168,6 +164,11 @@ dropped, because a silently dropped auth plugin would leave its routes open.</p>
 </span><span id="line-6"><span class="gr">NotImplementedError</span>: <span class="n">The plugin &lt;object object at ...&gt; is Bottle-only...</span>
 </span></code></pre></div>
 </div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" rel="nofollow noopener" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code><svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a></span></p>
+</dd>
+</dl>
 </dd></dl>
 <dl class="py function">
 <dt class="sig sig-object py" id="py2http.flask_plugins.mk_auth_hook">
@@ -212,7 +213,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=c75a234e"></script>
+<script src="../_static/documentation_options.js?v=6322a757"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

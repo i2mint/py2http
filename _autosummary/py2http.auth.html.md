@@ -101,9 +101,6 @@ ValueError: secret must be a non-empty key when verify=True
 Validate extra `jwt.decode` arguments (`audience`, `issuer`,
 `leeway`…), refusing those the verification setup owns.
 
-* **Return type:**
-  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
-
 ```pycon
 >>> jwt_decode_kwargs({'audience': 'my-api'})
 {'audience': 'my-api'}
@@ -112,6 +109,9 @@ Traceback (most recent call last):
   ...
 ValueError: decode_kwargs may not set ['options']; use verify= and algorithms=
 ```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### py2http.auth.key_matches(given, expected)
 

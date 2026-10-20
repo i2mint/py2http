@@ -20,9 +20,6 @@ dropped, because a silently dropped auth plugin would leave its routes open.
 
 The `plugins` as a list, each known to work under Flask; else `NotImplementedError`.
 
-* **Return type:**
-  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)
-
 ```pycon
 >>> check_flask_plugins(None)
 []
@@ -31,6 +28,9 @@ Traceback (most recent call last):
   ...
 NotImplementedError: The plugin <object object at ...> is Bottle-only...
 ```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)
 
 ### py2http.flask_plugins.mk_auth_hook(plugins, , public_views, cors=False)
 

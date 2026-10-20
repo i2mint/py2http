@@ -30,6 +30,7 @@
   <meta name="twitter:title" content="py2http.default_configs | Py2http" />
   <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d75fae25" />
   <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=d6d7c91b" />
+  <link rel="stylesheet" type="text/css" href="../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
   <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
   <link rel="stylesheet" type="text/css" href="../../_static/epythet.css?v=681d3bae" />
   <link rel="search" title="Search" href="../../search.html" />
@@ -451,15 +452,18 @@
 </span><span id="line-255">    <span class="s2">"logger"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="line-256">    <span class="s2">"plugins"</span><span class="p">:</span> <span class="p">[],</span>
 </span><span id="line-257">    <span class="s2">"enable_cors"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="line-258">    <span class="s2">"cors_allowed_origins"</span><span class="p">:</span> <span class="s2">"*"</span><span class="p">,</span>
-</span><span id="line-259">    <span class="s2">"publish_openapi"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="line-260">    <span class="s2">"openapi_insecure"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="line-261">    <span class="s2">"publish_swagger"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="line-262">    <span class="s2">"swagger_url"</span><span class="p">:</span> <span class="s2">"/swagger"</span><span class="p">,</span>
-</span><span id="line-263">    <span class="s2">"swagger_title"</span><span class="p">:</span> <span class="s2">"Swagger"</span><span class="p">,</span>
-</span><span id="line-264">    <span class="s2">"ssl_certfile"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="line-265">    <span class="s2">"ssl_keyfile"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="line-266"><span class="p">}</span>
+</span><span id="line-258">    <span class="c1"># Bottle only: max bytes of an in-memory request body (None keeps bottle's 100 KiB).</span>
+</span><span id="line-259">    <span class="c1"># A bigger request is answered "413 Request entity too large".</span>
+</span><span id="line-260">    <span class="s2">"max_request_size"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="line-261">    <span class="s2">"cors_allowed_origins"</span><span class="p">:</span> <span class="s2">"*"</span><span class="p">,</span>
+</span><span id="line-262">    <span class="s2">"publish_openapi"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="line-263">    <span class="s2">"openapi_insecure"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="line-264">    <span class="s2">"publish_swagger"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="line-265">    <span class="s2">"swagger_url"</span><span class="p">:</span> <span class="s2">"/swagger"</span><span class="p">,</span>
+</span><span id="line-266">    <span class="s2">"swagger_title"</span><span class="p">:</span> <span class="s2">"Swagger"</span><span class="p">,</span>
+</span><span id="line-267">    <span class="s2">"ssl_certfile"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="line-268">    <span class="s2">"ssl_keyfile"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="line-269"><span class="p">}</span>
 </span></code></pre></div>
     </div></div>
           </main>
@@ -475,7 +479,7 @@ Otosense&nbsp;</p>
 </footer>
     </div>
     
-    <script src="../../_static/documentation_options.js?v=c75a234e"></script>
+    <script src="../../_static/documentation_options.js?v=6322a757"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

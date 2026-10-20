@@ -2,7 +2,7 @@
 
 # About this build
 
-This documentation was built on **2026-10-13 16:33 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/fd0bbc027a138234d0c57527cff24f20fc9a09fb"><code>fd0bbc0</code></a> on branch <code>master</code>, for **py2http 0.1.74** (from <code>setup.cfg</code>).
+This documentation was built on **2026-10-20 03:02 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/68dba2bb2161419b45308154ab105f98db646ffc"><code>68dba2b</code></a> on branch <code>master</code>, for **py2http 0.1.75** (from <code>setup.cfg</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -11,9 +11,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                       |
 |---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2http/commit/fd0bbc027a138234d0c57527cff24f20fc9a09fb"><code>fd0bbc027a138234d0c57527cff24f20fc9a09fb</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2http/commit/68dba2bb2161419b45308154ab105f98db646ffc"><code>68dba2bb2161419b45308154ab105f98db646ffc</code></a> |
 | Branch              | <code>master</code>                                                                                                                                   |
-| Tags at this commit | <code>0.1.74</code>                                                                                                                                   |
+| Tags at this commit | <code>0.1.75</code>                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                 |
 | Remote              | <code>https://github.com/i2mint/py2http</code>                                                                                                        |
 
@@ -22,16 +22,16 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2http</code>                                                                |
-| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38431191298">38431191298</a>       |
+| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/39361911761">39361911761</a>       |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>06f773d058ff02939f05ee53f6736ec887ab9830</code> (in the history of the built commit) |
+| Event commit | <code>f9be940f7103143da12b3cf3721fcf3e5e2de647</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.17  |
-| Sphinx   | 9.1.0   |
+| epythet  | 0.2.18  |
+| Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
 | Python   | 3.12.15 |
 
@@ -49,14 +49,14 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2http/0.1.74/">0.1.74</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/py2http/0.1.75/">0.1.75</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2http && cd py2http
-git checkout fd0bbc027a138234d0c57527cff24f20fc9a09fb
-pip install "epythet==0.2.17"
+git checkout 68dba2bb2161419b45308154ab105f98db646ffc
+pip install "epythet==0.2.18"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

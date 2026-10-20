@@ -40,7 +40,7 @@ with minimal setup.
 
 Bases: [`TypedDict`](https://docs.python.org/3/library/typing.html#typing.TypedDict)
 
-### py2http.service.mk_app(app_spec, \*, app_name='HTTP Service', framework='bottle', input_mapper=<function default_input_mapper>, output_mapper=<function send_json_resp.<locals>.output_mapper>, error_handler=<function default_error_handler>, header_inputs={}, middleware=[], host='localhost', port=3030, server='gunicorn', http_method='post', openapi={}, logger=None, plugins=[], enable_cors=False, cors_allowed_origins='\*', publish_openapi=False, openapi_insecure=False, publish_swagger=False, swagger_url='/swagger', swagger_title='Swagger', ssl_certfile=None, ssl_keyfile=None, \*\*configs)
+### py2http.service.mk_app(app_spec, \*, app_name='HTTP Service', framework='bottle', input_mapper=<function default_input_mapper>, output_mapper=<function send_json_resp.<locals>.output_mapper>, error_handler=<function default_error_handler>, header_inputs={}, middleware=[], host='localhost', port=3030, server='gunicorn', http_method='post', openapi={}, logger=None, plugins=[], enable_cors=False, max_request_size=None, cors_allowed_origins='\*', publish_openapi=False, openapi_insecure=False, publish_swagger=False, swagger_url='/swagger', swagger_title='Swagger', ssl_certfile=None, ssl_keyfile=None, \*\*configs)
 
 Generates an application which exposes web services created from the given python
 functions to remotely run them.
@@ -154,7 +154,7 @@ Generate a route object and an OpenAPI path specification for a function
 * **Keyword Arguments:**
   The configuration settings
 
-### py2http.service.run_app(app_obj, \*, app_name='HTTP Service', framework='bottle', input_mapper=<function default_input_mapper>, output_mapper=<function send_json_resp.<locals>.output_mapper>, error_handler=<function default_error_handler>, header_inputs={}, middleware=[], host='localhost', port=3030, server='gunicorn', http_method='post', openapi={}, logger=None, plugins=[], enable_cors=False, cors_allowed_origins='\*', publish_openapi=False, openapi_insecure=False, publish_swagger=False, swagger_url='/swagger', swagger_title='Swagger', ssl_certfile=None, ssl_keyfile=None, \*\*configs)
+### py2http.service.run_app(app_obj, \*, app_name='HTTP Service', framework='bottle', input_mapper=<function default_input_mapper>, output_mapper=<function send_json_resp.<locals>.output_mapper>, error_handler=<function default_error_handler>, header_inputs={}, middleware=[], host='localhost', port=3030, server='gunicorn', http_method='post', openapi={}, logger=None, plugins=[], enable_cors=False, max_request_size=None, cors_allowed_origins='\*', publish_openapi=False, openapi_insecure=False, publish_swagger=False, swagger_url='/swagger', swagger_title='Swagger', ssl_certfile=None, ssl_keyfile=None, \*\*configs)
 
 Run an application which exposes web services created from the given python
 functions to remotely run them.
@@ -163,7 +163,7 @@ application.
 You can also generate the application first, then run it using this function.
 
 * **Parameters:**
-  * **app_obj** (`Union`[[`Iterable`](https://docs.python.org/3/library/typing.html#typing.Iterable)[`Union`[[`Callable`](https://docs.python.org/3/library/typing.html#typing.Callable), `HandlerWithMappers`]], [`Dict`](https://docs.python.org/3/library/typing.html#typing.Dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), `Union`[[`Iterable`](https://docs.python.org/3/library/typing.html#typing.Iterable)[`Union`[[`Callable`](https://docs.python.org/3/library/typing.html#typing.Callable), `HandlerWithMappers`]], [`SubAppSpec`](#py2http.service.SubAppSpec)]], [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]) – The handler specification or application object. Can be a list of
+  * **app_obj** ([`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Iterable`](https://docs.python.org/3/library/typing.html#typing.Iterable)[[`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Callable`](https://docs.python.org/3/library/typing.html#typing.Callable), `HandlerWithMappers`]], [`Dict`](https://docs.python.org/3/library/typing.html#typing.Dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Iterable`](https://docs.python.org/3/library/typing.html#typing.Iterable)[[`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Callable`](https://docs.python.org/3/library/typing.html#typing.Callable), `HandlerWithMappers`]], [`SubAppSpec`](#py2http.service.SubAppSpec)]], [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]) – The handler specification or application object. Can be a list of
     python to expose, or a dict with a list of functions to expose per route in case
     of a multi-service. Can also be a pre-generated application object to run.
   * **\*\*configs** ([*dict*](https://docs.python.org/3/builtins/stdtypes.html#dict)) – The configuration for the application. See

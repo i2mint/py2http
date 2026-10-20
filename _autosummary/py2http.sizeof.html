@@ -30,6 +30,7 @@
 <meta content="py2http.sizeof | Py2http" name="twitter:title"/>
 <link href="../_static/pygments.css?v=d75fae25" rel="stylesheet" type="text/css"/>
 <link href="../_static/theme.css?v=d6d7c91b" rel="stylesheet" type="text/css"/>
+<link href="../_static/sphinx_autodoc_typehints.css?v=057ac668" rel="stylesheet" type="text/css"/>
 <link href="../_static/copybutton.css?v=76b2166b" rel="stylesheet" type="text/css"/>
 <link href="../_static/epythet.css?v=681d3bae" rel="stylesheet" type="text/css"/>
 <link href="../search.html" rel="search" title="Search"/>
@@ -152,11 +153,6 @@ bytes’ worth of objects. Classes, modules and the code of functions are shared
 not counted, and neither is what classes and modules hold (class attributes, module
 globals), nor caches kept in C (<code class="docutils literal notranslate"><span class="pre">lru_cache</span></code>). Holding a bound method of another
 object counts that whole object, as holding the object itself would.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" rel="nofollow noopener" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code><svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a></span></p>
-</dd>
-</dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="gp">&gt;&gt;&gt; </span><span class="n">small</span><span class="p">,</span> <span class="n">big</span> <span class="o">=</span> <span class="n">bounded_deep_sizeof</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]),</span> <span class="n">bounded_deep_sizeof</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">)))</span>
 </span><span id="line-2"><span class="gp">&gt;&gt;&gt; </span><span class="n">small</span> <span class="o">&lt;</span> <span class="n">big</span>
 </span><span id="line-3"><span class="go">True</span>
@@ -164,6 +160,11 @@ object counts that whole object, as holding the object itself would.</p>
 </span><span id="line-5"><span class="go">True</span>
 </span></code></pre></div>
 </div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" rel="nofollow noopener" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code><svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a></span></p>
+</dd>
+</dl>
 </dd></dl>
 </section>
 </div></div><aside class="hidden text-sm xl:block" id="right-sidebar">
@@ -185,7 +186,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=c75a234e"></script>
+<script src="../_static/documentation_options.js?v=6322a757"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

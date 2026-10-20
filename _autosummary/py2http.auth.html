@@ -30,6 +30,7 @@
 <meta content="py2http.auth | Py2http" name="twitter:title"/>
 <link href="../_static/pygments.css?v=d75fae25" rel="stylesheet" type="text/css"/>
 <link href="../_static/theme.css?v=d6d7c91b" rel="stylesheet" type="text/css"/>
+<link href="../_static/sphinx_autodoc_typehints.css?v=057ac668" rel="stylesheet" type="text/css"/>
 <link href="../_static/copybutton.css?v=76b2166b" rel="stylesheet" type="text/css"/>
 <link href="../_static/epythet.css?v=681d3bae" rel="stylesheet" type="text/css"/>
 <link href="../search.html" rel="search" title="Search"/>
@@ -256,11 +257,6 @@ tokens), or an HMAC algorithm is asked for with a non-<code class="docutils lite
 <span class="sig-prename descclassname"><span class="pre">py2http.auth.</span></span><span class="sig-name descname"><span class="pre">jwt_decode_kwargs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">decode_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/auth.html#jwt_decode_kwargs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.auth.jwt_decode_kwargs" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.auth.jwt_decode_kwargs'">¶</a></dt>
 <dd><p>Validate extra <code class="docutils literal notranslate"><span class="pre">jwt.decode</span></code> arguments (<code class="docutils literal notranslate"><span class="pre">audience</span></code>, <code class="docutils literal notranslate"><span class="pre">issuer</span></code>,
 <code class="docutils literal notranslate"><span class="pre">leeway</span></code>…), refusing those the verification setup owns.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" rel="nofollow noopener" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code><svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a></span></p>
-</dd>
-</dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="gp">&gt;&gt;&gt; </span><span class="n">jwt_decode_kwargs</span><span class="p">({</span><span class="s1">'audience'</span><span class="p">:</span> <span class="s1">'my-api'</span><span class="p">})</span>
 </span><span id="line-2"><span class="go">{'audience': 'my-api'}</span>
 </span><span id="line-3"><span class="gp">&gt;&gt;&gt; </span><span class="n">jwt_decode_kwargs</span><span class="p">({</span><span class="s1">'options'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'verify_signature'</span><span class="p">:</span> <span class="kc">False</span><span class="p">}})</span>
@@ -269,6 +265,11 @@ tokens), or an HMAC algorithm is asked for with a non-<code class="docutils lite
 </span><span id="line-6"><span class="gr">ValueError</span>: <span class="n">decode_kwargs may not set ['options']; use verify= and algorithms=</span>
 </span></code></pre></div>
 </div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" rel="nofollow noopener" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code><svg fill="currentColor" height="1em" stroke="none" viewbox="0 96 960 960" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M188 868q-11-11-11-28t11-28l436-436H400q-17 0-28.5-11.5T360 336q0-17 11.5-28.5T400 296h320q17 0 28.5 11.5T760 336v320q0 17-11.5 28.5T720 696q-17 0-28.5-11.5T680 656V432L244 868q-11 11-28 11t-28-11Z"></path></svg></a></span></p>
+</dd>
+</dl>
 </dd></dl>
 <dl class="py function">
 <dt class="sig sig-object py" id="py2http.auth.key_matches">
@@ -318,7 +319,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=c75a234e"></script>
+<script src="../_static/documentation_options.js?v=6322a757"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

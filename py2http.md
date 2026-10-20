@@ -1,4 +1,4 @@
-> built 2026-10-13 16:33 UTC from fd0bbc0 (master) · py2http 0.1.74. Details: build_info.json
+> built 2026-10-20 03:02 UTC from 68dba2b (master) · py2http 0.1.75. Details: build_info.json
 
 # index.html.md
 
@@ -357,9 +357,6 @@ ValueError: secret must be a non-empty key when verify=True
 Validate extra `jwt.decode` arguments (`audience`, `issuer`,
 `leeway`…), refusing those the verification setup owns.
 
-* **Return type:**
-  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
-
 ```pycon
 >>> jwt_decode_kwargs({'audience': 'my-api'})
 {'audience': 'my-api'}
@@ -368,6 +365,9 @@ Traceback (most recent call last):
   ...
 ValueError: decode_kwargs may not set ['options']; use verify= and algorithms=
 ```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### py2http.auth.key_matches(given, expected)
 
@@ -1200,15 +1200,15 @@ up an HTTP service in Python using the py2http library.
 
 The HTTP status for an error a handler raised (500 when it is not a client’s).
 
-* **Return type:**
-  [`int`](https://docs.python.org/3/builtins/functions.html#int)
-
 ```pycon
 >>> error_status(AuthorizationError()), error_status(ForbiddenError())
 (401, 403)
 >>> error_status(InputError()), error_status(KeyError())
 (400, 500)
 ```
+
+* **Return type:**
+  [`int`](https://docs.python.org/3/builtins/functions.html#int)
 
 ### py2http.default_configs.flask_error_handler(error)
 
@@ -1252,14 +1252,14 @@ The `WWW-Authenticate` value of a 401 a dispatched function raised: the
 `PY2HTTP_WWW_AUTHENTICATE` environment variable, else `Bearer` (also when the
 variable holds a line break, which would make every 401 fail to send).
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> os.environ.pop(WWW_AUTHENTICATE_ENV_VAR, None) and None
 >>> www_authenticate_challenge()
 'Bearer'
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 
 # _autosummary/py2http.diagnosis.html.md
@@ -1298,9 +1298,6 @@ dropped, because a silently dropped auth plugin would leave its routes open.
 
 The `plugins` as a list, each known to work under Flask; else `NotImplementedError`.
 
-* **Return type:**
-  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)
-
 ```pycon
 >>> check_flask_plugins(None)
 []
@@ -1309,6 +1306,9 @@ Traceback (most recent call last):
   ...
 NotImplementedError: The plugin <object object at ...> is Bottle-only...
 ```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)
 
 ### py2http.flask_plugins.mk_auth_hook(plugins, , public_views, cors=False)
 
@@ -1785,7 +1785,7 @@ with minimal setup.
 
 Bases: [`TypedDict`](https://docs.python.org/3/library/typing.html#typing.TypedDict)
 
-### py2http.service.mk_app(app_spec, \*, app_name='HTTP Service', framework='bottle', input_mapper=<function default_input_mapper>, output_mapper=<function send_json_resp.<locals>.output_mapper>, error_handler=<function default_error_handler>, header_inputs={}, middleware=[], host='localhost', port=3030, server='gunicorn', http_method='post', openapi={}, logger=None, plugins=[], enable_cors=False, cors_allowed_origins='\*', publish_openapi=False, openapi_insecure=False, publish_swagger=False, swagger_url='/swagger', swagger_title='Swagger', ssl_certfile=None, ssl_keyfile=None, \*\*configs)
+### py2http.service.mk_app(app_spec, \*, app_name='HTTP Service', framework='bottle', input_mapper=<function default_input_mapper>, output_mapper=<function send_json_resp.<locals>.output_mapper>, error_handler=<function default_error_handler>, header_inputs={}, middleware=[], host='localhost', port=3030, server='gunicorn', http_method='post', openapi={}, logger=None, plugins=[], enable_cors=False, max_request_size=None, cors_allowed_origins='\*', publish_openapi=False, openapi_insecure=False, publish_swagger=False, swagger_url='/swagger', swagger_title='Swagger', ssl_certfile=None, ssl_keyfile=None, \*\*configs)
 
 Generates an application which exposes web services created from the given python
 functions to remotely run them.
@@ -1899,7 +1899,7 @@ Generate a route object and an OpenAPI path specification for a function
 * **Keyword Arguments:**
   The configuration settings
 
-### py2http.service.run_app(app_obj, \*, app_name='HTTP Service', framework='bottle', input_mapper=<function default_input_mapper>, output_mapper=<function send_json_resp.<locals>.output_mapper>, error_handler=<function default_error_handler>, header_inputs={}, middleware=[], host='localhost', port=3030, server='gunicorn', http_method='post', openapi={}, logger=None, plugins=[], enable_cors=False, cors_allowed_origins='\*', publish_openapi=False, openapi_insecure=False, publish_swagger=False, swagger_url='/swagger', swagger_title='Swagger', ssl_certfile=None, ssl_keyfile=None, \*\*configs)
+### py2http.service.run_app(app_obj, \*, app_name='HTTP Service', framework='bottle', input_mapper=<function default_input_mapper>, output_mapper=<function send_json_resp.<locals>.output_mapper>, error_handler=<function default_error_handler>, header_inputs={}, middleware=[], host='localhost', port=3030, server='gunicorn', http_method='post', openapi={}, logger=None, plugins=[], enable_cors=False, max_request_size=None, cors_allowed_origins='\*', publish_openapi=False, openapi_insecure=False, publish_swagger=False, swagger_url='/swagger', swagger_title='Swagger', ssl_certfile=None, ssl_keyfile=None, \*\*configs)
 
 Run an application which exposes web services created from the given python
 functions to remotely run them.
@@ -1908,7 +1908,7 @@ application.
 You can also generate the application first, then run it using this function.
 
 * **Parameters:**
-  * **app_obj** (`Union`[[`Iterable`](https://docs.python.org/3/library/typing.html#typing.Iterable)[`Union`[[`Callable`](https://docs.python.org/3/library/typing.html#typing.Callable), `HandlerWithMappers`]], [`Dict`](https://docs.python.org/3/library/typing.html#typing.Dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), `Union`[[`Iterable`](https://docs.python.org/3/library/typing.html#typing.Iterable)[`Union`[[`Callable`](https://docs.python.org/3/library/typing.html#typing.Callable), `HandlerWithMappers`]], [`SubAppSpec`](_autosummary/py2http.service.html.md#py2http.service.SubAppSpec)]], [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]) – The handler specification or application object. Can be a list of
+  * **app_obj** ([`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Iterable`](https://docs.python.org/3/library/typing.html#typing.Iterable)[[`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Callable`](https://docs.python.org/3/library/typing.html#typing.Callable), `HandlerWithMappers`]], [`Dict`](https://docs.python.org/3/library/typing.html#typing.Dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Iterable`](https://docs.python.org/3/library/typing.html#typing.Iterable)[[`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Callable`](https://docs.python.org/3/library/typing.html#typing.Callable), `HandlerWithMappers`]], [`SubAppSpec`](_autosummary/py2http.service.html.md#py2http.service.SubAppSpec)]], [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]) – The handler specification or application object. Can be a list of
     python to expose, or a dict with a list of functions to expose per route in case
     of a multi-service. Can also be a pre-generated application object to run.
   * **\*\*configs** ([*dict*](https://docs.python.org/3/builtins/stdtypes.html#dict)) – The configuration for the application. See
@@ -1945,9 +1945,6 @@ not counted, and neither is what classes and modules hold (class attributes, mod
 globals), nor caches kept in C (`lru_cache`). Holding a bound method of another
 object counts that whole object, as holding the object itself would.
 
-* **Return type:**
-  [`int`](https://docs.python.org/3/builtins/functions.html#int)
-
 ```pycon
 >>> small, big = bounded_deep_sizeof([1, 2]), bounded_deep_sizeof(list(range(1000)))
 >>> small < big
@@ -1955,6 +1952,9 @@ True
 >>> bounded_deep_sizeof(list(range(10**6)), limit=1000) > 1000
 True
 ```
+
+* **Return type:**
+  [`int`](https://docs.python.org/3/builtins/functions.html#int)
 
 
 # _autosummary/py2http.types.html.md
@@ -2296,7 +2296,7 @@ so that it can be jsonizable.
 
 # About this build
 
-This documentation was built on **2026-10-13 16:33 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/fd0bbc027a138234d0c57527cff24f20fc9a09fb"><code>fd0bbc0</code></a> on branch <code>master</code>, for **py2http 0.1.74** (from <code>setup.cfg</code>).
+This documentation was built on **2026-10-20 03:02 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/68dba2bb2161419b45308154ab105f98db646ffc"><code>68dba2b</code></a> on branch <code>master</code>, for **py2http 0.1.75** (from <code>setup.cfg</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -2305,9 +2305,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                       |
 |---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2http/commit/fd0bbc027a138234d0c57527cff24f20fc9a09fb"><code>fd0bbc027a138234d0c57527cff24f20fc9a09fb</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2http/commit/68dba2bb2161419b45308154ab105f98db646ffc"><code>68dba2bb2161419b45308154ab105f98db646ffc</code></a> |
 | Branch              | <code>master</code>                                                                                                                                   |
-| Tags at this commit | <code>0.1.74</code>                                                                                                                                   |
+| Tags at this commit | <code>0.1.75</code>                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                 |
 | Remote              | <code>https://github.com/i2mint/py2http</code>                                                                                                        |
 
@@ -2316,16 +2316,16 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2http</code>                                                                |
-| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/38431191298">38431191298</a>       |
+| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/39361911761">39361911761</a>       |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>06f773d058ff02939f05ee53f6736ec887ab9830</code> (in the history of the built commit) |
+| Event commit | <code>f9be940f7103143da12b3cf3721fcf3e5e2de647</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.17  |
-| Sphinx   | 9.1.0   |
+| epythet  | 0.2.18  |
+| Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
 | Python   | 3.12.15 |
 
@@ -2343,14 +2343,14 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2http/0.1.74/">0.1.74</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/py2http/0.1.75/">0.1.75</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2http && cd py2http
-git checkout fd0bbc027a138234d0c57527cff24f20fc9a09fb
-pip install "epythet==0.2.17"
+git checkout 68dba2bb2161419b45308154ab105f98db646ffc
+pip install "epythet==0.2.18"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

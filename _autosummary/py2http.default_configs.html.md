@@ -34,15 +34,15 @@ up an HTTP service in Python using the py2http library.
 
 The HTTP status for an error a handler raised (500 when it is not a client’s).
 
-* **Return type:**
-  [`int`](https://docs.python.org/3/builtins/functions.html#int)
-
 ```pycon
 >>> error_status(AuthorizationError()), error_status(ForbiddenError())
 (401, 403)
 >>> error_status(InputError()), error_status(KeyError())
 (400, 500)
 ```
+
+* **Return type:**
+  [`int`](https://docs.python.org/3/builtins/functions.html#int)
 
 ### py2http.default_configs.flask_error_handler(error)
 
@@ -86,11 +86,11 @@ The `WWW-Authenticate` value of a 401 a dispatched function raised: the
 `PY2HTTP_WWW_AUTHENTICATE` environment variable, else `Bearer` (also when the
 variable holds a line break, which would make every 401 fail to send).
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> os.environ.pop(WWW_AUTHENTICATE_ENV_VAR, None) and None
 >>> www_authenticate_challenge()
 'Bearer'
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)

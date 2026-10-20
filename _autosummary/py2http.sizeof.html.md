@@ -21,9 +21,6 @@ not counted, and neither is what classes and modules hold (class attributes, mod
 globals), nor caches kept in C (`lru_cache`). Holding a bound method of another
 object counts that whole object, as holding the object itself would.
 
-* **Return type:**
-  [`int`](https://docs.python.org/3/builtins/functions.html#int)
-
 ```pycon
 >>> small, big = bounded_deep_sizeof([1, 2]), bounded_deep_sizeof(list(range(1000)))
 >>> small < big
@@ -31,3 +28,6 @@ True
 >>> bounded_deep_sizeof(list(range(10**6)), limit=1000) > 1000
 True
 ```
+
+* **Return type:**
+  [`int`](https://docs.python.org/3/builtins/functions.html#int)
