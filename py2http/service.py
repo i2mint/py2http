@@ -332,6 +332,9 @@ def mk_flask_app(funcs, **configs):
     plugins = check_flask_plugins(get_config("plugins"))
     routes, openapi_spec = mk_routes_and_openapi_specs(funcs, **configs)
     app = Flask(get_config("app_name"))
+    max_request_size = get_config("max_request_size")
+    if max_request_size is not None:
+        app.config["MAX_CONTENT_LENGTH"] = int(max_request_size)
     for wrap in get_config("middleware") or ():
         app.wsgi_app = wrap(app.wsgi_app)
     enable_cors = get_config("enable_cors")
