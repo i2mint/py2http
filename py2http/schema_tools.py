@@ -12,7 +12,9 @@ from i2.errors import InputError
 
 try:
     from i2 import is_placeholder_default
-except ImportError:  # older i2: no DefaultPlaceholder yet, so only NotSet is a placeholder
+except (
+    ImportError
+):  # older i2: no DefaultPlaceholder yet, so only NotSet is a placeholder
     try:
         from i2 import is_not_set as is_placeholder_default
     except ImportError:  # older still: same sentinel, not exported from the root yet
@@ -169,7 +171,9 @@ def mk_input_schema_from_func(func, exclude_keys=None, include_func_params=False
 
         default_type = Any
         p = {}
-        default = param_default(param)  # i2 placeholder defaults (e.g. NotSet) count as "no default"
+        default = param_default(
+            param
+        )  # i2 placeholder defaults (e.g. NotSet) count as "no default"
         if default is not Parameter.empty:
             if type(default) in JSON_TYPES:
                 default_type = type(default)

@@ -394,7 +394,9 @@ class ParamsSpecifier:
         }
 
         def dflt_of(param):
-            dflt = param_default(param)  # i2 placeholder defaults (e.g. NotSet) count as "no default"
+            dflt = param_default(
+                param
+            )  # i2 placeholder defaults (e.g. NotSet) count as "no default"
             return _dflt_default if dflt is Parameter.empty else dflt
 
         _name_and_dflts = {x.name: dflt_of(x) for x in params}
