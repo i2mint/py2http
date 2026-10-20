@@ -199,3 +199,19 @@ def test_max_request_size_sets_flask_max_content_length():
     assert r.status_code == 413
     assert app.test_client().post("/add", json={"x": 1}).status_code == 200
     assert mk_app([add], framework="flask").config["MAX_CONTENT_LENGTH"] is None
+
+
+def test_a_tuple_with_werkzeug_headers_keeps_them():
+    from werkzeug.datastructures import Headers
+
+    mapper = _mapper_with_content_type(lambda out: ("hi", 201, Headers([("X-A", "1")])))
+    r = _client(add, output_mapper=mapper).post("/add", json={"x": 1})
+    assert (r.status_code, r.headers["X-A"]) == (201, "1")
+
+
+def test_a_werkzeug_4xx_keeps_the_headers_it_carries():
+    from werkzeug.exceptions import MethodNotAllowed
+    from py2http.default_configs import flask_error_handler
+
+    _, status, headers = flask_error_handler(MethodNotAllowed(["POST"]))
+    assert status == 405 and headers["Allow"] == "POST"

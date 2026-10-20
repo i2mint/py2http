@@ -79,7 +79,7 @@ def _flask_response(result, content_type):
     if isinstance(result, tuple) and result and isinstance(result[0], (str, bytes)):
         body, *rest = result
         status = rest[0] if rest and isinstance(rest[0], (int, str)) else None
-        headers = next((r for r in rest if isinstance(r, (dict, list))), None)
+        headers = next((r for r in rest if r is not None and not isinstance(r, (int, str))), None)
         response = Response(body, status=status, headers=headers)
         if not any(k.lower() == "content-type" for k, _ in Headers(headers or {}).items()):
             response.content_type = content_type
@@ -233,7 +233,14 @@ def flask_error_handler(error: Exception):
     if status == 500 and os.getenv("OPAQUE_ERRORS", None):
         message = "Internal server error"
     status_line = f"400 {type(error).__name__}" if status == 400 else status
-    return {"error": message}, status_line, _status_headers(status)
+    headers = _status_headers(status)
+    if hasattr(error, "get_response") and status == code:  # e.g. the ``Allow`` of a 405
+        headers.update(
+            (k, v)
+            for k, v in error.get_response().headers
+            if k.lower() not in ("content-type", "content-length")
+        )
+    return {"error": message}, status_line, headers
 
 
 def default_error_handler(error: Exception):
