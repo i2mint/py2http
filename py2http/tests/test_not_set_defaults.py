@@ -6,7 +6,9 @@ These tests use ``i2.deco.NotSet`` directly, so they pass with any i2 version.
 """
 
 import json
+from inspect import Parameter
 
+import pytest
 from i2 import Sig
 from i2.deco import NotSet
 
@@ -71,3 +73,40 @@ def test_openapi_spec_of_a_func_factory_showing_not_set_defaults():
     _, spec = mk_routes_and_openapi_specs([with_not_set])
     assert "NotSet" not in json.dumps(spec)
     assert spec == mk_routes_and_openapi_specs([plain])[1]
+
+
+try:
+    from i2 import is_placeholder_default as _  # noqa: F401
+
+    _HAS_PLACEHOLDERS = True
+except ImportError:
+    _HAS_PLACEHOLDERS = False
+
+
+@pytest.mark.skipif(not _HAS_PLACEHOLDERS, reason="i2 without DefaultPlaceholder")
+def test_methodize_default_from_placeholder_is_no_default():
+    """i2mint/py2http#49: a ``methodize(..., default_from=...)`` default is a marker,
+    not a value: the schema keeps that param required, with no default.
+    """
+    from dataclasses import dataclass
+
+    from i2.wrapper import methodize
+
+    def baz(x, y: int, z: int, *, d: float = 1.5):
+        return x + y * z + d
+
+    @dataclass
+    class K:
+        x: int
+        zoo: int = 2
+        bar = methodize(baz, bind="x", default_from=[("z", "zoo")])
+
+    method = K(1).bar
+    assert Sig(method).parameters["z"].default is not Parameter.empty  # marker is there
+
+    schema = mk_input_schema_from_func(method)
+    assert schema["required"] == ["y", "z"]
+    assert "default" not in schema["properties"]["z"]
+
+    specifier = ParamsSpecifier.from_func(method, _dflt_default="dflt")
+    assert specifier._name_and_dflts == {"y": "dflt", "z": "dflt", "d": 1.5}
