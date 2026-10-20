@@ -1,4 +1,4 @@
-> built 2026-10-20 05:00 UTC from 04e0a24 (master) · py2http 0.1.77. Details: build_info.json
+> built 2026-10-20 18:35 UTC from 1831bc2 (master) · py2http 0.1.78. Details: build_info.json
 
 # index.html.md
 
@@ -1659,14 +1659,14 @@ in request handling.
 
 ### Functions
 
-| `mk_input_mapper`(transform)                                                            |                                                                        |
-|-----------------------------------------------------------------------------------------|------------------------------------------------------------------------|
-| [`mk_input_schema_from_func`](_autosummary/py2http.schema_tools.html.md#py2http.schema_tools.mk_input_schema_from_func)(func[, ...]) | Make the openAPI input schema for a function.                          |
-| `mk_output_schema_from_func`(func)                                                      |                                                                        |
-| `mk_sub_dict_schema_from_typed_dict`(typed_dict)                                        |                                                                        |
-| `mk_sub_list_schema_from_iterable`(iterable_type)                                       |                                                                        |
-| [`param_default`](_autosummary/py2http.schema_tools.html.md#py2http.schema_tools.param_default)(param)                   | Return `param.default`, or `Parameter.empty` if it is `i2`'s `NotSet`. |
-| `validate_input`(raw_input, schema)                                                     |                                                                        |
+| `mk_input_mapper`(transform)                                                            |                                                                              |
+|-----------------------------------------------------------------------------------------|------------------------------------------------------------------------------|
+| [`mk_input_schema_from_func`](_autosummary/py2http.schema_tools.html.md#py2http.schema_tools.mk_input_schema_from_func)(func[, ...]) | Make the openAPI input schema for a function.                                |
+| `mk_output_schema_from_func`(func)                                                      |                                                                              |
+| `mk_sub_dict_schema_from_typed_dict`(typed_dict)                                        |                                                                              |
+| `mk_sub_list_schema_from_iterable`(iterable_type)                                       |                                                                              |
+| [`param_default`](_autosummary/py2http.schema_tools.html.md#py2http.schema_tools.param_default)(param)                   | Return `param.default`, or `Parameter.empty` if it is a placeholder default. |
+| `validate_input`(raw_input, schema)                                                     |                                                                              |
 
 ### py2http.schema_tools.mk_input_schema_from_func(func, exclude_keys=None, include_func_params=False)
 
@@ -1728,10 +1728,12 @@ True
 
 ### py2http.schema_tools.param_default(param)
 
-Return `param.default`, or `Parameter.empty` if it is `i2`’s `NotSet`.
+Return `param.default`, or `Parameter.empty` if it is a placeholder default.
 
-`NotSet` in a signature means “no value given”, not a real default, so schema
-builders treat that param as required, with no default (it is not JSON
+A placeholder default is `i2`’s `NotSet` sentinel or any
+`i2.DefaultPlaceholder` (such as the marker `methodize(..., default_from=...)`
+puts in a signature). It means “no concrete value here”, not a real default, so
+schema builders treat that param as required, with no default (it is not JSON
 serializable either).
 
 ```pycon
@@ -2298,18 +2300,20 @@ so that it can be jsonizable.
 
 # About this build
 
-This documentation was built on **2026-10-20 05:00 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/04e0a24b2cce4d9dabfe9a6796e1352db8118e19"><code>04e0a24</code></a> on branch <code>master</code>, for **py2http 0.1.77** (from <code>setup.cfg</code>).
+This documentation was built on **2026-10-20 18:35 UTC** from commit <a href="https://github.com/i2mint/py2http/commit/1831bc256eea64f10b753cf6c7762b896d0fd01a"><code>1831bc2</code></a> on branch <code>master</code>, for **py2http 0.1.78** (from <code>setup.cfg</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.1.78) is ahead of the latest release on PyPI (0.1.77): these docs describe unreleased code.
 
 ## Source
 
 |                     |                                                                                                                                                       |
 |---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2http/commit/04e0a24b2cce4d9dabfe9a6796e1352db8118e19"><code>04e0a24b2cce4d9dabfe9a6796e1352db8118e19</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2http/commit/1831bc256eea64f10b753cf6c7762b896d0fd01a"><code>1831bc256eea64f10b753cf6c7762b896d0fd01a</code></a> |
 | Branch              | <code>master</code>                                                                                                                                   |
-| Tags at this commit | <code>0.1.77</code>                                                                                                                                   |
+| Tags at this commit | <code>0.1.78</code>                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                 |
 | Remote              | <code>https://github.com/i2mint/py2http</code>                                                                                                        |
 
@@ -2318,15 +2322,15 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2http</code>                                                                |
-| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/39372330900">39372330900</a>       |
+| Run          | <a href="https://github.com/i2mint/py2http/actions/runs/39475703674">39475703674</a>       |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>c7f5b8199c952254075eff8a1576d1016ed5a9da</code> (in the history of the built commit) |
+| Event commit | <code>f87b5cea7f924cc0169ffd927c521c1a4d09441b</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.18  |
+| epythet  | 0.2.22  |
 | Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
 | Python   | 3.12.15 |
@@ -2345,14 +2349,14 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2http/0.1.77/">0.1.77</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/py2http/0.1.77/">0.1.77</a>, older than the documented version (0.1.78).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2http && cd py2http
-git checkout 04e0a24b2cce4d9dabfe9a6796e1352db8118e19
-pip install "epythet==0.2.18"
+git checkout 1831bc256eea64f10b753cf6c7762b896d0fd01a
+pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

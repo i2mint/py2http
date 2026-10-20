@@ -157,7 +157,7 @@ in request handling.</p>
 <td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#py2http.schema_tools.param_default" title="py2http.schema_tools.param_default"><code class="xref py py-obj docutils literal notranslate"><span class="pre">param_default</span></code></a>(param)</p></td>
-<td><p>Return <code class="docutils literal notranslate"><span class="pre">param.default</span></code>, or <code class="docutils literal notranslate"><span class="pre">Parameter.empty</span></code> if it is <code class="docutils literal notranslate"><span class="pre">i2</span></code>'s <code class="docutils literal notranslate"><span class="pre">NotSet</span></code>.</p></td>
+<td><p>Return <code class="docutils literal notranslate"><span class="pre">param.default</span></code>, or <code class="docutils literal notranslate"><span class="pre">Parameter.empty</span></code> if it is a placeholder default.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate_input</span></code>(raw_input, schema)</p></td>
 <td><p></p></td>
@@ -230,9 +230,11 @@ also be included (under the field <code class="code docutils literal notranslate
 <dl class="py function">
 <dt class="sig sig-object py" id="py2http.schema_tools.param_default">
 <span class="sig-prename descclassname"><span class="pre">py2http.schema_tools.</span></span><span class="sig-name descname"><span class="pre">param_default</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2http/schema_tools.html#param_default"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a @click.prevent="window.navigator.clipboard.writeText($el.href); $el.setAttribute('data-tooltip', 'Copied!'); setTimeout(() =&gt; $el.setAttribute('data-tooltip', 'Copy link to this element'), 2000)" aria-label="Copy link to this element" class="headerlink" data-tooltip="Copy link to this element" href="#py2http.schema_tools.param_default" x-intersect.margin.0%.0%.-70%.0%="activeSection = '#py2http.schema_tools.param_default'">¶</a></dt>
-<dd><p>Return <code class="docutils literal notranslate"><span class="pre">param.default</span></code>, or <code class="docutils literal notranslate"><span class="pre">Parameter.empty</span></code> if it is <code class="docutils literal notranslate"><span class="pre">i2</span></code>’s <code class="docutils literal notranslate"><span class="pre">NotSet</span></code>.</p>
-<p><code class="docutils literal notranslate"><span class="pre">NotSet</span></code> in a signature means “no value given”, not a real default, so schema
-builders treat that param as required, with no default (it is not JSON
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">param.default</span></code>, or <code class="docutils literal notranslate"><span class="pre">Parameter.empty</span></code> if it is a placeholder default.</p>
+<p>A placeholder default is <code class="docutils literal notranslate"><span class="pre">i2</span></code>’s <code class="docutils literal notranslate"><span class="pre">NotSet</span></code> sentinel or any
+<code class="docutils literal notranslate"><span class="pre">i2.DefaultPlaceholder</span></code> (such as the marker <code class="docutils literal notranslate"><span class="pre">methodize(...,</span> <span class="pre">default_from=...)</span></code>
+puts in a signature). It means “no concrete value here”, not a real default, so
+schema builders treat that param as required, with no default (it is not JSON
 serializable either).</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><code><span id="line-1"><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">i2.deco</span><span class="w"> </span><span class="kn">import</span> <span class="n">NotSet</span>
 </span><span id="line-2"><span class="gp">&gt;&gt;&gt; </span><span class="n">param_default</span><span class="p">(</span><span class="n">Parameter</span><span class="p">(</span><span class="s1">'x'</span><span class="p">,</span> <span class="n">Parameter</span><span class="o">.</span><span class="n">KEYWORD_ONLY</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
@@ -265,7 +267,7 @@ Otosense </p>
 </div>
 </footer>
 </div>
-<script src="../_static/documentation_options.js?v=f0a2a924"></script>
+<script src="../_static/documentation_options.js?v=18b80ae6"></script>
 <script src="../_static/doctools.js?v=fd6eb6e6"></script>
 <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
 <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

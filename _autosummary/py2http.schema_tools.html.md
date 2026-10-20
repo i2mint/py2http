@@ -10,14 +10,14 @@ in request handling.
 
 ### Functions
 
-| `mk_input_mapper`(transform)                                                            |                                                                        |
-|-----------------------------------------------------------------------------------------|------------------------------------------------------------------------|
-| [`mk_input_schema_from_func`](#py2http.schema_tools.mk_input_schema_from_func)(func[, ...]) | Make the openAPI input schema for a function.                          |
-| `mk_output_schema_from_func`(func)                                                      |                                                                        |
-| `mk_sub_dict_schema_from_typed_dict`(typed_dict)                                        |                                                                        |
-| `mk_sub_list_schema_from_iterable`(iterable_type)                                       |                                                                        |
-| [`param_default`](#py2http.schema_tools.param_default)(param)                   | Return `param.default`, or `Parameter.empty` if it is `i2`'s `NotSet`. |
-| `validate_input`(raw_input, schema)                                                     |                                                                        |
+| `mk_input_mapper`(transform)                                                            |                                                                              |
+|-----------------------------------------------------------------------------------------|------------------------------------------------------------------------------|
+| [`mk_input_schema_from_func`](#py2http.schema_tools.mk_input_schema_from_func)(func[, ...]) | Make the openAPI input schema for a function.                                |
+| `mk_output_schema_from_func`(func)                                                      |                                                                              |
+| `mk_sub_dict_schema_from_typed_dict`(typed_dict)                                        |                                                                              |
+| `mk_sub_list_schema_from_iterable`(iterable_type)                                       |                                                                              |
+| [`param_default`](#py2http.schema_tools.param_default)(param)                   | Return `param.default`, or `Parameter.empty` if it is a placeholder default. |
+| `validate_input`(raw_input, schema)                                                     |                                                                              |
 
 ### py2http.schema_tools.mk_input_schema_from_func(func, exclude_keys=None, include_func_params=False)
 
@@ -79,10 +79,12 @@ True
 
 ### py2http.schema_tools.param_default(param)
 
-Return `param.default`, or `Parameter.empty` if it is `i2`’s `NotSet`.
+Return `param.default`, or `Parameter.empty` if it is a placeholder default.
 
-`NotSet` in a signature means “no value given”, not a real default, so schema
-builders treat that param as required, with no default (it is not JSON
+A placeholder default is `i2`’s `NotSet` sentinel or any
+`i2.DefaultPlaceholder` (such as the marker `methodize(..., default_from=...)`
+puts in a signature). It means “no concrete value here”, not a real default, so
+schema builders treat that param as required, with no default (it is not JSON
 serializable either).
 
 ```pycon

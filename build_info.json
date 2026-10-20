@@ -1,38 +1,38 @@
 {
   "schema_version": 1,
-  "built_at": "2026-10-20T05:00:15Z",
+  "built_at": "2026-10-20T18:35:17Z",
   "package": {
     "name": "py2http",
-    "version": "0.1.77",
+    "version": "0.1.78",
     "display_name": "Py2http",
     "source": "setup.cfg"
   },
   "git": {
     "available": true,
-    "commit": "04e0a24b2cce4d9dabfe9a6796e1352db8118e19",
-    "short_commit": "04e0a24",
+    "commit": "1831bc256eea64f10b753cf6c7762b896d0fd01a",
+    "short_commit": "1831bc2",
     "branch": "master",
     "tags": [
-      "0.1.77"
+      "0.1.78"
     ],
     "dirty": false,
     "remote_url": "https://github.com/i2mint/py2http",
-    "commit_url": "https://github.com/i2mint/py2http/commit/04e0a24b2cce4d9dabfe9a6796e1352db8118e19",
+    "commit_url": "https://github.com/i2mint/py2http/commit/1831bc256eea64f10b753cf6c7762b896d0fd01a",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "i2mint/py2http",
-    "sha": "c7f5b8199c952254075eff8a1576d1016ed5a9da",
+    "sha": "f87b5cea7f924cc0169ffd927c521c1a4d09441b",
     "sha_in_history": true,
     "ref": "refs/heads/master",
     "ref_name": "master",
-    "run_id": "39372330900",
-    "run_url": "https://github.com/i2mint/py2http/actions/runs/39372330900",
+    "run_id": "39475703674",
+    "run_url": "https://github.com/i2mint/py2http/actions/runs/39475703674",
     "server_url": "https://github.com"
   },
   "tools": {
-    "epythet": "0.2.18",
+    "epythet": "0.2.22",
     "sphinx": "9.1.1",
     "docutils": "0.22.4",
     "python": "3.12.15"
@@ -63,13 +63,15 @@
   "pypi": {
     "checked": true,
     "latest": "0.1.77",
-    "relation": "same",
+    "relation": "ahead",
     "error": null
   },
-  "reproduce": "git clone https://github.com/i2mint/py2http && cd py2http\ngit checkout 04e0a24b2cce4d9dabfe9a6796e1352db8118e19\npip install \"epythet==0.2.18\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/i2mint/py2http && cd py2http\ngit checkout 1831bc256eea64f10b753cf6c7762b896d0fd01a\npip install \"epythet==0.2.22\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
-    "aligned": true,
-    "notes": []
+    "aligned": false,
+    "notes": [
+      "The documented version (0.1.78) is ahead of the latest release on PyPI (0.1.77): these docs describe unreleased code."
+    ]
   }
 }
