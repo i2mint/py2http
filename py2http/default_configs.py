@@ -18,6 +18,7 @@ import inspect
 import json
 import logging
 import os
+import uuid
 from functools import wraps
 
 from i2.errors import (
@@ -33,7 +34,9 @@ from py2http.decorators import handle_json_req, send_json_resp, JsonRespEncoder
 from py2http.config import AIOHTTP, BOTTLE, FLASK
 from py2http.constants import (
     BEARER_CHALLENGE,
+    EXPOSE_ERRORS_ENV_VAR,
     JSON_CONTENT_TYPE,
+    OPAQUE_ERRORS_ENV_VAR,
     WWW_AUTHENTICATE_ENV_VAR,
 )
 
@@ -203,10 +206,35 @@ def error_status(error: Exception) -> int:
     return 500
 
 
+
+def server_error_message(error: Exception) -> str:
+    """The text a client gets for an unexpected (500) error.
+
+    By default it is a generic message carrying an error id, and the exception is
+    logged server-side under that id, so the text of the exception (which can hold
+    file paths, connection strings or data) never reaches the client. Set
+    ``PY2HTTP_EXPOSE_ERRORS`` to send ``str(error)`` instead (development);
+    ``OPAQUE_ERRORS`` still forces the generic message.
+
+    >>> import os
+    >>> os.environ.pop("PY2HTTP_EXPOSE_ERRORS", None) and None
+    >>> server_error_message(KeyError("secret path")).startswith("Internal server error")
+    True
+    """
+    if os.getenv(EXPOSE_ERRORS_ENV_VAR) and not os.getenv(OPAQUE_ERRORS_ENV_VAR):
+        return str(error)
+    error_id = uuid.uuid4().hex[:12]
+    logger.error(
+        "Internal server error %s: %s", error_id, error, exc_info=error
+    )
+    return f"Internal server error (error id {error_id})"
+
 def aiohttp_error_handler(error: Exception):
     status = error_status(error)
     if status == 500:
-        _raise_http_client_error(web.HTTPInternalServerError, "Internal server error")
+        _raise_http_client_error(
+            web.HTTPInternalServerError, server_error_message(error)
+        )
     reason = type(error).__name__ if status == 400 else None
     _raise_http_client_error(
         _AIOHTTP_ERRORS[status],
@@ -222,14 +250,14 @@ def bottle_error_handler(error: Exception):
     response.status = f"400 {type(error).__name__}" if status == 400 else status
     for header, value in _status_headers(status).items():
         response.set_header(header, value)
-    if status == 500 and os.getenv("OPAQUE_ERRORS", None):
-        message = "Internal server error"
+    if status == 500:
+        message = server_error_message(error)
     return {"error": message}
 
 
 def flask_error_handler(error: Exception):
     """The ``(body, status, headers)`` a Flask view returns for an error, mapped like
-    the bottle handler (``OPAQUE_ERRORS`` hides the text of a 500)."""
+    the bottle handler (a 500 carries :func:`server_error_message`, not the exception text)."""
     message = str(error)
     status = error_status(error)
     code = getattr(
@@ -242,8 +270,8 @@ def flask_error_handler(error: Exception):
         and hasattr(error, "get_response")
     ):
         status, message = code, getattr(error, "description", None) or message
-    if status == 500 and os.getenv("OPAQUE_ERRORS", None):
-        message = "Internal server error"
+    if status == 500:
+        message = server_error_message(error)
     status_line = f"400 {type(error).__name__}" if status == 400 else status
     headers = _status_headers(status)
     if hasattr(error, "get_response") and status == code:  # e.g. the ``Allow`` of a 405

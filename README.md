@@ -208,7 +208,7 @@ Functions that generate an HTTP service, such as `run_app`, accept a number of k
 * `framework=py2http.config.BOTTLE` The HTTP framework to use.
 * `input_mapper=py2http.default_configs.default_input_mapper` A function to map an HTTP request to a dict of input arguments.
 * `output_mapper=py2http.default_configs.default_output_mapper` A function to map the output of a function to an HTTP response.
-* `error_handler=py2http.default_configs.default_error_handler` A function to map an exception to an HTTP response.
+* `error_handler=py2http.default_configs.default_error_handler` A function to map an exception to an HTTP response. An unexpected error (500) answers "Internal server error (error id …)" and logs the exception under that id; set `PY2HTTP_EXPOSE_ERRORS=1` to send the exception text instead (development only).
 * `header_inputs={}` A dict of object properties in JSON schema format describing keys that should be excluded from request body definitions. These inputs are expected to be extracted from the request headers in the input mapper.
 * `host='localhost'` The hostname the server can be reached at, to include in the OpenAPI specification.
 * `port=3030` The TCP port to listen on.

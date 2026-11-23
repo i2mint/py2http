@@ -13,3 +13,8 @@ API_KEY_CHALLENGE = "ApiKey"
 #: Environment variable naming the challenge for a 401 a dispatched function raised
 #: (``AuthorizationError``); the deployment's auth decides it. Default: Bearer.
 WWW_AUTHENTICATE_ENV_VAR = "PY2HTTP_WWW_AUTHENTICATE"
+#: Set (to anything non-empty) to send an unexpected error's text to the client in a
+#: 500 body. Off by default: exception text can carry paths, connection strings or data.
+EXPOSE_ERRORS_ENV_VAR = "PY2HTTP_EXPOSE_ERRORS"
+#: Legacy switch that forces the generic 500 message (now the default); still honoured.
+OPAQUE_ERRORS_ENV_VAR = "OPAQUE_ERRORS"
