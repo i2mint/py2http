@@ -51,10 +51,28 @@ def test_bottle_400_reason_names_the_error():
     assert got == "400 InputError"
 
 
-def test_opaque_errors_hides_500_text(monkeypatch, capsys):
+def test_500_text_hidden_by_default(monkeypatch, capsys, caplog):
+    monkeypatch.delenv("PY2HTTP_EXPOSE_ERRORS", raising=False)
+    _, body = call_wsgi(_app_raising(KeyError("internal detail")), "/fail", {})
+    assert "internal detail" not in body["error"]
+    assert body["error"].startswith("Internal server error (error id ")
+    error_id = body["error"].rsplit(" ", 1)[-1].rstrip(")")
+    # the operator can find the exception under the id the client was given
+    assert any(error_id in r.getMessage() and "internal detail" in r.getMessage() for r in caplog.records)
+
+
+def test_expose_errors_sends_500_text(monkeypatch, capsys):
+    monkeypatch.setenv("PY2HTTP_EXPOSE_ERRORS", "1")
+    monkeypatch.delenv("OPAQUE_ERRORS", raising=False)
+    _, body = call_wsgi(_app_raising(KeyError("internal detail")), "/fail", {})
+    assert "internal detail" in body["error"]
+
+
+def test_opaque_errors_wins_over_expose(monkeypatch, capsys):
+    monkeypatch.setenv("PY2HTTP_EXPOSE_ERRORS", "1")
     monkeypatch.setenv("OPAQUE_ERRORS", "1")
     _, body = call_wsgi(_app_raising(KeyError("internal detail")), "/fail", {})
-    assert body == {"error": "Internal server error"}
+    assert "internal detail" not in body["error"]
 
 
 @pytest.mark.parametrize("error, status", CASES)
@@ -88,8 +106,8 @@ def test_flask_error_handler(error, status, monkeypatch):
         assert response.headers["WWW-Authenticate"] == "Bearer"
     else:
         assert "WWW-Authenticate" not in response.headers
-    if status == 500:
-        assert "internal detail" in response.get_json()["error"]
+    if status == 500:  # hidden by default (i2mint/py2http#35)
+        assert "internal detail" not in response.get_json()["error"]
 
 
 def test_flask_opaque_errors_hides_500_text(monkeypatch):
@@ -101,7 +119,9 @@ def test_flask_opaque_errors_hides_500_text(monkeypatch):
     app.add_url_rule(
         "/f", "f", lambda: flask_error_handler(KeyError("internal detail"))
     )
-    assert app.test_client().get("/f").get_json() == {"error": "Internal server error"}
+    assert app.test_client().get("/f").get_json()["error"].startswith(
+        "Internal server error"
+    )
 
 
 @pytest.mark.parametrize("error, status", CASES)
